@@ -36,6 +36,7 @@ class TrainConfig:
     lr: float = 3e-4
     weight_decay: float = 0.01
     warmup_frac: float = 0.05
+    label_smoothing: float = 0.0
     seed: int = 42
     device: str = "cuda"
     num_workers: int = 0
@@ -136,7 +137,7 @@ def train(cfg: TrainConfig, model_cfg: ModelConfig | None = None) -> dict:
         return 0.5 * (1.0 + math.cos(math.pi * progress))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lr_at)
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss(label_smoothing=cfg.label_smoothing)
 
     ckpt_dir = Path(cfg.ckpt_dir)
     ckpt_dir.mkdir(exist_ok=True)
@@ -233,6 +234,8 @@ def _parse_args() -> tuple[TrainConfig, ModelConfig]:
     p.add_argument("--n-layers", type=int, default=3)
     p.add_argument("--n-heads", type=int, default=4)
     p.add_argument("--dropout", type=float, default=0.1)
+    p.add_argument("--label-smoothing", type=float, default=0.0)
+    p.add_argument("--weight-decay", type=float, default=0.01)
     p.add_argument("--device", default="cuda")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--limit", type=int, default=None)
@@ -246,6 +249,8 @@ def _parse_args() -> tuple[TrainConfig, ModelConfig]:
         device=args.device,
         seed=args.seed,
         limit=args.limit,
+        label_smoothing=args.label_smoothing,
+        weight_decay=args.weight_decay,
     )
     model_cfg = ModelConfig(
         d_model=args.d_model,
