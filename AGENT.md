@@ -151,12 +151,12 @@ Total: ~1 week of focused work, or 2-3 weekends of casual.
 
 | Scramble | Model | Solved? | Moves | Tool calls | Cost | Notes |
 |---|---|---|---|---|---|---|
-| 2 | Sonnet 4.5 | ✓ | 25 | 14 | $0.23 | Clean: multi-axis EO → trigger DR → HTR+Finish |
-| 1 | Sonnet 4.5 | ✓ | 25 trivial | 14 | $0.21 | Used invert(scramble); fixed in prompt |
-| 1 | Sonnet 4.5 | timeout | — | 27 | ~$8 | Found real EO; ran out of wall time at DR |
+| 2 | Sonnet 4.5 | ✓ | **25** | 14 | $0.23 | Clean: multi-axis EO → trigger DR → HTR+Finish |
+| 1 | Sonnet 4.5 | ✗ trivial | 25 | 14 | $0.21 | Used invert(scramble); fixed in prompt |
+| 1 v2 | Sonnet 4.5 | timeout | — | 27 | ~$8 | Found real EO `D L' U F2 R' U'` (matches analyzer); ran out of wall |
+| 1 v3 | Sonnet 4.5 | timeout | — | 43 | ~$15 | Explored many EO paths, found 5-move FB EO; still searching |
 | 3 | Sonnet 4.5 | timeout | 34 interim | 25 | ~$10 | Found 34 but kept searching for shorter |
-| 2 | Opus 4.5 | (in flight) | — | — | — | Comparison run |
-| 1 | Sonnet 4.5 | (in flight) | — | — | — | 40-min wall, 60 calls |
+| 2 | Opus 4.5 | timeout | — | 15 | ~$10 | Got stuck on default DR width; now fixed to 512 |
 
 ---
 
