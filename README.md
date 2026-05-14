@@ -43,8 +43,16 @@ constraint — FMC routinely benefits from breaking partial structure
 
 ### Current capability
 
-On the real WCA scramble `R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F`,
-the analyzer produces a **27-move (25 after cancellation) full solve**:
+Three hand-picked WCA-grade scrambles, all produce engine-verified
+full solves on a single 4060:
+
+| Scramble (`R' U' F` start/end) | Result | Stages |
+|---|---|---|
+| `B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F` | **25 moves** | EO 4 + DR 8 + HTR 7 + Finish 8 (normal) |
+| `L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F` | **30 moves** | EO 4 + DR 7 + HTR 10 + Finish 10 (NISS — entire pipeline on the inverse side) |
+| `R2 B2 D2 R F2 L D2 B2 R B2 U2 R F' L D' B U B' R' F' D' R' U' F` | **31 moves** | EO 5 + DR 8 + HTR 7 + Finish 12 (RL axis — needed the multi-axis HTR fix) |
+
+Sample full breakdown (the 25-move solve):
 
 ```
 [ EO (UD) ]  4 moves   →  R B D' B'
@@ -53,8 +61,19 @@ the analyzer produces a **27-move (25 after cancellation) full solve**:
 [ Finish ]  8 moves    →  B2 U2 F2 U2 F2 R2 D2 L2
 ```
 
-verified scramble→SOLVED by the engine. Search time ~10 minutes on a
-single 4060.
+Each scramble has its own story:
+- **#1** is normal-side easy — short EO, clean DR, fully solved on
+  normal pipeline only.
+- **#2** required NISS — normal-side EO is reachable but DR is
+  structurally deep (>=7 moves over EO-preserving moves at width 8192).
+  The inverse-side pipeline finds a clean 4-move EO and 7-move DR.
+- **#3** required multi-axis HTR tables — the best DR is on the RL
+  axis, not UD. Before the fix, the A\* DR→HTR heuristic returned
+  `None` for non-UD axes and the finish silently failed.
+
+Search wall time is currently ~10-25 min per scramble on GPU. The
+analyzer prioritizes solve quality over speed; speed tuning is an
+explicit follow-up.
 
 ### NISS (Normal-Inverse Scramble Switch)
 
