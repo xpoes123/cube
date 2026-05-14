@@ -348,7 +348,7 @@ def _try_axis(
     return skeletons
 
 
-def _extend_to_htr_and_finish(
+def _extend_to_htr(
     model: PolicyTransformer,
     dr_end_state: State,
     axis: Axis,
@@ -356,39 +356,27 @@ def _extend_to_htr_and_finish(
     device: torch.device | str,
     seed_history: tuple[Move, ...],
     side: Side = "normal",
-) -> tuple[Stage, ...] | None:
-    """Search DR → canonical HTR (M1) and finish via PDB when possible.
+) -> Stage | None:
+    """Search DR → canonical HTR (M1).
 
-    Two-step:
-      1. A* in the DR-group (`dr_group_moves`) from `dr_end_state` to
-         any state satisfying `is_htr_ud` (single-axis HTR). Heuristic
-         is `htr_lower_bound` = max(corner_dist, edge_dist), admissible
-         because each DR move affects at most 4 corners and 4 edges.
-      2. If the landed canonical-HTR state is ALSO strict-HTR (multi-
-         axis EO/CO all zero), apply `htr_solve` PDB for the optimal
-         half-turn finish. Otherwise emit the HTR stage and stop here —
-         the leave-slice finish is Milestone 2 work.
+    A* in the DR-group (`dr_group_moves`) from `dr_end_state` to any
+    state satisfying `is_htr_ud` (single-axis HTR). Heuristic is
+    `htr_lower_bound` = max(corner_dist, edge_dist), admissible because
+    each DR move affects at most 4 corners and 4 edges.
 
-    `side` is recorded on the emitted stages so cross-side stitching in
-    `Skeleton.flat_moves` works correctly.
-
-    Returns the additional stages, or None on search failure.
+    `side` is recorded on the emitted stage. Returns None on search
+    failure.
     """
     side_tag = " [inv]" if side == "inverse" else ""
 
-    # Fast path: already in strict-HTR.
-    if is_htr(dr_end_state):
-        finish = htr_solve(dr_end_state)
-        if finish is None:
-            return None
-        return (
-            Stage(name=f"HTR ({axis.value}){side_tag}", moves=(), log_prob=0.0,
-                  end_state=dr_end_state, side=side),
-            Stage(name=f"Finish{side_tag}", moves=tuple(finish), log_prob=0.0,
-                  end_state=dr_end_state.apply_alg(finish), side=side),
+    # Fast path: already in canonical HTR — emit a zero-move stage so
+    # the caller can still attach a Finish.
+    if is_htr_ud(dr_end_state):
+        return Stage(
+            name=f"HTR ({axis.value}){side_tag}", moves=(), log_prob=0.0,
+            end_state=dr_end_state, side=side,
         )
 
-    # Step 1: A* DR → canonical HTR with DR-group action mask.
     def h(state: State) -> int:
         bound = htr_lower_bound(state, axis)
         return bound if bound is not None else 0
@@ -398,7 +386,7 @@ def _extend_to_htr_and_finish(
     # meaningfully improving the search. Empirically 9-move DR→HTR in
     # <0.1s on the test scramble.
     htr_sols = a_star_search(
-        None,  # no model needed when policy_weight=0
+        None,
         start_state=dr_end_state,
         target_predicate=is_htr_ud,
         heuristic=h,
@@ -415,7 +403,7 @@ def _extend_to_htr_and_finish(
 
     best = htr_sols[0]
     htr_state = dr_end_state.apply_alg(list(best.moves))
-    htr_stage = Stage(
+    return Stage(
         name=f"HTR ({axis.value}){side_tag}",
         moves=best.moves,
         log_prob=best.log_prob,
@@ -423,19 +411,56 @@ def _extend_to_htr_and_finish(
         side=side,
     )
 
-    # Step 2: If we happened to land in strict-HTR, finish with the PDB.
-    # Otherwise the canonical-HTR state needs leave-slice (Milestone 2)
-    # to fully solve — return HTR stage only for now.
-    if is_htr(htr_state):
-        finish = htr_solve(htr_state)
-        if finish is not None:
-            return (
-                htr_stage,
-                Stage(name=f"Finish{side_tag}", moves=tuple(finish),
-                      log_prob=0.0,
-                      end_state=htr_state.apply_alg(finish), side=side),
-            )
 
+def _finish_from_htr(htr_state: State, side: Side = "normal") -> Stage | None:
+    """Half-turn finish via the htr_solve PDB.
+
+    `htr_state` must be in strict-HTR (multi-axis EO/CO all zero) in the
+    frame of `side`. HTR is closed under inversion, so a strict-HTR
+    state in either frame is solvable by the same PDB lookup; the move
+    sequence will differ between frames, which is the whole point of
+    the HTR→Finish NISS boundary.
+
+    Returns None if the state isn't strict-HTR or the PDB walk fails.
+    """
+    if not is_htr(htr_state):
+        return None
+    finish = htr_solve(htr_state)
+    if finish is None:
+        return None
+    side_tag = " [inv]" if side == "inverse" else ""
+    return Stage(
+        name=f"Finish{side_tag}", moves=tuple(finish), log_prob=0.0,
+        end_state=htr_state.apply_alg(finish), side=side,
+    )
+
+
+def _extend_to_htr_and_finish(
+    model: PolicyTransformer,
+    dr_end_state: State,
+    axis: Axis,
+    history_len: int,
+    device: torch.device | str,
+    seed_history: tuple[Move, ...],
+    side: Side = "normal",
+) -> tuple[Stage, ...] | None:
+    """Search DR → canonical HTR (M1) and finish via PDB when possible.
+
+    Thin wrapper around `_extend_to_htr` + `_finish_from_htr` for the
+    single-side case. Callers that want to also try the OTHER side for
+    the Finish should call the two pieces directly.
+
+    Returns the additional stages, or None on search failure.
+    """
+    htr_stage = _extend_to_htr(
+        model, dr_end_state, axis, history_len, device, seed_history,
+        side=side,
+    )
+    if htr_stage is None:
+        return None
+    finish_stage = _finish_from_htr(htr_stage.end_state, side=side)
+    if finish_stage is not None:
+        return (htr_stage, finish_stage)
     return (htr_stage,)
 
 
@@ -781,27 +806,67 @@ def find_skeleton(
         # Sides to try for the HTR extension: the DR's own side always,
         # plus the opposite side when NISS is enabled.
         same_side: Side = dr_stage.side
-        try_sides: list[Side] = [same_side]
+        try_htr_sides: list[Side] = [same_side]
         if use_niss:
             other_side: Side = "inverse" if same_side == "normal" else "normal"
-            try_sides.append(other_side)
+            try_htr_sides.append(other_side)
 
         found_ext_for_sk = False
-        for htr_side in try_sides:
+        for htr_side in try_htr_sides:
             if htr_side == same_side:
                 start = dr_stage.end_state
             else:
                 start = _cumulative_state(sk.scramble, sk.stages, htr_side)
             seed = _stage_seed_history(sk.scramble, sk.stages, htr_side)
-            ext = _extend_to_htr_and_finish(
+            htr_stage = _extend_to_htr(
                 model, start, axis, history_len, device, seed,
                 side=htr_side,
             )
-            if ext is not None:
+            if htr_stage is None:
+                continue
+
+            # NISS at HTR→Finish: HTR is closed under inversion, so a
+            # strict-HTR state in one frame is also strict-HTR in the
+            # other frame. The PDB walk produces a different move
+            # sequence in each frame; cancellation at the HTR/Finish
+            # boundary may differ between sides, so we emit BOTH as
+            # candidates and let ranking pick the shortest.
+            stages_with_htr = sk.stages + (htr_stage,)
+            try_finish_sides: list[Side] = [htr_side]
+            if use_niss:
+                finish_other: Side = (
+                    "inverse" if htr_side == "normal" else "normal"
+                )
+                try_finish_sides.append(finish_other)
+
+            emitted_any_finish = False
+            for finish_side in try_finish_sides:
+                if finish_side == htr_side:
+                    htr_state_in_frame = htr_stage.end_state
+                else:
+                    htr_state_in_frame = _cumulative_state(
+                        sk.scramble, stages_with_htr, finish_side,
+                    )
+                finish_stage = _finish_from_htr(
+                    htr_state_in_frame, side=finish_side,
+                )
+                if finish_stage is None:
+                    continue
                 extended.append(Skeleton(
-                    scramble=sk.scramble, stages=sk.stages + ext,
+                    scramble=sk.scramble,
+                    stages=stages_with_htr + (finish_stage,),
+                ))
+                emitted_any_finish = True
+                found_ext_for_sk = True
+
+            if not emitted_any_finish:
+                # HTR reached but no PDB finish (canonical-HTR but not
+                # strict-HTR — leave-slice case, M2).
+                extended.append(Skeleton(
+                    scramble=sk.scramble, stages=stages_with_htr,
                 ))
                 found_ext_for_sk = True
+
         if not found_ext_for_sk:
             extended.append(sk)
 

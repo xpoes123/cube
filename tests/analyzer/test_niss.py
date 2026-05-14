@@ -276,3 +276,91 @@ def test_dr_state_preserved_under_inversion():
     assert eo_count(inverse_state, Axis.UD) == 0
     assert co_count(normal_state, Axis.UD) == 0
     assert co_count(inverse_state, Axis.UD) == 0
+
+
+def test_htr_state_solves_from_both_frames():
+    """Algebraic invariant the NISS at HTR→Finish boundary depends on.
+
+    HTR is a subgroup of G (the cube group), closed under inverse, so a
+    strict-HTR state in the normal frame is also strict-HTR in the
+    inverse frame. `htr_solve` produces a valid PDB walk in both
+    frames; the move sequences differ but each, applied in its own
+    frame, returns to SOLVED.
+
+    The full skeleton (EO + DR + HTR + Finish) must therefore be a
+    complete solve regardless of which side the Finish lives on.
+    """
+    from cube.analyzer.skeleton import (
+        _cumulative_state,
+        _extend_to_htr,
+        _finish_from_htr,
+        _stage_seed_history,
+    )
+    from cube.classifier.features import Axis
+    from cube.classifier.htr import htr_solve, is_htr
+
+    # Scramble 2: known 25-move staged solve.
+    scramble = parse_alg(
+        "R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F"
+    )
+    scramble_t = tuple(scramble)
+    eo_moves = tuple(parse_alg("R B D' B'"))
+    dr_moves = tuple(parse_alg("B2 U' B2 R F2 R' F2 R"))
+
+    stages = (
+        Stage(name="EO (UD)", moves=eo_moves, log_prob=0.0,
+              end_state=SOLVED.apply_alg(list(scramble) + list(eo_moves)),
+              side="normal"),
+        Stage(name="DR (UD)", moves=dr_moves, log_prob=0.0,
+              end_state=SOLVED.apply_alg(
+                  list(scramble) + list(eo_moves) + list(dr_moves)
+              ),
+              side="normal"),
+    )
+
+    # Extend to HTR on normal side using the same pipeline find_skeleton uses.
+    dr_end = stages[-1].end_state
+    seed = _stage_seed_history(scramble_t, stages, "normal")
+    htr_stage = _extend_to_htr(
+        None, dr_end, Axis.UD, history_len=32, device="cpu",
+        seed_history=seed, side="normal",
+    )
+    assert htr_stage is not None
+    assert is_htr(htr_stage.end_state)
+
+    stages_h = stages + (htr_stage,)
+    # The htr_state in the OTHER frame, via the cumulative-state helper.
+    inv_htr_state = _cumulative_state(scramble_t, stages_h, "inverse")
+    # HTR is closed under inverse: both frames see strict-HTR.
+    assert is_htr(inv_htr_state)
+
+    # `htr_solve` succeeds for both, with equal move count (HTR is
+    # axis-symmetric under half-turns), but produces different sequences.
+    normal_finish = htr_solve(htr_stage.end_state)
+    inverse_finish = htr_solve(inv_htr_state)
+    assert normal_finish is not None
+    assert inverse_finish is not None
+    assert len(normal_finish) == len(inverse_finish)
+
+    # Each finish brings its own frame to SOLVED.
+    assert htr_stage.end_state.apply_alg(normal_finish) == SOLVED
+    assert inv_htr_state.apply_alg(inverse_finish) == SOLVED
+
+    # Both full skeletons (normal-Finish and inverse-Finish) solve the
+    # original scramble.
+    finish_n = _finish_from_htr(htr_stage.end_state, side="normal")
+    finish_i = _finish_from_htr(inv_htr_state, side="inverse")
+    assert finish_n is not None and finish_i is not None
+
+    sk_normal_finish = Skeleton(
+        scramble=scramble_t, stages=stages_h + (finish_n,),
+    )
+    sk_inverse_finish = Skeleton(
+        scramble=scramble_t, stages=stages_h + (finish_i,),
+    )
+    assert sk_normal_finish.is_solved
+    assert sk_inverse_finish.is_solved
+    # The two hybrids may have different cancelled-move counts.
+    # On scramble 2 both happen to be 25 moves; we only assert both solve.
+    assert sk_normal_finish.total_moves > 0
+    assert sk_inverse_finish.total_moves > 0
