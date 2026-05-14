@@ -229,7 +229,11 @@ def _try_axis(
             dr_end = trigger_end
             for m in tail:
                 dr_end = dr_end.apply(m)
-            htr_dist = dr_distance_to_htr(dr_end, axis)
+            # Tight admissible lower bound on the HTR phase: max of the
+            # corner-distance and edge-distance PDBs. The corner-only
+            # bound systematically under-counts when the edge structure
+            # is the harder side.
+            htr_dist = htr_lower_bound(dr_end, axis)
             dr_stage = Stage(
                 name=f"DR ({axis.value})",
                 moves=full_dr_moves,
@@ -399,11 +403,11 @@ def find_skeleton(
 
     candidates = sorted(candidates, key=_rank)
 
-    # Extend the top few (EO, DR) candidates with HTR + Finish stages.
-    # We only do this for the top-N because each call is expensive
-    # (~30s for the DR → HTR beam search). The HTR PDB ensures finish
-    # is O(1) once HTR is reached.
-    _EXTEND_TOP_N = 3
+    # Extend the top (EO, DR) candidates with HTR + Finish stages. The A*
+    # DR → HTR with the tight htr_lower_bound heuristic is fast (~0.1s),
+    # so we can afford a larger N. More candidates → better odds the
+    # shortest cancelled-total solution is reached.
+    _EXTEND_TOP_N = 12
     extended: list[Skeleton] = []
     for sk in candidates[:_EXTEND_TOP_N]:
         if len(sk.stages) < 2:
