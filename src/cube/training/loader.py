@@ -14,6 +14,7 @@ from typing import Any
 
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
+from cube.engine.symmetry import mirror_lr_alg
 from cube.segmenter.types import Method, Phase
 from cube.training.dataset import TrainingExample
 
@@ -29,11 +30,20 @@ def iter_records_from_jsonl(path: str | Path) -> Iterator[dict[str, Any]]:
             yield json.loads(line)
 
 
-def record_to_examples(record: dict[str, Any]) -> list[TrainingExample]:
+def record_to_examples(
+    record: dict[str, Any],
+    mirror_lr: bool = False,
+) -> list[TrainingExample]:
     """Convert a single JSONL record into per-move TrainingExamples.
 
     Walks the flat solution (`normal + invert(inverse)`), attaches phase
     labels from the record's `phases` list (using cumulative_count ranges).
+
+    When `mirror_lr=True`, the scramble and solution are reflected across
+    the U-D-F-B plane before walking — yields the LR-mirror solve. Phase
+    labels and counts are preserved (mirroring doesn't change the EO/DR/
+    HTR/block enum or its move index). source_id gets "_M" appended so
+    callers can tell mirrored examples apart.
     """
     scramble = parse_alg(record["scramble"])
     normal = parse_alg(record["solution_normal"])
@@ -42,6 +52,11 @@ def record_to_examples(record: dict[str, Any]) -> list[TrainingExample]:
     # Flatten: normal + invert(inverse).
     from cube.engine.notation import invert
     flat = normal + invert(inverse)
+
+    if mirror_lr:
+        scramble = mirror_lr_alg(scramble)
+        flat = mirror_lr_alg(flat)
+    source_id = record["source_id"] + ("_M" if mirror_lr else "")
 
     # Phase lookup by move index.
     move_to_phase: dict[int, tuple[Phase, str]] = {}
@@ -69,7 +84,7 @@ def record_to_examples(record: dict[str, Any]) -> list[TrainingExample]:
         raw_label = phase_label[1] if phase_label else None
         examples.append(
             TrainingExample(
-                source_id=record["source_id"],
+                source_id=source_id,
                 move_index=i,
                 state_before=state,
                 target_move=move,

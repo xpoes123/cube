@@ -43,6 +43,7 @@ class TrainConfig:
     ckpt_dir: str = "checkpoints"
     log_every: int = 50
     limit: int | None = None
+    mirror_aug: bool = False
 
 
 def _accuracy(logits: torch.Tensor, target: torch.Tensor, k: int = 1) -> float:
@@ -106,6 +107,7 @@ def train(cfg: TrainConfig, model_cfg: ModelConfig | None = None) -> dict:
         history_len=cfg.history_len,
         seed=cfg.seed,
         limit=cfg.limit,
+        mirror_aug=cfg.mirror_aug,
     )
     print(
         f"  loaded in {time.time() - t0:.1f}s "
@@ -239,6 +241,8 @@ def _parse_args() -> tuple[TrainConfig, ModelConfig]:
     p.add_argument("--device", default="cuda")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--limit", type=int, default=None)
+    p.add_argument("--mirror-aug", action="store_true",
+                   help="Double train data via LR-mirror reflection.")
     args = p.parse_args()
     train_cfg = TrainConfig(
         jsonl_path=args.jsonl_path,
@@ -251,6 +255,7 @@ def _parse_args() -> tuple[TrainConfig, ModelConfig]:
         limit=args.limit,
         label_smoothing=args.label_smoothing,
         weight_decay=args.weight_decay,
+        mirror_aug=args.mirror_aug,
     )
     model_cfg = ModelConfig(
         d_model=args.d_model,

@@ -22,7 +22,7 @@ from torch.utils.data import Dataset
 
 from cube.training.dataset import TrainingExample
 from cube.training.encoding import encode_move
-from cube.training.loader import iter_examples_from_jsonl
+from cube.training.loader import iter_records_from_jsonl, record_to_examples
 from cube.training.model import PAD_MOVE
 from cube.training.split import split_by_source_id
 
@@ -120,46 +120,42 @@ def build_splits(
     test_ratio: float = 0.15,
     seed: int = 42,
     limit: int | None = None,
+    mirror_aug: bool = False,
 ) -> SplitBundles:
     """Load JSONL, materialize tensors per split, return all three bundles.
 
     `limit`: cap on number of source records (for quick experiments).
+    `mirror_aug`: append LR-mirrored copies of train-set records to the
+    training data. Val and test are NOT augmented — that would inflate
+    numbers without actually measuring generalization.
     """
-    # First pass: bucket examples by source_id assignment.
-    # We iterate once; iter_examples_from_jsonl yields all examples in source order.
     train_ex: list[TrainingExample] = []
     val_ex: list[TrainingExample] = []
     test_ex: list[TrainingExample] = []
 
-    # We need source_ids known up front for the splitter, but the iterator
-    # doesn't expose record order without a pre-pass. Simplest correct approach:
-    # collect all examples, gather distinct source_ids, split, then partition.
-    all_examples: list[TrainingExample] = []
-    seen_sources: list[str] = []
-    seen_set: set[str] = set()
-    for ex in iter_examples_from_jsonl(jsonl_path):
-        if ex.source_id not in seen_set:
-            seen_set.add(ex.source_id)
-            seen_sources.append(ex.source_id)
-            if limit is not None and len(seen_sources) > limit:
-                # We've already added this example; pop the source_id we just added
-                # and stop iterating.
-                seen_set.remove(ex.source_id)
-                seen_sources.pop()
-                break
-        all_examples.append(ex)
+    # Cheap pre-pass: gather distinct source_ids in record order, so we can
+    # split before materializing examples.
+    records: list[dict] = []
+    for record in iter_records_from_jsonl(jsonl_path):
+        records.append(record)
+        if limit is not None and len(records) >= limit:
+            break
 
+    source_ids = [r["source_id"] for r in records]
     train_set, val_set, test_set = split_by_source_id(
-        seen_sources, val_ratio=val_ratio, test_ratio=test_ratio, seed=seed
+        source_ids, val_ratio=val_ratio, test_ratio=test_ratio, seed=seed
     )
 
-    for ex in all_examples:
-        if ex.source_id in train_set:
-            train_ex.append(ex)
-        elif ex.source_id in val_set:
-            val_ex.append(ex)
+    for record in records:
+        sid = record["source_id"]
+        if sid in train_set:
+            train_ex.extend(record_to_examples(record))
+            if mirror_aug:
+                train_ex.extend(record_to_examples(record, mirror_lr=True))
+        elif sid in val_set:
+            val_ex.extend(record_to_examples(record))
         else:
-            test_ex.append(ex)
+            test_ex.extend(record_to_examples(record))
 
     return SplitBundles(
         train=_examples_to_bundle(train_ex, history_len),
