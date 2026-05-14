@@ -52,6 +52,20 @@ def main() -> None:
     print(f"loaded {args.ckpt}")
     print(f"  val: top1={ckpt['val']['top1']:.4f} top5={ckpt['val']['top5']:.4f} "
           f"(epoch {ckpt['epoch']})")
+
+    # Pre-warm the per-axis HTR distance tables so the first search call
+    # doesn't pay the ~50s build cost mid-A*.
+    from cube.classifier.features import Axis
+    from cube.classifier.htr import (
+        _dr_corner_to_htr_distance_table,
+        _dr_edge_to_htr_distance_table,
+    )
+    print("  warming HTR distance tables (corners + edges × 3 axes)...")
+    _t0 = time.time()
+    for ax in (Axis.UD, Axis.FB, Axis.RL):
+        _dr_corner_to_htr_distance_table(ax)
+        _dr_edge_to_htr_distance_table(ax)
+    print(f"  HTR tables ready ({time.time()-_t0:.1f}s)")
     print()
 
     scramble = parse_alg(args.scramble)
