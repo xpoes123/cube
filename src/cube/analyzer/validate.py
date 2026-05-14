@@ -41,6 +41,7 @@ def _worker_entry(
     dr_beam: int,
     dr_depth: int,
     result_q: mp.Queue,
+    use_niss: bool = True,
 ) -> None:
     """Run find_skeleton on one scramble, push result onto queue.
 
@@ -78,6 +79,7 @@ def _worker_entry(
             eo_max_depth=eo_depth,
             dr_beam_width=dr_beam,
             dr_max_depth=dr_depth,
+            use_niss=use_niss,
         )
         search_elapsed = time.time() - t_search
         total_elapsed = time.time() - t_start
@@ -177,6 +179,7 @@ def _run_one(
     dr_beam: int,
     dr_depth: int,
     time_budget: float,
+    use_niss: bool = True,
 ) -> tuple[dict | None, bool, float]:
     """Run find_skeleton in a subprocess with a hard wall-clock budget.
 
@@ -188,7 +191,7 @@ def _run_one(
     p = ctx.Process(
         target=_worker_entry,
         args=(scramble_str, ckpt_path, device, eo_beam, eo_depth,
-              dr_beam, dr_depth, q),
+              dr_beam, dr_depth, q, use_niss),
         daemon=True,
     )
     t0 = time.time()
@@ -429,6 +432,8 @@ def main() -> int:
     ap.add_argument("--eo-depth", type=int, default=10)
     ap.add_argument("--dr-beam", type=int, default=8192)
     ap.add_argument("--dr-depth", type=int, default=14)
+    ap.add_argument("--no-niss", action="store_true",
+                    help="Disable inverse-side & NISS hybrid search.")
     ap.add_argument("--report", default=None,
                     help="Optional path to write the markdown report.")
     ap.add_argument("--json-out", default=None,
@@ -473,6 +478,7 @@ def main() -> int:
             args.eo_beam, args.eo_depth,
             args.dr_beam, args.dr_depth,
             args.time_budget,
+            use_niss=not args.no_niss,
         )
         res = ScrambleResult(
             index=idx,
