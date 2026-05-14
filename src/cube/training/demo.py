@@ -111,8 +111,8 @@ def main() -> None:
     p.add_argument("--ckpt", default="checkpoints/policy_best.pt")
     p.add_argument(
         "--scramble",
-        default="R U R' U' R' F R2 U' R' U' R U R' F'",
-        help="WCA-notation scramble.",
+        default="R' U' F D2 L2 B U2 B' U2 R2 F D2 R2 F D U' R' B' U' R F U2 R' U' F",
+        help="WCA-notation scramble (default is a real TNoodle-style FMC scramble).",
     )
     p.add_argument("--rollout", type=int, default=25)
     p.add_argument("--topk", type=int, default=5)
