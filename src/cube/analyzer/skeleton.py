@@ -498,24 +498,31 @@ def _stage_seed_history(
 def _rank_skeleton(sk: Skeleton) -> tuple[int, int, int, float]:
     """Sort key for skeleton candidates. Lower is better.
 
-    Order:
-      1. Solved skeletons (full pipeline through Finish) beat partial.
-      2. More stages beat fewer.
-      3. Lower expected total length (moves + htr_distance) wins.
-      4. Tiebreak: fewer total moves, then higher policy log-prob.
+    For SOLVED skeletons: pure move-count comparison wins. A 22-move
+    insertion-rescued skeleton beats a 25-move staged one, regardless
+    of how many stages each has. Stage count is a partial-progress
+    signal, not a quality signal among full solves.
+
+    For UNSOLVED skeletons: prefer more stages (further along the
+    pipeline), then lower expected total = moves + htr_distance.
     """
     is_solved = sk.is_solved
     if is_solved:
-        expected_total = sk.total_moves
-    else:
-        htr_d = 99
-        for st in reversed(sk.stages):
-            if st.htr_distance is not None:
-                htr_d = st.htr_distance
-                break
-        expected_total = sk.total_moves + htr_d
+        return (
+            0,
+            sk.total_moves,
+            0,
+            0,
+            -sum(s.log_prob for s in sk.stages),
+        )
+    htr_d = 99
+    for st in reversed(sk.stages):
+        if st.htr_distance is not None:
+            htr_d = st.htr_distance
+            break
+    expected_total = sk.total_moves + htr_d
     return (
-        0 if is_solved else 1,
+        1,
         -len(sk.stages),
         expected_total,
         sk.total_moves,
