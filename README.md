@@ -430,11 +430,20 @@ in parentheses.
 
 ```bash
 uv sync
-uv run pytest                                        # 209 tests
+uv run pytest                                        # 210+ tests
+# Best-quality solve with NISS (~10-25 min):
 uv run python -m cube.analyzer.skeleton_cli "SCRAMBLE..."
+# Fast triage, no NISS, lean beams (~5 min, lower quality):
+uv run python -m cube.analyzer.skeleton_cli --fast "SCRAMBLE..."
+# Corpus benchmark:
+uv run python -m cube.analyzer.validate \
+  --corpus data/raw/wca.jsonl --n 10 --seed 0 --time-budget 600 \
+  --device cuda --no-niss --dr-beam 2048 --dr-depth 10 \
+  --report benchmarks/results.md
 ```
 
-Optional flags: `--dr-beam`, `--dr-depth`, `--top`, `--device`.
+Optional CLI flags: `--no-niss`, `--fast`, `--dr-beam`, `--dr-depth`,
+`--eo-beam`, `--eo-depth`, `--top`, `--device`.
 
 # Repo layout
 
