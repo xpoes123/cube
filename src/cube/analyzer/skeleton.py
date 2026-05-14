@@ -29,7 +29,7 @@ import torch
 
 from cube.analyzer.search import a_star_search, beam_search
 from cube.analyzer.triggers import has_dr_within, tail_to_dr
-from cube.classifier.features import Axis, best_eo_axis, is_eo_solved
+from cube.classifier.features import Axis, best_eo_axis, is_dr, is_eo_solved
 from cube.classifier.htr import (
     dr_group_moves,
     htr_lower_bound,
@@ -239,6 +239,9 @@ def _try_axis(
     # Caller's find_skeleton ranks the union across axes.
     skeletons: list[Skeleton] = []
     seen_dr_moves: set[tuple[Move, ...]] = set()
+    # Direct-DR fallback (Stage 2c) is bounded but expensive at wide beam;
+    # only run it on the shortest EO per axis to cap wall time.
+    direct_dr_fallback_budget = 1 if dr_beam_width > 256 else 0
 
     for eo_sol in eo_sols:
         eo_end_state = start_state.apply_alg(list(eo_sol.moves))
@@ -264,8 +267,46 @@ def _try_axis(
             extra_depths_after_first_hit=2,
         )
         if not trigger_sols:
-            # Track EO-only as a fallback option.
-            skeletons.append(Skeleton(scramble=scramble_t, stages=(eo_stage,)))
+            # Stage 2c (direct-DR fallback): trigger beam whiffed. If the
+            # caller dialed in a wide DR budget, try a single direct
+            # is_dr beam at the configured width — this catches scrambles
+            # where DR is reachable but no short-tail trigger exists.
+            direct_dr_sols = []
+            if direct_dr_fallback_budget > 0:
+                direct_dr_fallback_budget -= 1
+                direct_dr_sols = beam_search(
+                    model,
+                    start_state=eo_end_state,
+                    target_predicate=lambda s, ax=axis: is_dr(s, ax),
+                    beam_width=dr_beam_width,
+                    max_depth=dr_max_depth,
+                    history_len=history_len,
+                    device=device,
+                    seed_history=seed_history + eo_sol.moves,
+                    allowed_move_indices=_EO_PRESERVING[axis],
+                    extra_depths_after_first_hit=2,
+                )
+            if not direct_dr_sols:
+                # Track EO-only as a fallback option.
+                skeletons.append(Skeleton(scramble=scramble_t, stages=(eo_stage,)))
+                continue
+            for dr_sol in direct_dr_sols:
+                if dr_sol.moves in seen_dr_moves:
+                    continue
+                seen_dr_moves.add(dr_sol.moves)
+                dr_end = eo_end_state.apply_alg(list(dr_sol.moves))
+                htr_dist = htr_lower_bound(dr_end, axis)
+                dr_stage = Stage(
+                    name=dr_name,
+                    moves=dr_sol.moves,
+                    log_prob=dr_sol.log_prob,
+                    end_state=dr_end,
+                    htr_distance=htr_dist,
+                    side=side,
+                )
+                skeletons.append(Skeleton(
+                    scramble=scramble_t, stages=(eo_stage, dr_stage),
+                ))
             continue
 
         # Stage 2b: for each trigger-state, compute the shortest tail.
