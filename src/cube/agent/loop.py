@@ -424,6 +424,12 @@ shorter paths by attacking from both ends.
 # Strategy guidance
 - Aim for short solutions (target: 25-30 moves). Anything under 40 is a real result.
 - Typical pipeline: EO -> DR -> HTR -> finish. But feel free to deviate.
+- **Important**: the inverse of the scramble is always a valid solution of
+  the same length as the scramble itself — but this is the TRIVIAL "undo
+  the scramble" solution and doesn't count as FMC. Your solution should
+  be SHORTER than the scramble (typically 25-30 moves for a 25-27 move
+  scramble). Don't pass the inverse-scramble as `history` to inspect_state
+  and claim it as a solution.
 
 # CRITICAL: each stage needs the right tool. Pipeline:
 
