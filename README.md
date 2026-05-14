@@ -76,18 +76,24 @@ Search wall time on GPU: **~5 min with `--fast`** (no NISS, lean beams),
 
 ### Random WCA corpus benchmark
 
-10 random scrambles, GPU, 10-min/scramble budget, `--fast`:
+10 random scrambles (seed=0), single 4060 GPU:
 
-| metric | value |
-|---|---|
-| full-solve rate | **5/10 = 50%** |
-| mean solved length | 31 moves |
-| min / max solved | 27 / 36 moves |
-| **beats the human** | **2 / 5 solved scrambles** |
-| mean Δ vs human | +5 moves |
+| mode | full solves | mean moves | best | wall budget |
+|---|---|---|---|---|
+| pre-NISS (CPU) | 0/10 | — | — | 5 min |
+| `--fast` (no NISS, dr-beam 2048) | **5/10** | 31.0 | 27 | 10 min |
+| NISS-on (dr-beam 2048) | **7/10** | 32.7 | **24** | 20 min |
 
-Pre-NISS baseline (committed at `benchmarks/baseline_cpu_pre_niss.md`)
-was 0/10. NISS-on benchmark with longer budget pending.
+- **Beats the human reconstruction**: 2/5 with `--fast`, 2/7 with NISS-on.
+- The best result so far: 24 moves on a scramble where the human did 20.
+- NISS rescues 4 scrambles that `--fast` got EO-only on; cost is ~2× wall time.
+- 3 scrambles still time out at 20 min with NISS-on — the hard tail.
+
+Files at `benchmarks/`:
+- `baseline_cpu_pre_niss.md` — pre-NISS baseline
+- `baseline_gpu_fast.md` — `--fast` results
+- `baseline_gpu_niss_2048.md` — NISS-on results
+- `test_scrambles.md` — hand-picked scrambles
 
 ### NISS (Normal-Inverse Scramble Switch)
 
