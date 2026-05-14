@@ -349,17 +349,38 @@ scramble, then concatenate `normal_moves + invert(inverse_moves)`. Lets you find
 shorter paths by attacking from both ends.
 
 # Strategy guidance
-- Aim for short solutions (target: 25-30 moves) but you don't need to be optimal. \
-Anything under 40 is a real result.
+- Aim for short solutions (target: 25-30 moves). Anything under 40 is a real result.
 - Typical pipeline: EO -> DR -> HTR -> finish. But feel free to deviate.
-- Use `inspect_state` early to see what you're working with. Use `try_alg` to test \
-continuations. Use `policy_intuition` when stuck or to seed candidates.
-- When you think you have a solution, FIRST call `verify_solved` to confirm. \
+
+# CRITICAL: `lookahead` is depth-limited (max 5 moves). DR is typically \
+8-12 moves from EO, so a SINGLE `lookahead(target="dr")` call from the scramble \
+WILL FAIL. You must search **iteratively, one stage at a time**, the way humans do:
+
+  1. `lookahead(target="eo", axis=X, depth=5)` → pick a short EO. Apply it (add to history).
+  2. `inspect_state` to confirm. Then iterate within the DR phase:
+     - Try `policy_intuition` to get a strong opener move toward DR.
+     - Apply 2-4 moves following intuition + try_alg.
+     - When `inspect_state` says you're close to DR (bad_corners on your axis ≤ 4), \
+       try `lookahead(target="dr", axis=X, depth=5)` to finish.
+  3. Repeat for DR → HTR (use `inspect_state` to know when HTR is close), \
+     then HTR → solved.
+  4. Try NISS at each boundary: `niss_flip`, then run the same loop on the inverse \
+     scramble. Inverse moves get concatenated as `normal + invert(inverse)`.
+
+DO NOT call `lookahead(target="dr")` directly from the scramble or right after \
+EO. It will return nothing and waste tool calls. Build up to DR step by step.
+
+- Use `lookup_commutator` + `residual_cycles` when you have a near-solved state with \
+a small cycle remaining — insert a commutator at the cheapest position.
+- Use `cancel(moves)` to collapse adjacent same-face moves before submitting.
+
+# Submitting
+When you believe you have a solution, FIRST call `verify_solved` to confirm. \
 Then output the final solution as a JSON array on its own line in this format:
 
   FINAL_SOLUTION: ["R", "U", "R'", ...]
 
-The runner will parse that line and re-verify. If verification fails, you'll \
+The runner parses that line and re-verifies. If verification fails, you'll \
 be told why and can keep working.
 
 Be concise in your reasoning. Use tools liberally. Don't get stuck explaining \
