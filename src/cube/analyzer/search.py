@@ -103,6 +103,7 @@ def beam_search(
     seed_history: tuple[Move, ...] = (),
     stop_at_first_hit: bool = True,
     allowed_move_indices: tuple[int, ...] | None = None,
+    extra_depths_after_first_hit: int = 0,
 ) -> list[Solution]:
     """Beam-search from `start_state` to any state where `target_predicate` is True.
 
@@ -113,6 +114,11 @@ def beam_search(
     `allowed_move_indices` optionally restricts the action space (e.g., to
     EO-preserving moves during a DR stage). When None, all 18 moves are
     available.
+
+    `extra_depths_after_first_hit`: when > 0, the search continues this
+    many depths past the first hit-producing depth. Lets the caller collect
+    longer-but-still-acceptable candidates (e.g. DR shortlist Δ=3 to find
+    a longer DR with a better HTR subset). Overrides stop_at_first_hit.
 
     Returns solutions sorted by log_prob (descending). If
     `stop_at_first_hit`, terminates at the first depth where the predicate
@@ -135,8 +141,9 @@ def beam_search(
         if allowed_move_indices is None
         else allowed_move_indices
     )
+    first_hit_depth: int | None = None
 
-    for _depth in range(max_depth):
+    for depth_idx in range(max_depth):
         if not beams:
             break
 
@@ -161,8 +168,15 @@ def beam_search(
                         Beam(child_state, child_history, child_log_prob)
                     )
 
-        if hits and stop_at_first_hit:
+        if hits and first_hit_depth is None:
+            first_hit_depth = depth_idx + 1
+        if hits and stop_at_first_hit and extra_depths_after_first_hit == 0:
             return sorted(hits, key=lambda s: s.log_prob, reverse=True)
+        if (
+            first_hit_depth is not None
+            and depth_idx + 1 >= first_hit_depth + extra_depths_after_first_hit
+        ):
+            return sorted(hits, key=lambda s: (len(s), -s.log_prob))
 
         candidates.sort(key=lambda b: b.log_prob, reverse=True)
         seen: set[State] = set()
