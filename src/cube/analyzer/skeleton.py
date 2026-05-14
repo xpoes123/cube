@@ -800,8 +800,41 @@ def find_skeleton(
 
     # Rest of candidates unchanged.
     extended.extend(candidates[_EXTEND_TOP_N:])
-    # Re-sort: extended (full-solve) candidates float to top.
-    return sorted(extended, key=_rank_skeleton)
+    extended = sorted(extended, key=_rank_skeleton)
+
+    # Insertion pass (M3): for each top-K skeleton that DOESN'T solve,
+    # run the insertion finder against its cancelled move sequence. The
+    # commutator library is small and the search is brute-force, so this
+    # is fast (<1s per skeleton). Add solving insertions as new candidates.
+    from cube.analyzer.insertions import find_insertions_for_skeleton
+
+    with_insertions: list[Skeleton] = list(extended)
+    _INSERTION_TOP_K = 8
+    for sk in extended[:_INSERTION_TOP_K]:
+        if sk.is_solved or not sk.stages:
+            continue
+        residual, opts = find_insertions_for_skeleton(
+            sk.cancelled_moves, sk.scramble, top_k=3,
+        )
+        for opt in opts:
+            if not opt.solved:
+                continue
+            # Append a synthetic "Insertion" stage. moves stored = the
+            # full final solving sequence relative to the original
+            # skeleton; flat_moves will use it as-is (single normal stage
+            # representing the whole post-insertion move list).
+            insertion_stage = Stage(
+                name=f"Insertion ({opt.commutator.name} @ pos {opt.position})",
+                moves=tuple(opt.final_moves),
+                log_prob=0.0,
+                end_state=SOLVED,
+                side="normal",
+            )
+            with_insertions.append(Skeleton(
+                scramble=sk.scramble, stages=(insertion_stage,),
+            ))
+
+    return sorted(with_insertions, key=_rank_skeleton)
 
 
 def find_skeleton_inverse(
