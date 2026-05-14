@@ -235,22 +235,19 @@ def _extend_to_htr_and_finish(
     device: torch.device | str,
     seed_history: tuple[Move, ...],
 ) -> tuple[Stage, ...] | None:
-    """Search DR → HTR via beam, then HTR → SOLVED via PDB lookup.
+    """Search DR → SOLVED directly with all 18 moves.
 
-    UD axis only for now (HTR PDB is rooted at SOLVED on the UD axis).
+    Skips the explicit HTR intermediate (which is unreachable as a hard
+    target from generic DR states under our multi-axis-strict
+    definition). Beam search with all 18 moves; the policy keeps us
+    roughly DR-shaped. If a true HTR state is hit along the way, we
+    record it; otherwise we record the moves that reached SOLVED as a
+    single "Finish" stage.
 
-    NOTE on group closure: a generic post-DR state typically has nonzero
-    FB-EO/RL-EO or FB-CO/RL-CO. The full HTR (=half-turn-only subgroup)
-    requires ALL multi-axis EO and CO = 0. Half turns preserve all of
-    these, so true HTR is unreachable from such a DR state using only
-    DR-group moves. To find an HTR-reachable state we permit the full
-    18-move set during the DR → HTR search and just trust that the
-    policy/beam will keep us in the rough DR shape (most found paths
-    do).
-
-    Returns (htr_stage, finish_stage) on success, or None if no HTR
-    state was reached within budget.
+    Returns one or two stages depending on what was found, or None on
+    failure.
     """
+    # Fast path: state IS in true HTR — use PDB.
     if is_htr(dr_end_state):
         finish = htr_solve(dr_end_state)
         if finish is None:
@@ -262,32 +259,26 @@ def _extend_to_htr_and_finish(
                   end_state=dr_end_state.apply_alg(finish)),
         )
 
-    # Use all 18 moves: DR-group-only can't change FB-EO/RL-EO when
-    # they're nonzero (and they typically are for generic DR states).
-    htr_sols = beam_search(
+    # Otherwise: search directly to SOLVED. All 18 moves; the policy
+    # was trained on the full move space so this is its natural mode.
+    sols = beam_search(
         model,
         start_state=dr_end_state,
-        target_predicate=is_htr,
-        beam_width=2048,
-        max_depth=14,
+        target_predicate=lambda s: s == SOLVED,
+        beam_width=1024,
+        max_depth=16,
         history_len=history_len,
         device=device,
         seed_history=seed_history,
     )
-    if not htr_sols:
+    if not sols:
         return None
 
-    htr_sol = htr_sols[0]
-    htr_end = dr_end_state.apply_alg(list(htr_sol.moves))
-    finish = htr_solve(htr_end)
-    if finish is None:
-        return None
-
+    best = sols[0]
+    end_state = dr_end_state.apply_alg(list(best.moves))
     return (
-        Stage(name=f"HTR ({axis.value})", moves=htr_sol.moves,
-              log_prob=htr_sol.log_prob, end_state=htr_end),
-        Stage(name="Finish", moves=tuple(finish), log_prob=0.0,
-              end_state=htr_end.apply_alg(finish)),
+        Stage(name="Finish", moves=best.moves,
+              log_prob=best.log_prob, end_state=end_state),
     )
 
 

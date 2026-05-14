@@ -280,6 +280,72 @@ def dr_distance_to_htr(state: State, axis: Axis = Axis.UD) -> int | None:
     return _dr_corner_to_htr_distance_table().get(state.cp)
 
 
+@lru_cache(maxsize=1)
+def _dr_edge_to_htr_distance_table() -> dict[tuple[int, ...], int]:
+    """For every UD-DR-reachable edge perm, the minimum DR-group moves to
+    reach any HTR edge perm.
+
+    Parallel to _dr_corner_to_htr_distance_table but on edges. Combined
+    with the corner table, gives a strong admissible heuristic for full-
+    state DR → HTR distance: max(corner_dist, edge_dist).
+    """
+    moves = dr_group_moves(Axis.UD)
+    htr_eps = htr_edge_perms()
+    distance: dict[tuple[int, ...], int] = {ep: 0 for ep in htr_eps}
+    frontier: deque[tuple[tuple[int, ...], int]] = deque(
+        (ep, 0) for ep in htr_eps
+    )
+    solved_eo = (0,) * 12
+    ep_move_cache: dict[tuple[tuple[int, ...], Move], tuple[int, ...]] = {}
+
+    def apply_ep(ep: tuple[int, ...], m: Move) -> tuple[int, ...]:
+        key = (ep, m)
+        cached = ep_move_cache.get(key)
+        if cached is not None:
+            return cached
+        s = State(
+            cp=SOLVED.cp, co=(0,) * 8, ep=ep,
+            eo=solved_eo, eo_fb=solved_eo, eo_rl=solved_eo,
+        )
+        new_ep = s.apply(m).ep
+        ep_move_cache[key] = new_ep
+        return new_ep
+
+    while frontier:
+        ep, d = frontier.popleft()
+        for m in moves:
+            new_ep = apply_ep(ep, m)
+            if new_ep in distance:
+                continue
+            distance[new_ep] = d + 1
+            frontier.append((new_ep, d + 1))
+    return distance
+
+
+def dr_edge_distance_to_htr(state: State, axis: Axis = Axis.UD) -> int | None:
+    """Min DR-group moves to bring `state.ep` into the HTR-edge-subgroup.
+
+    Admissible lower bound on full-state moves to HTR (combined with
+    corner distance via max).
+    """
+    if axis != Axis.UD:
+        return None
+    return _dr_edge_to_htr_distance_table().get(state.ep)
+
+
+def htr_lower_bound(state: State, axis: Axis = Axis.UD) -> int | None:
+    """Admissible lower bound on DR-group moves from `state` to any HTR state.
+
+    max(corner_distance, edge_distance) — each move affects at most 4
+    corners and at most 4 edges, so neither bound can be exceeded.
+    """
+    c = dr_distance_to_htr(state, axis)
+    e = dr_edge_distance_to_htr(state, axis)
+    if c is None or e is None:
+        return None
+    return max(c, e)
+
+
 # ---------- HTR pattern database (full HTR-group enumeration) ----------
 
 
