@@ -232,3 +232,47 @@ def test_find_skeleton_with_niss_beats_normal_only(model):
             if any(st.side == "inverse" for st in sk.stages)
         ]
         assert all(len(sk.flat_moves) >= 0 for sk in niss_candidates)
+
+
+def test_dr_state_preserved_under_inversion():
+    """Algebraic invariant the multi-boundary NISS at DR→HTR depends on.
+
+    EO=0 and CO=0 are subgroups of G (kernels of homomorphisms to Z_2^11
+    and Z_3^7). Subgroups are closed under inverse, so a state in DR on
+    some axis has its frame-inverse also in DR on the same axis.
+
+    Concretely: the cumulative inverse-frame state at a (EO+DR-normal)
+    point of a skeleton is also in DR (same axis).
+    """
+    from cube.analyzer.skeleton import _cumulative_state
+    from cube.classifier.features import Axis, co_count, eo_count, is_dr
+
+    # Scramble 2's known DR-UD on normal side.
+    scramble = parse_alg(
+        "R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F"
+    )
+    scramble_t = tuple(scramble)
+    eo_moves = tuple(parse_alg("R B D' B'"))
+    dr_moves = tuple(parse_alg("B2 U' B2 R F2 R' F2 R"))
+
+    stages = (
+        Stage(name="EO (UD)", moves=eo_moves, log_prob=0.0,
+              end_state=SOLVED.apply_alg(list(scramble) + list(eo_moves)),
+              side="normal"),
+        Stage(name="DR (UD)", moves=dr_moves, log_prob=0.0,
+              end_state=SOLVED.apply_alg(
+                  list(scramble) + list(eo_moves) + list(dr_moves)
+              ),
+              side="normal"),
+    )
+
+    normal_state = _cumulative_state(scramble_t, stages, "normal")
+    inverse_state = _cumulative_state(scramble_t, stages, "inverse")
+
+    # Both frames see a DR-UD state.
+    assert is_dr(normal_state, Axis.UD)
+    assert is_dr(inverse_state, Axis.UD)
+    assert eo_count(normal_state, Axis.UD) == 0
+    assert eo_count(inverse_state, Axis.UD) == 0
+    assert co_count(normal_state, Axis.UD) == 0
+    assert co_count(inverse_state, Axis.UD) == 0
