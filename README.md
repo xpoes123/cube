@@ -23,6 +23,16 @@ SIMD, pipeline richness exceed what we'd ship in pure Python. Competing
 on move-count is a losing fight. But neither has a learned policy or
 an LLM reasoning layer. **That intersection is the wedge.**
 
+## Current agent results
+
+| Scramble | Solved? | Moves | Tool calls | Cost | Notes |
+|---|---|---|---|---|---|
+| 2 (`R' U' F B' U2 F' U2 R2 B' R2 …`) | ✓ | **25** | 14 | $0.23 | Multi-axis EO scan → trigger DR → HTR+Finish; matches analyzer baseline |
+| 1 (`R' U' F L' R U2 F2 L2 R U2 …`) | ✓ | 25 (trivial) | 14 | $0.21 | Found degenerate invert(scramble); prompt updated to disallow |
+| 3 (`R' U' F R2 B2 D2 R F2 L D2 …`) | ✗ | — | 25 (timeout) | ~$10 | Got interim 34-move solve but timed out exploring |
+
+Model: `claude-sonnet-4-5-20250929`. Transcripts at `runs/*.md`.
+
 ## Why
 
 Optimal solvers are useless to humans: they suggest 24-move solutions that
