@@ -90,7 +90,7 @@ def _h_find_dr_via_trigger(args: dict[str, Any]) -> dict:
         args["scramble"], args["history"],
         axis=args["axis"],
         tail_length=args.get("tail_length", 2),
-        setup_width=args.get("setup_width", 30),
+        setup_width=args.get("setup_width", 512),
         setup_depth=args.get("setup_depth", 8),
     )
 
@@ -362,7 +362,7 @@ TOOL_REGISTRY: dict[str, tuple[ToolHandler, dict]] = {
                     "history": _MOVE_LIST_SCHEMA,
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                     "tail_length": {"type": "integer", "minimum": 1, "maximum": 3, "default": 2},
-                    "setup_width": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 512},
+                    "setup_width": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 512, "description": "Default 512 is the sweet spot; only lower for very fast triage."},
                     "setup_depth": {"type": "integer", "minimum": 1, "maximum": 10, "default": 8},
                 },
                 "required": ["scramble", "history", "axis"],

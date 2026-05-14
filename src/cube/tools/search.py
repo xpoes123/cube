@@ -147,7 +147,7 @@ def find_dr_via_trigger(
     *,
     axis: str,
     tail_length: int = 2,
-    setup_width: int = 30,
+    setup_width: int = 512,
     setup_depth: int = 8,
 ) -> dict:
     """Search for DR via the trigger-then-tail pattern strong humans use.
