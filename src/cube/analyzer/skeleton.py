@@ -17,6 +17,7 @@ from dataclasses import dataclass
 import torch
 
 from cube.analyzer.search import Solution, beam_search
+from cube.analyzer.triggers import has_dr_within, tail_to_dr
 from cube.classifier.features import Axis, best_eo_axis, is_dr, is_eo_solved
 from cube.classifier.htr import dr_distance_to_htr
 from cube.engine.moves import Face, Move, Turn
@@ -52,6 +53,12 @@ def _eo_preserving_moves(axis: Axis) -> tuple[int, ...]:
 _EO_PRESERVING: dict[Axis, tuple[int, ...]] = {
     a: _eo_preserving_moves(a) for a in Axis
 }
+
+
+# How many moves the tail-search may use to reach DR from a beam state.
+# Each predicate call is O(18^K). K=2 means ~324 ops per state which is
+# fast enough for beam_width=256 at typical depths.
+_TAIL_LEN = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,59 +162,69 @@ def _try_axis(
     best_expected_total = float("inf")
     best_eo_only: Skeleton | None = None
 
+    # Two-stage DR search per EO:
+    #   2a. Shallow beam to a "trigger state" — a state from which DR is
+    #       reachable within _TAIL_LEN moves (checked by direct DFS).
+    #   2b. The full DR path is beam-setup + the DFS tail.
+    # This is faster than monolithic DR search because trigger-states are
+    # vastly more numerous than DR-states — every state ≤_TAIL_LEN moves
+    # from DR is a hit. Shallow beam search finds them reliably.
     for eo_sol in eo_sols:
         eo_end_state = scrambled.apply_alg(list(eo_sol.moves))
-        dr_sols = beam_search(
-            model,
-            start_state=eo_end_state,
-            target_predicate=lambda s, ax=axis: is_dr(s, ax),
-            beam_width=dr_beam_width,
-            max_depth=dr_max_depth,
-            history_len=history_len,
-            device=device,
-            seed_history=scramble_t + eo_sol.moves,
-            allowed_move_indices=_EO_PRESERVING[axis],
-        )
-
         eo_stage = Stage(
             name=f"EO ({axis.value})",
             moves=eo_sol.moves,
             log_prob=eo_sol.log_prob,
             end_state=eo_end_state,
         )
-
-        # Track best EO-only skeleton in case no DR fires anywhere.
         if best_eo_only is None or len(eo_sol.moves) < best_eo_only.total_moves:
             best_eo_only = Skeleton(scramble=scramble_t, stages=(eo_stage,))
 
-        if not dr_sols:
+        # Stage 2a: search for trigger states (≤_TAIL_LEN from DR).
+        trigger_sols = beam_search(
+            model,
+            start_state=eo_end_state,
+            target_predicate=lambda s, ax=axis: has_dr_within(s, ax, _TAIL_LEN),
+            beam_width=256,
+            max_depth=10,
+            history_len=history_len,
+            device=device,
+            seed_history=scramble_t + eo_sol.moves,
+            allowed_move_indices=_EO_PRESERVING[axis],
+            extra_depths_after_first_hit=2,
+        )
+        if not trigger_sols:
             continue
 
-        # Pick best DR for this EO by (length + htr_distance).
-        def _dr_score(sol: Solution, end_state: State = eo_end_state) -> int:
-            after = end_state.apply_alg(list(sol.moves))
-            htr_d = dr_distance_to_htr(after, axis)
-            if htr_d is None:
-                return len(sol) + 99
-            return len(sol) + htr_d
+        # Stage 2b: for each trigger-state, compute the shortest tail.
+        for trig_sol in trigger_sols:
+            trigger_end = eo_end_state.apply_alg(list(trig_sol.moves))
+            tail = tail_to_dr(trigger_end, axis, _TAIL_LEN)
+            if tail is None:
+                continue  # beam target fired but DFS lost it; shouldn't happen
 
-        best_dr = min(dr_sols, key=_dr_score)
-        dr_end_state = eo_end_state.apply_alg(list(best_dr.moves))
-        htr_dist = dr_distance_to_htr(dr_end_state, axis)
-        eo_len = len(eo_sol.moves)
-        dr_len = len(best_dr.moves)
-        expected_total = eo_len + dr_len + (htr_dist if htr_dist is not None else 99)
-
-        if expected_total < best_expected_total:
-            best_expected_total = expected_total
-            dr_stage = Stage(
-                name=f"DR ({axis.value})",
-                moves=best_dr.moves,
-                log_prob=best_dr.log_prob,
-                end_state=dr_end_state,
-                htr_distance=htr_dist,
+            full_dr_moves = trig_sol.moves + tail
+            dr_end = trigger_end
+            for m in tail:
+                dr_end = dr_end.apply(m)
+            htr_dist = dr_distance_to_htr(dr_end, axis)
+            expected_total = (
+                len(eo_sol.moves) + len(full_dr_moves)
+                + (htr_dist if htr_dist is not None else 99)
             )
-            best_skeleton = Skeleton(scramble=scramble_t, stages=(eo_stage, dr_stage))
+
+            if expected_total < best_expected_total:
+                best_expected_total = expected_total
+                dr_stage = Stage(
+                    name=f"DR ({axis.value})",
+                    moves=full_dr_moves,
+                    log_prob=trig_sol.log_prob,
+                    end_state=dr_end,
+                    htr_distance=htr_dist,
+                )
+                best_skeleton = Skeleton(
+                    scramble=scramble_t, stages=(eo_stage, dr_stage),
+                )
 
     return best_skeleton if best_skeleton is not None else best_eo_only
 
