@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from enum import Enum
 
+from cube.engine.facelet import CORNER_COLORS, CORNER_FACELETS, face_of
 from cube.engine.state import SOLVED, State
 
 
@@ -52,17 +53,61 @@ def eo_count(state: State, axis: Axis = Axis.UD) -> int:
     raise ValueError(f"unknown axis: {axis}")
 
 
-def co_count(state: State) -> int:
-    """Number of misoriented corners under UD-axis CO convention."""
-    return sum(1 for o in state.co if o != 0)
+# Face index sets per axis (face indices match facelet.py: U=0 R=1 F=2 D=3 L=4 B=5).
+_AXIS_FACES: dict[Axis, frozenset[int]] = {
+    Axis.UD: frozenset({0, 3}),  # U, D
+    Axis.FB: frozenset({2, 5}),  # F, B
+    Axis.RL: frozenset({1, 4}),  # R, L
+}
+
+
+def _corner_axis_oriented(state: State, position: int, axis: Axis) -> bool:
+    """Is the cubie at `position` oriented relative to `axis`?
+
+    Definition: the cubie has 3 facelets, exactly one of which carries an
+    axis-colored sticker (e.g., U or D for UD-axis). The corner is
+    "axis-oriented" iff that sticker is currently on an axis-face.
+
+    Computed directly from facelet positions — no extra state needed.
+    """
+    cubie = state.cp[position]
+    orient = state.co[position]
+    axis_faces = _AXIS_FACES[axis]
+    cubie_colors = CORNER_COLORS[cubie]
+
+    # The cubie's slot 0 is always its U/D facelet (UD-color). For other
+    # axes, find which of the cubie's slots carries an axis-color.
+    axis_slot_in_cubie = next(
+        s for s in range(3) if cubie_colors[s] in axis_faces
+    )
+    # to_facelets places cubie_colors[(slot - orient) % 3] at facelet_slots[slot].
+    # So cubie_colors[axis_slot_in_cubie] lands at position-slot
+    # (axis_slot_in_cubie + orient) % 3.
+    pos_slot = (axis_slot_in_cubie + orient) % 3
+    facelet_idx = CORNER_FACELETS[position][pos_slot]
+    return face_of(facelet_idx) in axis_faces
+
+
+def co_count(state: State, axis: Axis = Axis.UD) -> int:
+    """Number of corners NOT oriented relative to `axis`.
+
+    UD-axis: equivalent to `sum(1 for o in state.co if o != 0)` — fast path.
+    Other axes: derived from facelets.
+    """
+    if axis == Axis.UD:
+        return sum(1 for o in state.co if o != 0)
+    return sum(1 for p in range(8) if not _corner_axis_oriented(state, p, axis))
 
 
 def is_eo_solved(state: State, axis: Axis = Axis.UD) -> bool:
     return eo_count(state, axis) == 0
 
 
-def is_co_solved(state: State) -> bool:
-    return co_count(state) == 0
+def is_co_solved(state: State, axis: Axis = Axis.UD) -> bool:
+    """True iff all 8 corners are oriented relative to `axis`."""
+    if axis == Axis.UD:
+        return all(o == 0 for o in state.co)
+    return all(_corner_axis_oriented(state, p, axis) for p in range(8))
 
 
 def best_eo_axis(state: State) -> tuple[Axis, int]:
@@ -108,29 +153,66 @@ def is_dr(state: State, axis: Axis = Axis.UD) -> bool:
 
     Conditions:
       1. EO solved on `axis`.
-      2. CO solved (currently UD-axis CO only — see scope notes).
+      2. CO solved on `axis` (corner's axis-color facelet on an axis-face).
       3. The axis-perpendicular slice edges all in their slice.
-
-    Note: CO check is UD-axis only. For DR on FB or RL axis, this returns
-    True only when CO happens to be solved under UD convention too, which
-    is a stricter condition than DR-on-axis strictly requires. Multi-axis
-    CO is a follow-up.
     """
     return (
         is_eo_solved(state, axis)
-        and is_co_solved(state)
+        and is_co_solved(state, axis)
         and slice_in_slice(state, axis)
     )
 
 
 def dr_distance_lowerbound(state: State) -> int:
-    """Heuristic lower bound on moves to reach DR (UD axis).
+    """Cheap "how bad is this state for DR" score (UD axis).
+
+    NOTE: This is bad-piece-count, NOT an admissible move-count lower bound.
+    For an A*-admissible heuristic use `dr_heuristic` below.
 
     Cheap heuristic = max(bad_edges, misoriented_corners). Used for ordering /
-    triage, not for proof of optimality. The policy/value model will replace
-    this with a learned estimate later.
+    triage, not for proof of optimality.
     """
-    return max(eo_count(state), co_count(state), e_slice_misplaced_count(state))
+    return max(eo_count(state), co_count(state, Axis.UD), e_slice_misplaced_count(state))
+
+
+# ---------- Admissible heuristics (for A* search) ----------
+#
+# Each face quarter turn affects at most 4 pieces of any one feature
+# (4 edges flipped, 4 corners twisted, 4 slice edges cycled). So the
+# minimum number of moves to fix N misplaced pieces is `ceil(N / 4)`.
+# That gives a true lower bound on remaining moves to the target — the
+# admissibility condition for A*.
+#
+# These are conservative (under-estimate true distance), which is exactly
+# what A* needs. Stronger heuristics would speed up search further but
+# must still under-estimate to preserve optimality.
+
+
+def _ceil_div_4(n: int) -> int:
+    return (n + 3) // 4
+
+
+def eo_heuristic(state: State, axis: Axis = Axis.UD) -> int:
+    """Admissible lower bound on moves to reach EO solved on `axis`."""
+    return _ceil_div_4(eo_count(state, axis))
+
+
+def dr_heuristic(state: State, axis: Axis = Axis.UD) -> int:
+    """Admissible lower bound on moves to reach DR on `axis`.
+
+    Takes the max of three independent admissible bounds:
+      - moves to fix EO on this axis
+      - moves to fix CO on this axis
+      - moves to get axis-perpendicular slice edges in slice
+
+    Each is the floor on its own subproblem; the max is therefore a valid
+    lower bound on the combined problem.
+    """
+    return max(
+        _ceil_div_4(eo_count(state, axis)),
+        _ceil_div_4(co_count(state, axis)),
+        _ceil_div_4(slice_misplaced_count(state, axis)),
+    )
 
 
 # ---------- HTR (half-turn reduction) ----------

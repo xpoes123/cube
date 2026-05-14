@@ -21,8 +21,9 @@ Why beam search (vs. MCTS or A*):
 
 from __future__ import annotations
 
+import heapq
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import torch
 import torch.nn.functional as F
@@ -34,6 +35,9 @@ from cube.training.model import PAD_MOVE, N_MOVES, PolicyTransformer
 
 # A predicate identifies a target state (EO, DR, SOLVED, block solved, …).
 StatePredicate = Callable[[State], bool]
+
+# An admissible heuristic: lower bound on moves-to-target from a state.
+StateHeuristic = Callable[[State], int]
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,3 +181,197 @@ def beam_search(
 
 def format_solution(solution: Solution) -> str:
     return " ".join(str(m) for m in solution.moves)
+
+
+# =====================================================================
+# A* search
+# =====================================================================
+#
+# Beam is policy-blind to "am I closer to the target." A* fixes that by
+# expanding nodes in order of f(n) = g(n) + h(n), where:
+#   g(n) = path cost (depth so far)
+#   h(n) = admissible lower bound on remaining moves to target
+# With an admissible h, A* is guaranteed optimal.
+#
+# We add a third term, policy_bias = -lambda * log_p(path), so f becomes:
+#   f(n) = g(n) + h(n) - lambda * log_p(path)
+# When lambda = 0, A* finds the optimal-length sequence. When lambda > 0,
+# it prefers higher-policy-probability paths among ties — sacrificing
+# some optimality for human-style move ordering. This is the same idea
+# AlphaZero uses with a learned value, just with a hand-coded h.
+
+# Sentinel returned by the policy when policy_weight is 0 (skip forwards).
+_NO_POLICY = None
+
+
+@dataclass(order=True)
+class _AStarNode:
+    f: float
+    counter: int                      # tiebreaker for the heap (state-comparison-free)
+    state: State = field(compare=False)
+    history: tuple[Move, ...] = field(compare=False)
+    g: int = field(compare=False)
+    log_prob: float = field(compare=False)
+
+
+def _policy_log_probs_batched(
+    model: PolicyTransformer,
+    states: list[State],
+    histories: list[tuple[Move, ...]],
+    history_len: int,
+    device: torch.device,
+) -> list[list[float]]:
+    """Run the model on a list of (state, history) pairs and return log-probs."""
+    beams = [
+        Beam(state=s, history=h, log_prob=0.0)
+        for s, h in zip(states, histories, strict=True)
+    ]
+    batch = _encode_beams(beams, history_len, device)
+    with torch.no_grad():
+        logits = model(**batch)
+    return F.log_softmax(logits, dim=-1).cpu().tolist()
+
+
+def a_star_search(
+    model: PolicyTransformer | None,
+    start_state: State,
+    target_predicate: StatePredicate,
+    heuristic: StateHeuristic,
+    max_depth: int = 16,
+    max_nodes: int = 100_000,
+    history_len: int = 32,
+    device: torch.device | str = "cuda",
+    seed_history: tuple[Move, ...] = (),
+    allowed_move_indices: tuple[int, ...] | None = None,
+    policy_weight: float = 0.0,
+    expansion_batch: int = 256,
+) -> list[Solution]:
+    """A* search from start_state to any state satisfying target_predicate.
+
+    `heuristic(state)` must return an admissible lower bound on moves to target.
+
+    `policy_weight` (lambda): when > 0 and `model` is provided, paths with
+    higher policy log-prob are preferred among ties. Set to 0 for pure
+    optimal-length search; set high to bias toward human-style moves.
+
+    `max_nodes`: cap on the closed set size — safety valve for memory.
+
+    Returns solutions sorted by length, then by policy log_prob (descending).
+    Returns up to one solution per distinct path length found before depth
+    or node limit is hit.
+    """
+    dev = torch.device(device) if isinstance(device, str) else device
+    if model is not None:
+        model.eval()
+
+    move_iter = (
+        tuple(range(N_MOVES))
+        if allowed_move_indices is None
+        else allowed_move_indices
+    )
+
+    if target_predicate(start_state):
+        return [Solution(moves=(), log_prob=0.0)]
+
+    counter = 0
+    h0 = heuristic(start_state)
+    start_node = _AStarNode(
+        f=float(h0),
+        counter=counter,
+        state=start_state,
+        history=seed_history,
+        g=0,
+        log_prob=0.0,
+    )
+    open_heap: list[_AStarNode] = [start_node]
+    best_g: dict[State, int] = {start_state: 0}
+    hits: list[Solution] = []
+    seen_path_lengths: set[int] = set()
+    seed_len = len(seed_history)
+
+    use_policy = (model is not None) and (policy_weight > 0.0)
+
+    while open_heap and len(best_g) < max_nodes:
+        # Pop a batch of nodes to expand at once — lets us batch the
+        # policy network call. We pull up to `expansion_batch` nodes off
+        # the heap, but only those whose g is still consistent with the
+        # best-known g (no stale entries).
+        batch_nodes: list[_AStarNode] = []
+        while open_heap and len(batch_nodes) < expansion_batch:
+            node = heapq.heappop(open_heap)
+            if node.g != best_g.get(node.state, -1):
+                continue  # stale; skip
+            if node.g >= max_depth:
+                continue
+            batch_nodes.append(node)
+
+        if not batch_nodes:
+            break
+
+        # Optionally compute policy log-probs for the whole batch in one go.
+        if use_policy:
+            log_probs_batch = _policy_log_probs_batched(
+                model,
+                [n.state for n in batch_nodes],
+                [n.history for n in batch_nodes],
+                history_len,
+                dev,
+            )
+        else:
+            log_probs_batch = [[0.0] * N_MOVES for _ in batch_nodes]
+
+        for node, log_probs in zip(batch_nodes, log_probs_batch, strict=True):
+            for move_idx in move_iter:
+                move = decode_move(move_idx)
+                child_state = node.state.apply(move)
+                child_g = node.g + 1
+                if child_g > max_depth:
+                    continue
+                prior_g = best_g.get(child_state)
+                if prior_g is not None and prior_g <= child_g:
+                    continue
+
+                child_log_prob = node.log_prob + log_probs[move_idx]
+                child_history = node.history + (move,)
+
+                if target_predicate(child_state):
+                    stage_moves = child_history[seed_len:]
+                    if len(stage_moves) not in seen_path_lengths:
+                        hits.append(Solution(stage_moves, child_log_prob))
+                        seen_path_lengths.add(len(stage_moves))
+                    continue
+
+                best_g[child_state] = child_g
+                child_h = heuristic(child_state)
+                child_f = child_g + child_h - policy_weight * child_log_prob
+                counter += 1
+                heapq.heappush(
+                    open_heap,
+                    _AStarNode(
+                        f=child_f,
+                        counter=counter,
+                        state=child_state,
+                        history=child_history,
+                        g=child_g,
+                        log_prob=child_log_prob,
+                    ),
+                )
+
+        # Early-exit: once we've found a solution, the heap's min g + h is
+        # a lower bound on remaining path lengths (h admissible). We stop
+        # when no shorter solution can still be reached. Note: cannot use
+        # `f` here since with policy_weight > 0, f includes a policy term
+        # that breaks the g + h <= length guarantee.
+        if hits and open_heap:
+            shortest = min(len(s) for s in hits)
+            # The g+h on the heap is bounded below by the lowest-f node's
+            # g+h. Stop if the heap's lowest g+h would already exceed
+            # `shortest` even without policy bonus.
+            min_node = open_heap[0]
+            min_remaining = min_node.g + heuristic(min_node.state)
+            if min_remaining >= shortest:
+                break
+        elif hits and not open_heap:
+            break
+
+    return sorted(hits, key=lambda s: (len(s), -s.log_prob))

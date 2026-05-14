@@ -87,9 +87,9 @@ _EO_BEAM_WIDTH = 256
 _DR_MAX_DEPTH = 14
 _DR_BEAM_WIDTH = 8192
 
-# DR predicate is currently UD-axis-CO-strict, so only attempt DR on UD
-# axis. FB/RL stages return EO-only. Multi-axis CO is a follow-up.
-_DR_AXES = (Axis.UD,)
+# Multi-axis CO is now implemented (classifier.features._corner_axis_oriented),
+# so DR is genuinely axis-aware. We try all three axes by default.
+_DR_AXES = (Axis.UD, Axis.FB, Axis.RL)
 
 
 def _try_axis(
@@ -172,10 +172,9 @@ def find_skeleton(
     "Best" = most stages reached (prefer EO+DR over EO-only), then fewest
     total moves, then highest log-prob.
 
-    DR detection is currently UD-axis-CO-strict (see classifier.features
-    docstring). In practice this means UD-axis usually wins for any
-    scramble where DR is reachable at all; the FB/RL pathways still try
-    but only get to EO.
+    DR detection is axis-aware (multi-axis CO landed in
+    classifier.features._corner_axis_oriented), so any of the 3 axes can
+    produce a full EO+DR skeleton if the policy can find one.
     """
     scrambled = SOLVED.apply_alg(scramble)
     scramble_t = tuple(scramble)
