@@ -18,6 +18,7 @@ import torch
 
 from cube.analyzer.search import Solution, beam_search
 from cube.classifier.features import Axis, best_eo_axis, is_dr, is_eo_solved
+from cube.classifier.htr import dr_distance_to_htr
 from cube.engine.moves import Face, Move, Turn
 from cube.engine.state import SOLVED, State
 from cube.training.encoding import encode_move
@@ -59,6 +60,9 @@ class Stage:
     moves: tuple[Move, ...]
     log_prob: float
     end_state: State    # state after applying these moves
+    # Quality signal for DR stages: corner-perm distance from this state
+    # to any HTR state. None for non-DR stages or when not computable.
+    htr_distance: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,11 +152,13 @@ def _try_axis(
 
     dr_sol = dr_sols[0]
     dr_end_state = eo_end_state.apply_alg(list(dr_sol.moves))
+    htr_dist = dr_distance_to_htr(dr_end_state, axis)
     dr_stage = Stage(
         name=f"DR ({axis.value})",
         moves=dr_sol.moves,
         log_prob=dr_sol.log_prob,
         end_state=dr_end_state,
+        htr_distance=htr_dist,
     )
     return Skeleton(scramble=scramble_t, stages=(eo_stage, dr_stage))
 
@@ -193,12 +199,23 @@ def find_skeleton(
     if not candidates:
         return Skeleton(scramble=scramble_t, stages=())
 
-    # Prefer the most-complete skeleton; tiebreak by total moves then log-prob.
-    def _rank(sk: Skeleton) -> tuple[int, int, float]:
+    # Rank candidates:
+    # 1. Prefer more stages (EO+DR over EO-only).
+    # 2. Among full skeletons with known htr_distance, prefer lower total
+    #    "expected length" = dr_length + htr_distance. This is the key
+    #    "good subset beats short DR" criterion from the FMC method docs.
+    # 3. Tiebreak by total moves, then policy log-prob.
+    def _rank(sk: Skeleton) -> tuple[int, int, int, float]:
+        last = sk.stages[-1]
+        htr_d = last.htr_distance if last.htr_distance is not None else 99
+        # expected_total = scramble→DR moves + DR→HTR distance.
+        # When htr_distance unknown, expected_total = total_moves + penalty.
+        expected_total = sk.total_moves + htr_d
         return (
-            -len(sk.stages),           # more stages first (negate for ascending sort)
-            sk.total_moves,            # then fewer total moves
-            -sum(s.log_prob for s in sk.stages),  # then higher cumulative log-prob
+            -len(sk.stages),
+            expected_total,
+            sk.total_moves,
+            -sum(s.log_prob for s in sk.stages),
         )
 
     return min(candidates, key=_rank)
@@ -214,11 +231,21 @@ def format_skeleton(skeleton: Skeleton) -> str:
 
     for st in skeleton.stages:
         moves_str = " ".join(str(m) for m in st.moves)
+        htr_tag = ""
+        if st.htr_distance is not None:
+            htr_tag = f"  +{st.htr_distance}→HTR"
         lines.append(
             f"  [{st.name:>9}] {len(st.moves):>2} moves  "
-            f"log-prob={st.log_prob:>6.2f}  →  {moves_str}"
+            f"log-prob={st.log_prob:>6.2f}{htr_tag}  →  {moves_str}"
         )
     lines.append(f"  skeleton total: {skeleton.total_moves} moves")
+    last = skeleton.stages[-1]
+    if last.htr_distance is not None:
+        expected = skeleton.total_moves + last.htr_distance
+        lines.append(
+            f"  expected to HTR: {expected} moves "
+            f"(skeleton {skeleton.total_moves} + corner-distance {last.htr_distance})"
+        )
 
     # Sanity: best EO/DR fact about the final state.
     final = skeleton.stages[-1].end_state

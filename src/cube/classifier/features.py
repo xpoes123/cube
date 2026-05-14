@@ -215,6 +215,117 @@ def dr_heuristic(state: State, axis: Axis = Axis.UD) -> int:
     )
 
 
+# ---------- DR corner structural features ----------
+#
+# After DR is reached on an axis, the corner permutation lies in the
+# DR-stabilizer (group <U, D, R², L², F², B²>). FMC solvers classify
+# the resulting corner state into "subsets" (4a1, 4b2, 2c3, …) that
+# predict optimal HTR-finish length.
+#
+# Implementing the full canonical 96-case classifier requires a
+# published lookup table or a BFS over the HTR subgroup (Milestone 3
+# work). Until then, the structural features below capture most of the
+# discriminative signal:
+#   - `swap_count`: corners that left their home U/D layer
+#   - `axial_count`: corners at column-correct positions
+#   - `perm_parity`: even/odd corner permutation
+#   - `max_cycle_len`: longest cycle in the corner permutation
+#
+# Corner column layout (matches CORNER_NAMES order):
+#   index % 4 = 0: RF column (URF, DFR)
+#   index % 4 = 1: FL column (UFL, DLF)
+#   index % 4 = 2: LB column (ULB, DBL)
+#   index % 4 = 3: RB column (UBR, DRB)
+# A corner is "axial" iff it's at a position in its home column
+# (cp[pos] % 4 == pos % 4).
+
+
+def corner_swap_count(state: State) -> int:
+    """Number of corners NOT in their home U/D layer.
+
+    Always even (parity-preserving under the DR-group). Values: 0, 2, 4, 6, 8.
+    Maps to the leading digit of the subset notation (0c…, 2c…, 4a/b/c, …).
+    """
+    return sum(
+        1 for p in range(8)
+        if (state.cp[p] // 4) != (p // 4)
+    )
+
+
+def corner_axial_count(state: State) -> int:
+    """Number of corners at column-correct positions (cp[p] % 4 == p % 4).
+
+    Values: 0, 2, 4, 6, 8 (parity-preserving in DR-group).
+    """
+    return sum(
+        1 for p in range(8)
+        if (state.cp[p] % 4) == (p % 4)
+    )
+
+
+def corner_perm_parity(state: State) -> int:
+    """Sign of the corner permutation: 0 = even, 1 = odd.
+
+    HTR group is a subgroup of the alternating group on corners, so after
+    DR + corner-only moves, parity is always even. This is a sanity check
+    and helps distinguish subsets that differ by orbit structure.
+    """
+    cp = list(state.cp)
+    seen = [False] * 8
+    sign = 0
+    for i in range(8):
+        if seen[i]:
+            continue
+        # Walk the cycle starting at i.
+        j = i
+        cycle_len = 0
+        while not seen[j]:
+            seen[j] = True
+            j = cp[j]
+            cycle_len += 1
+        if cycle_len % 2 == 0:  # even-length cycles are odd permutations
+            sign ^= 1
+    return sign
+
+
+def corner_cycle_structure(state: State) -> tuple[int, ...]:
+    """Cycle lengths of the corner permutation, sorted descending.
+
+    e.g. (3, 3, 2) means two 3-cycles and a 2-cycle. (1,1,1,1,1,1,1,1) =
+    identity. Useful for distinguishing 4a (no permutation, just orbit
+    swap) from 4b (2-cycles) from 4c (longer cycles).
+    """
+    cp = list(state.cp)
+    seen = [False] * 8
+    lengths: list[int] = []
+    for i in range(8):
+        if seen[i]:
+            continue
+        j = i
+        cycle_len = 0
+        while not seen[j]:
+            seen[j] = True
+            j = cp[j]
+            cycle_len += 1
+        lengths.append(cycle_len)
+    return tuple(sorted(lengths, reverse=True))
+
+
+def dr_corner_features(state: State) -> dict[str, int | tuple[int, ...]]:
+    """Structural feature snapshot for a (presumed post-DR) state.
+
+    Useful as inputs to a learned subset classifier or as auxiliary
+    information alongside the canonical subset label. Not a substitute
+    for the canonical 96-case classification — see `htr` module.
+    """
+    return {
+        "swap_count": corner_swap_count(state),
+        "axial_count": corner_axial_count(state),
+        "perm_parity": corner_perm_parity(state),
+        "cycle_structure": corner_cycle_structure(state),
+    }
+
+
 # ---------- HTR (half-turn reduction) ----------
 
 
