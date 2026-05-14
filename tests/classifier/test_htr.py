@@ -216,3 +216,41 @@ def test_htr_solve_on_non_htr_returns_none():
     for face in Face:
         state = SOLVED.apply(Move(face, Turn.CW))
         assert htr_solve(state) is None
+
+
+def test_is_htr_ud_solved():
+    from cube.classifier.htr import is_htr_ud
+    assert is_htr_ud(SOLVED)
+
+
+def test_is_htr_ud_is_strictly_looser_than_is_htr():
+    """is_htr ⊆ is_htr_ud (strict implies single-axis).
+
+    Random half-turn walks from SOLVED stay in is_htr; they should
+    also stay in is_htr_ud trivially since the conditions are weaker.
+    """
+    import random
+    from cube.classifier.htr import is_htr, is_htr_ud
+    rng = random.Random(7)
+    half_turns = [Move(f, Turn.HALF) for f in Face]
+    for _ in range(40):
+        k = rng.randint(0, 8)
+        seq = [rng.choice(half_turns) for _ in range(k)]
+        s = SOLVED.apply_alg(seq)
+        if is_htr(s):
+            assert is_htr_ud(s)
+
+
+def test_is_htr_ud_after_dr_group_moves_can_be_true():
+    """Apply DR-group moves to SOLVED → result is in is_htr_ud iff cp/ep
+    in the HTR subgroups AND UD-EO/CO stay zero. Quarter U/D moves
+    typically break this; half turns preserve it."""
+    from cube.classifier.htr import is_htr_ud
+    # SOLVED + U2 stays in HTR_ud (half turn preserves cp/ep within HTR).
+    s = SOLVED.apply(Move(Face.U, Turn.HALF))
+    assert is_htr_ud(s)
+    # SOLVED + U breaks cp/ep out of HTR-corner/edge sets in general.
+    s = SOLVED.apply(Move(Face.U, Turn.CW))
+    # cp after U: (3, 0, 1, 2, 4, 5, 6, 7) — is this in HTR-corner-set?
+    # Probably not — HTR is half-turn-generated, U is a quarter.
+    assert not is_htr_ud(s)

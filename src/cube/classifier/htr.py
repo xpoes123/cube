@@ -72,7 +72,7 @@ def htr_edge_perms() -> frozenset[tuple[int, ...]]:
 
 
 def is_htr(state: State) -> bool:
-    """True iff `state` is in the HTR subgroup.
+    """True iff `state` is in the strict HTR subgroup (multi-axis).
 
     Five conditions, all derived from "reachable from SOLVED via half turns":
       1. EO solved on all 3 axes (half turns preserve EO).
@@ -80,11 +80,11 @@ def is_htr(state: State) -> bool:
       3. Corner permutation in HTR-reachable corner-perm set.
       4. Edge permutation in HTR-reachable edge-perm set.
 
-    Slice-in-slice on all axes is implied by (4) — half turns preserve
-    slice-membership for every slice axis, so any edge perm reachable
-    from SOLVED via half turns has every slice in its own slice.
+    This is the GROUP-THEORETIC HTR, and is unreachable from a generic
+    post-DR state via DR-group moves alone (since DR-group preserves
+    FB-EO/RL-EO/FB-CO/RL-CO which are typically non-zero post-DR). For
+    the predicate FMC solvers use, see `is_htr_ud`.
     """
-    # Cheap rejections first.
     if eo_count(state, Axis.UD) != 0:
         return False
     if eo_count(state, Axis.FB) != 0:
@@ -96,6 +96,35 @@ def is_htr(state: State) -> bool:
     if co_count(state, Axis.FB) != 0:
         return False
     if co_count(state, Axis.RL) != 0:
+        return False
+    if state.cp not in htr_corner_perms():
+        return False
+    if state.ep not in htr_edge_perms():
+        return False
+    return True
+
+
+def is_htr_ud(state: State) -> bool:
+    """Canonical (single-axis) HTR per FMC convention.
+
+    Requires:
+      1. UD-EO = 0
+      2. UD-CO = 0
+      3. cp in HTR-reachable corner-perm set
+      4. ep in HTR-reachable edge-perm set
+
+    Ignores FB/RL axis EO and CO — those typically remain non-zero in
+    a generic post-DR-UD state and FMC solvers don't track them.
+
+    This is the predicate to use as the DR → HTR search target. From a
+    DR state, applying DR-group moves can bring (cp, ep) into the HTR
+    subgroups, satisfying this predicate. The remaining finish (canonical
+    HTR → SOLVED) operates in the half-turn group or the leave-slice
+    subgroup.
+    """
+    if eo_count(state, Axis.UD) != 0:
+        return False
+    if co_count(state, Axis.UD) != 0:
         return False
     if state.cp not in htr_corner_perms():
         return False

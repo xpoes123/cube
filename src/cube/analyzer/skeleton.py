@@ -16,10 +16,18 @@ from dataclasses import dataclass
 
 import torch
 
-from cube.analyzer.search import Solution, beam_search
+from cube.analyzer.search import Solution, a_star_search, beam_search
 from cube.analyzer.triggers import has_dr_within, tail_to_dr
 from cube.classifier.features import Axis, best_eo_axis, is_dr, is_eo_solved
-from cube.classifier.htr import dr_distance_to_htr, dr_group_moves, htr_solve, is_htr
+from cube.classifier.htr import (
+    dr_distance_to_htr,
+    dr_group_moves,
+    htr_distance,
+    htr_lower_bound,
+    htr_solve,
+    is_htr,
+    is_htr_ud,
+)
 from cube.engine.moves import Face, Move, Turn
 from cube.engine.state import SOLVED, State
 from cube.training.encoding import encode_move
@@ -235,19 +243,21 @@ def _extend_to_htr_and_finish(
     device: torch.device | str,
     seed_history: tuple[Move, ...],
 ) -> tuple[Stage, ...] | None:
-    """Search DR → SOLVED directly with all 18 moves.
+    """Search DR → canonical HTR (M1) and finish via PDB when possible.
 
-    Skips the explicit HTR intermediate (which is unreachable as a hard
-    target from generic DR states under our multi-axis-strict
-    definition). Beam search with all 18 moves; the policy keeps us
-    roughly DR-shaped. If a true HTR state is hit along the way, we
-    record it; otherwise we record the moves that reached SOLVED as a
-    single "Finish" stage.
+    Two-step:
+      1. A* in the DR-group (`dr_group_moves`) from `dr_end_state` to
+         any state satisfying `is_htr_ud` (single-axis HTR). Heuristic
+         is `htr_lower_bound` = max(corner_dist, edge_dist), admissible
+         because each DR move affects at most 4 corners and 4 edges.
+      2. If the landed canonical-HTR state is ALSO strict-HTR (multi-
+         axis EO/CO all zero), apply `htr_solve` PDB for the optimal
+         half-turn finish. Otherwise emit the HTR stage and stop here —
+         the leave-slice finish is Milestone 2 work.
 
-    Returns one or two stages depending on what was found, or None on
-    failure.
+    Returns the additional stages, or None on search failure.
     """
-    # Fast path: state IS in true HTR — use PDB.
+    # Fast path: already in strict-HTR.
     if is_htr(dr_end_state):
         finish = htr_solve(dr_end_state)
         if finish is None:
@@ -259,27 +269,49 @@ def _extend_to_htr_and_finish(
                   end_state=dr_end_state.apply_alg(finish)),
         )
 
-    # Otherwise: search directly to SOLVED. All 18 moves; the policy
-    # was trained on the full move space so this is its natural mode.
-    sols = beam_search(
+    # Step 1: A* DR → canonical HTR with DR-group action mask.
+    def h(state: State) -> int:
+        bound = htr_lower_bound(state, axis)
+        return bound if bound is not None else 0
+
+    htr_sols = a_star_search(
         model,
         start_state=dr_end_state,
-        target_predicate=lambda s: s == SOLVED,
-        beam_width=1024,
+        target_predicate=is_htr_ud,
+        heuristic=h,
         max_depth=16,
+        max_nodes=200_000,
         history_len=history_len,
         device=device,
         seed_history=seed_history,
+        allowed_move_indices=_DR_PRESERVING[axis],
+        policy_weight=0.5,
     )
-    if not sols:
+    if not htr_sols:
         return None
 
-    best = sols[0]
-    end_state = dr_end_state.apply_alg(list(best.moves))
-    return (
-        Stage(name="Finish", moves=best.moves,
-              log_prob=best.log_prob, end_state=end_state),
+    best = htr_sols[0]
+    htr_state = dr_end_state.apply_alg(list(best.moves))
+    htr_stage = Stage(
+        name=f"HTR ({axis.value})",
+        moves=best.moves,
+        log_prob=best.log_prob,
+        end_state=htr_state,
     )
+
+    # Step 2: If we happened to land in strict-HTR, finish with the PDB.
+    # Otherwise the canonical-HTR state needs leave-slice (Milestone 2)
+    # to fully solve — return HTR stage only for now.
+    if is_htr(htr_state):
+        finish = htr_solve(htr_state)
+        if finish is not None:
+            return (
+                htr_stage,
+                Stage(name="Finish", moves=tuple(finish), log_prob=0.0,
+                      end_state=htr_state.apply_alg(finish)),
+            )
+
+    return (htr_stage,)
 
 
 def find_skeleton(
