@@ -359,6 +359,12 @@ access to tools that mirror what a strong human FMC solver uses on paper.
 # The scramble
 {scramble_str}
 
+That is exactly {scramble_length} moves. **Always pass the scramble to tools
+as the following JSON array — DO NOT retype it move-by-move, you will drop
+moves**:
+
+  scramble = {scramble_json}
+
 # Tools you have
 - `inspect_state(scramble, history)`: look at the cube. Tells you EO/CO per axis, \
 which axes have EO/DR/HTR, and whether it's solved.
@@ -488,7 +494,12 @@ def solve(
     """
     client = anthropic.Anthropic()  # picks up ANTHROPIC_API_KEY from env
 
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(scramble_str=" ".join(scramble))
+    scramble_json = json.dumps(scramble)
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        scramble_str=" ".join(scramble),
+        scramble_json=scramble_json,
+        scramble_length=len(scramble),
+    )
     user_msg = f"Solve this scramble: {' '.join(scramble)}"
 
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
