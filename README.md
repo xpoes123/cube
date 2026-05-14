@@ -35,10 +35,11 @@ constraint — FMC routinely benefits from breaking partial structure
 | 2. Stage segmenter + method inference | done |
 | 3. Training data + non-ML baselines | done |
 | 4. Findability policy v0 (transformer) | done — 65% top-5 |
-| **5. Analyzer MVP (M1: full-pipeline solves)** | **done** |
+| 5. Analyzer MVP (M1: full-pipeline solves) | done |
 | 6. M2: leave-slice / better finishes | partial |
-| 7. M3: NISS, insertions, optimizer | in progress |
-| 8. Calibration + 4×4 | future |
+| **7. NISS + multi-axis HTR distance tables** | **done** |
+| 8. M3: insertions, optimizer | in progress |
+| 9. Calibration + 4×4 | future |
 
 ### Current capability
 
@@ -54,6 +55,23 @@ the analyzer produces a **27-move (25 after cancellation) full solve**:
 
 verified scramble→SOLVED by the engine. Search time ~10 minutes on a
 single 4060.
+
+### NISS (Normal-Inverse Scramble Switch)
+
+The pipeline now searches on **both the normal and inverse scrambles**,
+plus the hybrids where EO is found on one side and DR is found on the
+other. Every FMC solution under 22 moves uses this switch at least once.
+
+Mathematically: if `N` are the normal-side moves and `I` are the
+inverse-side moves, the final solution is `N + invert(I)`. Stages
+record which side they were found on; cancellation handles the seam.
+
+### Multi-axis HTR
+
+The corner+edge distance PDBs are now built per-axis (UD, RL, FB) via
+`lru_cache(maxsize=3)`. Before this fix, the A\* DR→HTR heuristic
+returned `None` for non-UD DRs and degraded to blind BFS — silently
+killing the finish on any scramble whose best DR was on RL or FB.
 
 ---
 
