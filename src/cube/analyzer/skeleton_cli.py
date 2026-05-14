@@ -41,7 +41,16 @@ def main() -> None:
     p.add_argument("--dr-depth", type=int, default=14)
     p.add_argument("--device", default="cuda")
     p.add_argument("--top", type=int, default=5, help="Show top-N skeletons.")
+    p.add_argument("--no-niss", action="store_true",
+                   help="Disable inverse-side & NISS hybrid search (~3x faster, lower quality).")
+    p.add_argument("--fast", action="store_true",
+                   help="Preset: --no-niss, dr-beam=2048, dr-depth=10. Use for quick triage.")
     args = p.parse_args()
+
+    if args.fast:
+        args.no_niss = True
+        args.dr_beam = 2048
+        args.dr_depth = 10
 
     if not Path(args.ckpt).exists():
         raise SystemExit(f"checkpoint not found: {args.ckpt}")
@@ -80,6 +89,7 @@ def main() -> None:
         eo_max_depth=args.eo_depth,
         dr_beam_width=args.dr_beam,
         dr_max_depth=args.dr_depth,
+        use_niss=not args.no_niss,
     )
     elapsed = time.time() - t0
 
