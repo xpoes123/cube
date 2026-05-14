@@ -95,6 +95,12 @@ def _h_find_dr_via_trigger(args: dict[str, Any]) -> dict:
     )
 
 
+def _h_solve_htr_and_finish_from_dr(args: dict[str, Any]) -> dict:
+    return search.solve_htr_and_finish_from_dr(
+        args["scramble"], args["history"], axis=args["axis"],
+    )
+
+
 _MOVE_LIST_SCHEMA = {
     "type": "array",
     "items": {"type": "string"},
@@ -313,6 +319,30 @@ TOOL_REGISTRY: dict[str, tuple[ToolHandler, dict]] = {
             },
         },
     ),
+    "solve_htr_and_finish_from_dr": (
+        _h_solve_htr_and_finish_from_dr,
+        {
+            "name": "solve_htr_and_finish_from_dr",
+            "description": (
+                "From a DR-solved state, produce the full HTR + half-turn "
+                "finish. Strong humans recognize the HTR subset and execute "
+                "a memorized finish; this tool does the same via A* + PDB "
+                "walk-back. Returns htr_moves + finish_moves + total_moves. "
+                "ONLY use after the state is in DR on `axis` (call inspect_state "
+                "to verify). This is the cleanest way to complete the solve "
+                "once you've found a DR."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "scramble": _MOVE_LIST_SCHEMA,
+                    "history": _MOVE_LIST_SCHEMA,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["scramble", "history", "axis"],
+            },
+        },
+    ),
     "find_dr_via_trigger": (
         _h_find_dr_via_trigger,
         {
@@ -406,11 +436,12 @@ shorter paths by attacking from both ends.
      from DR (the way humans do it: spot a setup, recognize a trigger pattern,
      finish). Do NOT use plain `lookahead(target="dr")` from EO — DR is usually
      7-10 moves away, beyond lookahead's depth cap of 7.
-  3. **HTR** (5-8 more moves):
-     Once DR is solved, `lookahead(target="htr", axis=X, depth=7)` will find it.
-     DR-group moves (U/D quarters + half-turns) bring you to canonical HTR.
-  4. **Finish** (5-10 more moves):
-     From HTR, `lookahead(target="solved", depth=7)` finds the half-turn finish.
+  3. **HTR + Finish** (10-15 more moves, combined):
+     Once DR is solved, call `solve_htr_and_finish_from_dr(axis=X)`. This
+     produces both the HTR moves and the half-turn finish in one call —
+     equivalent to a strong human recognizing the HTR subset and executing
+     a memorized finish. Do NOT use `lookahead(target="htr")` for this —
+     it doesn't constrain to DR-group moves and wanders.
   5. **NISS**: at any boundary, try `niss_flip` and run the same pipeline on the
      inverse scramble. Inverse moves get concatenated as
      `normal_moves + invert(inverse_moves)` — `verify_solved` handles this

@@ -271,3 +271,115 @@ def find_dr_via_trigger(
         "found": len(options),
         "options": options,
     }
+
+
+def solve_htr_and_finish_from_dr(
+    scramble: list[str],
+    history: list[str],
+    *,
+    axis: str,
+) -> dict:
+    """From a DR-solved state, produce the HTR moves + half-turn finish.
+
+    This is the "memorized finish" tool. Strong humans recognize the HTR
+    subset of their DR state and execute a known finish; this tool does
+    the same by:
+      1. A* in the DR-group (axis-specific quarters + all half-turns)
+         using the corner+edge admissible heuristic until canonical HTR
+         is reached.
+      2. PDB walk-back from canonical HTR to SOLVED via half-turns only.
+
+    Returns:
+      - `htr_moves`: moves to reach canonical HTR from the DR state
+      - `finish_moves`: half-turn moves to SOLVED from canonical HTR
+      - `total_moves`: combined length
+      - `solved`: True iff scramble + history + htr_moves + finish_moves solves
+
+    Errors if the state is not actually in DR on the given axis.
+    """
+    from cube.analyzer.search import a_star_search
+    from cube.analyzer.skeleton import _DR_PRESERVING
+    from cube.classifier.htr import (
+        htr_lower_bound,
+        htr_solve,
+        is_htr,
+        is_htr_ud,
+    )
+
+    if axis not in _AXIS_LOOKUP:
+        return {"error": f"axis must be UD, FB, or RL; got {axis!r}"}
+    ax = _AXIS_LOOKUP[axis]
+
+    _policy_mod._load_model()
+    history_len = _policy_mod._HISTORY_LEN
+    device = _policy_mod._DEVICE
+
+    state = SOLVED.apply_alg(parse_alg(" ".join(scramble))) if scramble else SOLVED
+    if history:
+        state = state.apply_alg(parse_alg(" ".join(history)))
+
+    if not is_dr(state, ax):
+        return {
+            "error": (
+                f"State is not in DR on axis {axis}. "
+                f"Reach DR first using find_dr_via_trigger."
+            ),
+        }
+
+    seed_history = parse_alg(" ".join(scramble + history)) if (scramble or history) else []
+
+    def h(s):
+        bound = htr_lower_bound(s, ax)
+        return bound if bound is not None else 0
+
+    htr_sols = a_star_search(
+        None,
+        start_state=state,
+        target_predicate=is_htr_ud,
+        heuristic=h,
+        max_depth=16,
+        max_nodes=200_000,
+        history_len=history_len,
+        device=device,
+        seed_history=tuple(seed_history),
+        allowed_move_indices=_DR_PRESERVING[ax],
+        policy_weight=0.0,
+    )
+    if not htr_sols:
+        return {
+            "error": "A* failed to find canonical HTR within budget.",
+        }
+
+    htr_moves = htr_sols[0].moves
+    htr_state = state.apply_alg(list(htr_moves))
+
+    if not is_htr(htr_state):
+        return {
+            "htr_moves": [str(m) for m in htr_moves],
+            "finish_moves": [],
+            "total_moves": len(htr_moves),
+            "solved": False,
+            "note": (
+                "Reached canonical-HTR-UD but not strict HTR; half-turn "
+                "finish requires strict HTR. State has nonzero off-axis "
+                "EO/CO. Try NISS or a different finish strategy."
+            ),
+        }
+
+    finish = htr_solve(htr_state)
+    if finish is None:
+        return {
+            "htr_moves": [str(m) for m in htr_moves],
+            "finish_moves": [],
+            "total_moves": len(htr_moves),
+            "solved": False,
+            "note": "htr_solve PDB lookup returned None.",
+        }
+
+    final_state = htr_state.apply_alg(finish)
+    return {
+        "htr_moves": [str(m) for m in htr_moves],
+        "finish_moves": [str(m) for m in finish],
+        "total_moves": len(htr_moves) + len(finish),
+        "solved": final_state == SOLVED,
+    }
