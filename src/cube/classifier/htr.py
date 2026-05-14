@@ -236,10 +236,12 @@ def dr_subset_canonical(state: State) -> tuple[int, ...] | None:
     return orbit_min if orbit_min in orbits else None
 
 
-@lru_cache(maxsize=1)
-def _dr_corner_to_htr_distance_table() -> dict[tuple[int, ...], int]:
-    """For every UD-DR-reachable corner perm, the minimum corner-perm moves
-    to reach any HTR corner perm.
+@lru_cache(maxsize=3)
+def _dr_corner_to_htr_distance_table(
+    axis: Axis = Axis.UD,
+) -> dict[tuple[int, ...], int]:
+    """For every DR-reachable corner perm (on `axis`), the min corner-perm
+    moves under DR-group to reach any HTR corner perm.
 
     Built via single reverse-BFS from all HTR-corner-perms expanding by the
     DR-group corner-perm action. All 40320 entries computed in one pass.
@@ -249,8 +251,12 @@ def _dr_corner_to_htr_distance_table() -> dict[tuple[int, ...], int]:
     representative under HTR action — but we measure DR-group distance, not
     HTR-group distance). So all 96 cps within one coset get the same
     distance.
+
+    Per-axis: DR-group is axis-specific (UD = ⟨U, D, R², L², F², B²⟩,
+    RL = ⟨R, L, U², D², F², B²⟩, FB = ⟨F, B, U², D², R², L²⟩). Each gives
+    a different distance table for the same HTR target set.
     """
-    moves = dr_group_moves(Axis.UD)
+    moves = dr_group_moves(axis)
     # We need an apply function that operates on cp alone, so we cache one
     # forward-application per move starting from each cp.
     distance: dict[tuple[int, ...], int] = {cp: 0 for cp in htr_corner_perms()}
@@ -296,29 +302,23 @@ def dr_distance_to_htr(state: State, axis: Axis = Axis.UD) -> int | None:
     (e.g., state is not actually post-DR on the requested axis).
 
     Implementation: O(1) lookup against the precomputed distance table.
-    First call materializes the table (~1-2s for UD axis).
-
-    Caveat: this measures *corner-perm* distance only. The full state may
-    require more moves to actually reach HTR (e.g., edges still need
-    arranging). But corner distance is the dominant signal for DR subset
-    quality, and that's what FMC solvers use.
+    First call materializes the table (~1-2s per axis).
     """
-    if axis != Axis.UD:
-        # Multi-axis subset tables are a follow-up; for now, only UD.
-        return None
-    return _dr_corner_to_htr_distance_table().get(state.cp)
+    return _dr_corner_to_htr_distance_table(axis).get(state.cp)
 
 
-@lru_cache(maxsize=1)
-def _dr_edge_to_htr_distance_table() -> dict[tuple[int, ...], int]:
-    """For every UD-DR-reachable edge perm, the minimum DR-group moves to
-    reach any HTR edge perm.
+@lru_cache(maxsize=3)
+def _dr_edge_to_htr_distance_table(
+    axis: Axis = Axis.UD,
+) -> dict[tuple[int, ...], int]:
+    """For every DR-reachable edge perm (on `axis`), the min DR-group moves
+    to reach any HTR edge perm.
 
     Parallel to _dr_corner_to_htr_distance_table but on edges. Combined
     with the corner table, gives a strong admissible heuristic for full-
     state DR → HTR distance: max(corner_dist, edge_dist).
     """
-    moves = dr_group_moves(Axis.UD)
+    moves = dr_group_moves(axis)
     htr_eps = htr_edge_perms()
     distance: dict[tuple[int, ...], int] = {ep: 0 for ep in htr_eps}
     frontier: deque[tuple[tuple[int, ...], int]] = deque(
@@ -357,9 +357,7 @@ def dr_edge_distance_to_htr(state: State, axis: Axis = Axis.UD) -> int | None:
     Admissible lower bound on full-state moves to HTR (combined with
     corner distance via max).
     """
-    if axis != Axis.UD:
-        return None
-    return _dr_edge_to_htr_distance_table().get(state.ep)
+    return _dr_edge_to_htr_distance_table(axis).get(state.ep)
 
 
 def htr_lower_bound(state: State, axis: Axis = Axis.UD) -> int | None:
