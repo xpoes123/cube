@@ -85,6 +85,16 @@ def _h_lookahead(args: dict[str, Any]) -> dict:
     )
 
 
+def _h_find_dr_via_trigger(args: dict[str, Any]) -> dict:
+    return search.find_dr_via_trigger(
+        args["scramble"], args["history"],
+        axis=args["axis"],
+        tail_length=args.get("tail_length", 2),
+        setup_width=args.get("setup_width", 30),
+        setup_depth=args.get("setup_depth", 8),
+    )
+
+
 _MOVE_LIST_SCHEMA = {
     "type": "array",
     "items": {"type": "string"},
@@ -281,9 +291,10 @@ TOOL_REGISTRY: dict[str, tuple[ToolHandler, dict]] = {
         {
             "name": "lookahead",
             "description": (
-                "Bounded forward search (human-scale: depth ≤ 5, width ≤ 50). "
+                "Bounded forward search (human-scale: depth ≤ 7, width ≤ 50). "
                 "Find sequences that reach a target stage. target=eo|dr|htr|solved; "
-                "axis=UD|FB|RL (required for eo/dr/htr)."
+                "axis=UD|FB|RL (required for eo/dr/htr). For DR specifically, "
+                "prefer `find_dr_via_trigger` once EO is solved."
             ),
             "input_schema": {
                 "type": "object",
@@ -296,9 +307,35 @@ TOOL_REGISTRY: dict[str, tuple[ToolHandler, dict]] = {
                     },
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                     "width": {"type": "integer", "minimum": 1, "maximum": 50, "default": 20},
-                    "depth": {"type": "integer", "minimum": 1, "maximum": 5, "default": 4},
+                    "depth": {"type": "integer", "minimum": 1, "maximum": 7, "default": 5},
                 },
                 "required": ["scramble", "history", "target"],
+            },
+        },
+    ),
+    "find_dr_via_trigger": (
+        _h_find_dr_via_trigger,
+        {
+            "name": "find_dr_via_trigger",
+            "description": (
+                "Find DR by searching for a 'trigger state' that's ≤ tail_length "
+                "moves from DR, then completing via DFS. This mirrors how strong "
+                "humans actually find DR: spot a setup chain ending in a known "
+                "pattern (R, R U2 R, F R F, etc.), then the trigger lands the DR. "
+                "EO on `axis` must already be solved. Returns up to 5 (setup + tail) "
+                "sequences sorted by total length."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "scramble": _MOVE_LIST_SCHEMA,
+                    "history": _MOVE_LIST_SCHEMA,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                    "tail_length": {"type": "integer", "minimum": 1, "maximum": 3, "default": 2},
+                    "setup_width": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 512},
+                    "setup_depth": {"type": "integer", "minimum": 1, "maximum": 10, "default": 8},
+                },
+                "required": ["scramble", "history", "axis"],
             },
         },
     ),
@@ -352,23 +389,26 @@ shorter paths by attacking from both ends.
 - Aim for short solutions (target: 25-30 moves). Anything under 40 is a real result.
 - Typical pipeline: EO -> DR -> HTR -> finish. But feel free to deviate.
 
-# CRITICAL: `lookahead` is depth-limited (max 5 moves). DR is typically \
-8-12 moves from EO, so a SINGLE `lookahead(target="dr")` call from the scramble \
-WILL FAIL. You must search **iteratively, one stage at a time**, the way humans do:
+# CRITICAL: each stage needs the right tool. Pipeline:
 
-  1. `lookahead(target="eo", axis=X, depth=5)` → pick a short EO. Apply it (add to history).
-  2. `inspect_state` to confirm. Then iterate within the DR phase:
-     - Try `policy_intuition` to get a strong opener move toward DR.
-     - Apply 2-4 moves following intuition + try_alg.
-     - When `inspect_state` says you're close to DR (bad_corners on your axis ≤ 4), \
-       try `lookahead(target="dr", axis=X, depth=5)` to finish.
-  3. Repeat for DR → HTR (use `inspect_state` to know when HTR is close), \
-     then HTR → solved.
-  4. Try NISS at each boundary: `niss_flip`, then run the same loop on the inverse \
-     scramble. Inverse moves get concatenated as `normal + invert(inverse)`.
-
-DO NOT call `lookahead(target="dr")` directly from the scramble or right after \
-EO. It will return nothing and waste tool calls. Build up to DR step by step.
+  1. **EO** (1-5 moves):
+     `lookahead(target="eo", axis=X, depth=5)` from the scramble. Pick the
+     shortest hit. Apply those moves (add to history).
+  2. **DR** (5-10 more moves, total EO+DR ~10-12):
+     After EO is solved on axis X, call `find_dr_via_trigger(axis=X, tail_length=2)`.
+     This is the right tool for DR — it searches for a "trigger" state ≤2 moves
+     from DR (the way humans do it: spot a setup, recognize a trigger pattern,
+     finish). Do NOT use plain `lookahead(target="dr")` from EO — DR is usually
+     7-10 moves away, beyond lookahead's depth cap of 7.
+  3. **HTR** (5-8 more moves):
+     Once DR is solved, `lookahead(target="htr", axis=X, depth=7)` will find it.
+     DR-group moves (U/D quarters + half-turns) bring you to canonical HTR.
+  4. **Finish** (5-10 more moves):
+     From HTR, `lookahead(target="solved", depth=7)` finds the half-turn finish.
+  5. **NISS**: at any boundary, try `niss_flip` and run the same pipeline on the
+     inverse scramble. Inverse moves get concatenated as
+     `normal_moves + invert(inverse_moves)` — `verify_solved` handles this
+     automatically when you pass the full solution.
 
 - Use `lookup_commutator` + `residual_cycles` when you have a near-solved state with \
 a small cycle remaining — insert a commutator at the cheapest position.
