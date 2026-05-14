@@ -217,21 +217,12 @@ def _try_axis(
                 end_state=dr_end,
                 htr_distance=htr_dist,
             )
-
-            # Stage 3: DR → HTR via beam search in DR-group moves.
-            # Only attempt for UD axis (the only one where HTR PDB applies
-            # directly). FB/RL get the skeleton up to DR only.
-            stages: tuple[Stage, ...] = (eo_stage, dr_stage)
-            if axis == Axis.UD:
-                htr_extension = _extend_to_htr_and_finish(
-                    model, dr_end, axis,
-                    history_len, device,
-                    scramble_t + eo_sol.moves + full_dr_moves,
-                )
-                if htr_extension is not None:
-                    stages = (eo_stage, dr_stage) + htr_extension
-
-            skeletons.append(Skeleton(scramble=scramble_t, stages=stages))
+            # Note: HTR + Finish extension is run later in find_skeleton
+            # for only the top-N (EO, DR) candidates by expected total —
+            # too expensive to run per (EO, DR) here.
+            skeletons.append(Skeleton(
+                scramble=scramble_t, stages=(eo_stage, dr_stage),
+            ))
 
     return skeletons
 
@@ -246,41 +237,42 @@ def _extend_to_htr_and_finish(
 ) -> tuple[Stage, ...] | None:
     """Search DR → HTR via beam, then HTR → SOLVED via PDB lookup.
 
-    Returns (htr_stage, finish_stage) on success, or None if the DR → HTR
-    search didn't reach HTR within budget. UD axis only for now (HTR PDB
-    is rooted at SOLVED which is on the UD orientation).
+    UD axis only for now (HTR PDB is rooted at SOLVED on the UD axis).
+
+    NOTE on group closure: a generic post-DR state typically has nonzero
+    FB-EO/RL-EO or FB-CO/RL-CO. The full HTR (=half-turn-only subgroup)
+    requires ALL multi-axis EO and CO = 0. Half turns preserve all of
+    these, so true HTR is unreachable from such a DR state using only
+    DR-group moves. To find an HTR-reachable state we permit the full
+    18-move set during the DR → HTR search and just trust that the
+    policy/beam will keep us in the rough DR shape (most found paths
+    do).
+
+    Returns (htr_stage, finish_stage) on success, or None if no HTR
+    state was reached within budget.
     """
     if is_htr(dr_end_state):
-        # No DR→HTR moves needed; just finish.
         finish = htr_solve(dr_end_state)
         if finish is None:
             return None
         return (
-            Stage(
-                name=f"HTR ({axis.value})",
-                moves=(),
-                log_prob=0.0,
-                end_state=dr_end_state,
-            ),
-            Stage(
-                name="Finish",
-                moves=tuple(finish),
-                log_prob=0.0,
-                end_state=dr_end_state.apply_alg(finish),
-            ),
+            Stage(name=f"HTR ({axis.value})", moves=(), log_prob=0.0,
+                  end_state=dr_end_state),
+            Stage(name="Finish", moves=tuple(finish), log_prob=0.0,
+                  end_state=dr_end_state.apply_alg(finish)),
         )
 
-    # DR → HTR beam search restricted to DR-group moves.
+    # Use all 18 moves: DR-group-only can't change FB-EO/RL-EO when
+    # they're nonzero (and they typically are for generic DR states).
     htr_sols = beam_search(
         model,
         start_state=dr_end_state,
         target_predicate=is_htr,
-        beam_width=512,
-        max_depth=12,
+        beam_width=2048,
+        max_depth=14,
         history_len=history_len,
         device=device,
         seed_history=seed_history,
-        allowed_move_indices=_DR_PRESERVING[axis],
     )
     if not htr_sols:
         return None
@@ -292,18 +284,10 @@ def _extend_to_htr_and_finish(
         return None
 
     return (
-        Stage(
-            name=f"HTR ({axis.value})",
-            moves=htr_sol.moves,
-            log_prob=htr_sol.log_prob,
-            end_state=htr_end,
-        ),
-        Stage(
-            name="Finish",
-            moves=tuple(finish),
-            log_prob=0.0,
-            end_state=htr_end.apply_alg(finish),
-        ),
+        Stage(name=f"HTR ({axis.value})", moves=htr_sol.moves,
+              log_prob=htr_sol.log_prob, end_state=htr_end),
+        Stage(name="Finish", moves=tuple(finish), log_prob=0.0,
+              end_state=htr_end.apply_alg(finish)),
     )
 
 
@@ -374,7 +358,44 @@ def find_skeleton(
             -sum(s.log_prob for s in sk.stages),
         )
 
-    return sorted(candidates, key=_rank)
+    candidates = sorted(candidates, key=_rank)
+
+    # Extend the top few (EO, DR) candidates with HTR + Finish stages.
+    # We only do this for the top-N because each call is expensive
+    # (~30s for the DR → HTR beam search). The HTR PDB ensures finish
+    # is O(1) once HTR is reached.
+    _EXTEND_TOP_N = 3
+    extended: list[Skeleton] = []
+    for sk in candidates[:_EXTEND_TOP_N]:
+        if len(sk.stages) < 2:
+            extended.append(sk)
+            continue
+        # Last stage is the DR. Get axis from its name "DR (XX)".
+        dr_stage = sk.stages[-1]
+        dr_end = dr_stage.end_state
+        axis_str = dr_stage.name.split("(")[-1].rstrip(")")
+        try:
+            axis = Axis(axis_str)
+        except ValueError:
+            extended.append(sk)
+            continue
+        seed = sk.scramble + tuple(
+            m for st in sk.stages for m in st.moves
+        )
+        ext = _extend_to_htr_and_finish(
+            model, dr_end, axis, history_len, device, seed,
+        )
+        if ext is not None:
+            extended.append(Skeleton(
+                scramble=sk.scramble, stages=sk.stages + ext,
+            ))
+        else:
+            extended.append(sk)
+
+    # Rest of candidates unchanged.
+    extended.extend(candidates[_EXTEND_TOP_N:])
+    # Re-sort: extended (full-solve) candidates float to top.
+    return sorted(extended, key=_rank)
 
 
 def find_best_skeleton(*args, **kwargs) -> Skeleton:
