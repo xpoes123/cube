@@ -31,7 +31,6 @@ from cube.analyzer.search import a_star_search, beam_search
 from cube.analyzer.triggers import has_dr_within, tail_to_dr
 from cube.classifier.features import Axis, best_eo_axis, is_eo_solved
 from cube.classifier.htr import (
-    dr_distance_to_htr,
     dr_group_moves,
     htr_lower_bound,
     htr_solve,
@@ -603,7 +602,10 @@ def _dr_only_from_eo_state(
         dr_end = trig_end
         for m in tail:
             dr_end = dr_end.apply(m)
-        htr_d = dr_distance_to_htr(dr_end, eo_axis)
+        # Use tight admissible lower bound (max of corner + edge PDBs),
+        # consistent with _try_axis. Corner-only would under-rank DRs that
+        # land in a hard edge structure.
+        htr_d = htr_lower_bound(dr_end, eo_axis)
         dr_stage = Stage(
             name=f"DR ({eo_axis.value}){side_tag}",
             moves=full,
