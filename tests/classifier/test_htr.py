@@ -28,10 +28,13 @@ def test_htr_corner_set_size():
 
 
 def test_htr_edge_set_size():
-    """HTR edge subgroup has finite order; check it's the expected size."""
-    # 12!/(some structure) — empirically 6912 from BFS, sanity bound check.
-    n = len(htr_edge_perms())
-    assert 1000 < n < 20000, f"unexpected HTR edge set size: {n}"
+    """HTR edge subgroup has order exactly 6912.
+
+    Algebraic: half-turns act on edges as a subgroup of S_12. The orbit
+    of solved-edges under ⟨U², D², R², L², F², B²⟩ has 6912 elements.
+    96 (corner subgroup) × 6912 (edge subgroup) = 663,552 = |HTR|.
+    """
+    assert len(htr_edge_perms()) == 6912
 
 
 def test_solved_is_htr():
