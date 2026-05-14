@@ -374,15 +374,17 @@ def _extend_to_htr_and_finish(
 
     Returns the additional stages, or None on search failure.
     """
+    side_tag = " [inv]" if side == "inverse" else ""
+
     # Fast path: already in strict-HTR.
     if is_htr(dr_end_state):
         finish = htr_solve(dr_end_state)
         if finish is None:
             return None
         return (
-            Stage(name=f"HTR ({axis.value})", moves=(), log_prob=0.0,
+            Stage(name=f"HTR ({axis.value}){side_tag}", moves=(), log_prob=0.0,
                   end_state=dr_end_state, side=side),
-            Stage(name="Finish", moves=tuple(finish), log_prob=0.0,
+            Stage(name=f"Finish{side_tag}", moves=tuple(finish), log_prob=0.0,
                   end_state=dr_end_state.apply_alg(finish), side=side),
         )
 
@@ -414,7 +416,7 @@ def _extend_to_htr_and_finish(
     best = htr_sols[0]
     htr_state = dr_end_state.apply_alg(list(best.moves))
     htr_stage = Stage(
-        name=f"HTR ({axis.value})",
+        name=f"HTR ({axis.value}){side_tag}",
         moves=best.moves,
         log_prob=best.log_prob,
         end_state=htr_state,
@@ -429,7 +431,8 @@ def _extend_to_htr_and_finish(
         if finish is not None:
             return (
                 htr_stage,
-                Stage(name="Finish", moves=tuple(finish), log_prob=0.0,
+                Stage(name=f"Finish{side_tag}", moves=tuple(finish),
+                      log_prob=0.0,
                       end_state=htr_state.apply_alg(finish), side=side),
             )
 
