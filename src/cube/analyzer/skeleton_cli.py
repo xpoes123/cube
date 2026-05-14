@@ -17,7 +17,7 @@ from pathlib import Path
 
 import torch
 
-from cube.analyzer.skeleton import find_skeleton, format_skeleton
+from cube.analyzer.skeleton import find_skeleton, format_skeleton, Skeleton
 from cube.engine.notation import parse_alg
 from cube.training.model import ModelConfig, PolicyTransformer
 
@@ -40,6 +40,7 @@ def main() -> None:
     p.add_argument("--dr-beam", type=int, default=8192)
     p.add_argument("--dr-depth", type=int, default=14)
     p.add_argument("--device", default="cuda")
+    p.add_argument("--top", type=int, default=5, help="Show top-N skeletons.")
     args = p.parse_args()
 
     if not Path(args.ckpt).exists():
@@ -56,7 +57,7 @@ def main() -> None:
     scramble = parse_alg(args.scramble)
 
     t0 = time.time()
-    skeleton = find_skeleton(
+    skeletons = find_skeleton(
         model,
         scramble,
         history_len=history_len,
@@ -68,8 +69,13 @@ def main() -> None:
     )
     elapsed = time.time() - t0
 
-    print(format_skeleton(skeleton))
-    print(f"\n  search time: {elapsed:.2f}s")
+    print(f"found {len(skeletons)} skeleton candidates; showing top {min(args.top, len(skeletons))}:")
+    print()
+    for i, sk in enumerate(skeletons[: args.top]):
+        print(f"  --- #{i + 1} ---")
+        print(format_skeleton(sk))
+        print()
+    print(f"  search time: {elapsed:.2f}s")
 
 
 if __name__ == "__main__":

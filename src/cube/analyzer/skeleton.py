@@ -114,14 +114,12 @@ def _try_axis(
     eo_max_depth: int,
     dr_beam_width: int,
     dr_max_depth: int,
-) -> Skeleton | None:
-    """Run EO -> DR on one axis. Returns None if EO didn't fire.
+) -> list[Skeleton]:
+    """Run EO -> DR on one axis. Returns all (EO, DR) candidate skeletons.
 
-    Multi-candidate: explore EOs up to (min_eo + 2) moves, then for each
-    EO find the best DR by (dr_length + dr_to_htr_distance). The best
-    (EO, DR) pair across all candidates is returned. This matches how
-    human FMC solvers actually work — try many short EOs and pick the
-    one with the most promising DR subset.
+    Empty list if EO didn't fire. Multiple skeletons enable downstream
+    ranking and shortlist presentation — the human practice of
+    considering several DR candidates before committing.
     """
     eo_sols = beam_search(
         model,
@@ -135,19 +133,18 @@ def _try_axis(
         extra_depths_after_first_hit=2,
     )
     if not eo_sols:
-        return None
+        return []
     # Cap how many EOs we explore — each one triggers a costly DR search.
     # Per spec, we want diversity in the shortlist; for now just take the
     # K shortest unique EO move sequences.
     EO_CANDIDATES = 5
     eo_sols = sorted(eo_sols, key=lambda s: (len(s), -s.log_prob))[:EO_CANDIDATES]
 
-    # If we can't do DR on this axis (multi-axis CO is in but axis-CO
-    # heuristic just gives best-EO ranking), return the shortest EO.
+    # If we can't do DR on this axis, return a single EO-only skeleton.
     if axis not in _DR_AXES:
         eo_sol = eo_sols[0]
         eo_end_state = scrambled.apply_alg(list(eo_sol.moves))
-        return Skeleton(
+        return [Skeleton(
             scramble=scramble_t,
             stages=(Stage(
                 name=f"EO ({axis.value})",
@@ -155,20 +152,13 @@ def _try_axis(
                 log_prob=eo_sol.log_prob,
                 end_state=eo_end_state,
             ),),
-        )
+        )]
 
-    # For each EO, find its best DR. Score the pair by total expected length.
-    best_skeleton: Skeleton | None = None
-    best_expected_total = float("inf")
-    best_eo_only: Skeleton | None = None
+    # Collect ALL viable (EO, DR) candidates. Each gets its own Skeleton.
+    # Caller's find_skeleton ranks the union across axes.
+    skeletons: list[Skeleton] = []
+    seen_dr_moves: set[tuple[Move, ...]] = set()
 
-    # Two-stage DR search per EO:
-    #   2a. Shallow beam to a "trigger state" — a state from which DR is
-    #       reachable within _TAIL_LEN moves (checked by direct DFS).
-    #   2b. The full DR path is beam-setup + the DFS tail.
-    # This is faster than monolithic DR search because trigger-states are
-    # vastly more numerous than DR-states — every state ≤_TAIL_LEN moves
-    # from DR is a hit. Shallow beam search finds them reliably.
     for eo_sol in eo_sols:
         eo_end_state = scrambled.apply_alg(list(eo_sol.moves))
         eo_stage = Stage(
@@ -177,8 +167,6 @@ def _try_axis(
             log_prob=eo_sol.log_prob,
             end_state=eo_end_state,
         )
-        if best_eo_only is None or len(eo_sol.moves) < best_eo_only.total_moves:
-            best_eo_only = Skeleton(scramble=scramble_t, stages=(eo_stage,))
 
         # Stage 2a: search for trigger states (≤_TAIL_LEN from DR).
         trigger_sols = beam_search(
@@ -194,6 +182,8 @@ def _try_axis(
             extra_depths_after_first_hit=2,
         )
         if not trigger_sols:
+            # Track EO-only as a fallback option.
+            skeletons.append(Skeleton(scramble=scramble_t, stages=(eo_stage,)))
             continue
 
         # Stage 2b: for each trigger-state, compute the shortest tail.
@@ -201,32 +191,28 @@ def _try_axis(
             trigger_end = eo_end_state.apply_alg(list(trig_sol.moves))
             tail = tail_to_dr(trigger_end, axis, _TAIL_LEN)
             if tail is None:
-                continue  # beam target fired but DFS lost it; shouldn't happen
+                continue
 
             full_dr_moves = trig_sol.moves + tail
+            full_path = eo_sol.moves + full_dr_moves
+            if full_path in seen_dr_moves:
+                continue
+            seen_dr_moves.add(full_path)
+
             dr_end = trigger_end
             for m in tail:
                 dr_end = dr_end.apply(m)
             htr_dist = dr_distance_to_htr(dr_end, axis)
-            expected_total = (
-                len(eo_sol.moves) + len(full_dr_moves)
-                + (htr_dist if htr_dist is not None else 99)
+            dr_stage = Stage(
+                name=f"DR ({axis.value})",
+                moves=full_dr_moves,
+                log_prob=trig_sol.log_prob,
+                end_state=dr_end,
+                htr_distance=htr_dist,
             )
+            skeletons.append(Skeleton(scramble=scramble_t, stages=(eo_stage, dr_stage)))
 
-            if expected_total < best_expected_total:
-                best_expected_total = expected_total
-                dr_stage = Stage(
-                    name=f"DR ({axis.value})",
-                    moves=full_dr_moves,
-                    log_prob=trig_sol.log_prob,
-                    end_state=dr_end,
-                    htr_distance=htr_dist,
-                )
-                best_skeleton = Skeleton(
-                    scramble=scramble_t, stages=(eo_stage, dr_stage),
-                )
-
-    return best_skeleton if best_skeleton is not None else best_eo_only
+    return skeletons
 
 
 def find_skeleton(
@@ -238,32 +224,30 @@ def find_skeleton(
     eo_max_depth: int = _EO_MAX_DEPTH,
     dr_beam_width: int = _DR_BEAM_WIDTH,
     dr_max_depth: int = _DR_MAX_DEPTH,
-) -> Skeleton:
-    """Try (EO -> DR) on each axis; return the best skeleton.
+) -> list[Skeleton]:
+    """Try (EO -> DR) on each axis; return a ranked shortlist of skeletons.
 
-    "Best" = most stages reached (prefer EO+DR over EO-only), then fewest
-    total moves, then highest log-prob.
+    Returns all viable (EO, DR) candidates sorted by expected total
+    length to HTR. The caller picks the top-K to display.
 
-    DR detection is axis-aware (multi-axis CO landed in
-    classifier.features._corner_axis_oriented), so any of the 3 axes can
-    produce a full EO+DR skeleton if the policy can find one.
+    "Best" = most stages reached (prefer EO+DR over EO-only), then lower
+    `total_moves + htr_distance`, then fewer total moves, then higher
+    policy log-prob.
     """
     scrambled = SOLVED.apply_alg(scramble)
     scramble_t = tuple(scramble)
 
     candidates: list[Skeleton] = []
     for axis in (Axis.UD, Axis.FB, Axis.RL):
-        sk = _try_axis(
+        candidates.extend(_try_axis(
             model, scrambled, scramble_t, axis,
             history_len, device,
             eo_beam_width, eo_max_depth,
             dr_beam_width, dr_max_depth,
-        )
-        if sk is not None and sk.stages:
-            candidates.append(sk)
+        ))
 
     if not candidates:
-        return Skeleton(scramble=scramble_t, stages=())
+        return [Skeleton(scramble=scramble_t, stages=())]
 
     # Rank candidates:
     # 1. Prefer more stages (EO+DR over EO-only).
@@ -274,8 +258,6 @@ def find_skeleton(
     def _rank(sk: Skeleton) -> tuple[int, int, int, float]:
         last = sk.stages[-1]
         htr_d = last.htr_distance if last.htr_distance is not None else 99
-        # expected_total = scramble→DR moves + DR→HTR distance.
-        # When htr_distance unknown, expected_total = total_moves + penalty.
         expected_total = sk.total_moves + htr_d
         return (
             -len(sk.stages),
@@ -284,7 +266,13 @@ def find_skeleton(
             -sum(s.log_prob for s in sk.stages),
         )
 
-    return min(candidates, key=_rank)
+    return sorted(candidates, key=_rank)
+
+
+def find_best_skeleton(*args, **kwargs) -> Skeleton:
+    """Convenience: just the top-ranked skeleton."""
+    ranked = find_skeleton(*args, **kwargs)
+    return ranked[0]
 
 
 def format_skeleton(skeleton: Skeleton) -> str:
