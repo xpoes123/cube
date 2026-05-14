@@ -71,9 +71,23 @@ Each scramble has its own story:
   axis, not UD. Before the fix, the A\* DR→HTR heuristic returned
   `None` for non-UD axes and the finish silently failed.
 
-Search wall time is currently ~10-25 min per scramble on GPU. The
-analyzer prioritizes solve quality over speed; speed tuning is an
-explicit follow-up.
+Search wall time on GPU: **~5 min with `--fast`** (no NISS, lean beams),
+**10–25 min with NISS-on** (default, all hybrids).
+
+### Random WCA corpus benchmark
+
+10 random scrambles, GPU, 10-min/scramble budget, `--fast`:
+
+| metric | value |
+|---|---|
+| full-solve rate | **5/10 = 50%** |
+| mean solved length | 31 moves |
+| min / max solved | 27 / 36 moves |
+| **beats the human** | **2 / 5 solved scrambles** |
+| mean Δ vs human | +5 moves |
+
+Pre-NISS baseline (committed at `benchmarks/baseline_cpu_pre_niss.md`)
+was 0/10. NISS-on benchmark with longer budget pending.
 
 ### NISS (Normal-Inverse Scramble Switch)
 
