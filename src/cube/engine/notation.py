@@ -62,6 +62,11 @@ def invert(alg: list[Move]) -> list[Move]:
     return [m.inverse() for m in reversed(alg)]
 
 
+# Alias — `invert_alg` reads better at NISS callsites where `invert` (the
+# bare verb) can be ambiguous with `Move.inverse()`.
+invert_alg = invert
+
+
 # ---------- NISS support ----------
 
 
