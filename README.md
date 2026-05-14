@@ -1,11 +1,27 @@
 # cube
 
-An FMC (Fewest Moves Challenge) analysis engine calibrated to **human
-findability** rather than theoretical optimum. Fills the gap between Cube
-Explorer (optimal, brute-force, method-agnostic) and human FMC solvers
-(bounded search, method-driven).
+**An LLM agent equipped with FMC tools.** The current direction is to
+expose this project's classifiers, policy network, and search primitives
+as tools that an LLM can call to reason its way through a Fewest Moves
+Challenge scramble — using only operations a strong human FMC solver
+has access to.
 
-> "Find the best solution that was actually findable."
+See [`AGENT.md`](AGENT.md) for the design doc, what's "fair vs cheating,"
+and the LLM-with-tools architecture.
+
+Originally framed as "analyzer / solver" — that work is preserved as the
+baseline against which the agent gets compared. See "baseline analyzer"
+below for the staged EO→DR→HTR→Finish pipeline + benchmarks.
+
+> "Can an LLM solve a Rubik's cube as well as a human FMC champion? I
+> gave Claude the same tools a human uses and watched it try."
+
+## Why the pivot
+
+Cubelib + mallard already do classical FMC analysis very well — Rust,
+SIMD, pipeline richness exceed what we'd ship in pure Python. Competing
+on move-count is a losing fight. But neither has a learned policy or
+an LLM reasoning layer. **That intersection is the wedge.**
 
 ## Why
 
