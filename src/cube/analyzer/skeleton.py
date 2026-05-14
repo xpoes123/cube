@@ -274,8 +274,12 @@ def _extend_to_htr_and_finish(
         bound = htr_lower_bound(state, axis)
         return bound if bound is not None else 0
 
+    # Pure A* (policy_weight=0) — the corner+edge heuristic is tight
+    # enough that the policy was just adding model-eval overhead without
+    # meaningfully improving the search. Empirically 9-move DR→HTR in
+    # <0.1s on the test scramble.
     htr_sols = a_star_search(
-        model,
+        None,  # no model needed when policy_weight=0
         start_state=dr_end_state,
         target_predicate=is_htr_ud,
         heuristic=h,
@@ -285,7 +289,7 @@ def _extend_to_htr_and_finish(
         device=device,
         seed_history=seed_history,
         allowed_move_indices=_DR_PRESERVING[axis],
-        policy_weight=0.5,
+        policy_weight=0.0,
     )
     if not htr_sols:
         return None
