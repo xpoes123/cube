@@ -746,6 +746,13 @@ def find_skeleton(
     # DR → HTR with the tight htr_lower_bound heuristic is fast (~0.1s),
     # so we can afford a larger N. More candidates → better odds the
     # shortest cancelled-total solution is reached.
+    #
+    # NISS at DR→HTR boundary: for each candidate, we try the HTR/Finish
+    # extension on BOTH the DR's own side AND the opposite side. EO=0
+    # and CO=0 are subgroups of G (closed under inverse), so a DR-on-UD
+    # state in one frame is also DR-on-UD in the other. The two
+    # extensions produce different skeletons that may cancel better
+    # with the EO/DR boundary; ranking picks the shortest.
     _EXTEND_TOP_N = 12
     extended: list[Skeleton] = []
     for sk in candidates[:_EXTEND_TOP_N]:
@@ -753,7 +760,6 @@ def find_skeleton(
             extended.append(sk)
             continue
         dr_stage = sk.stages[-1]
-        dr_end = dr_stage.end_state
         # Parse axis from DR stage name "DR (XX)" or "DR (XX) [inv]".
         axis_str = dr_stage.name.split("(")[-1].split(")")[0]
         try:
@@ -761,20 +767,32 @@ def find_skeleton(
         except ValueError:
             extended.append(sk)
             continue
-        # Seed history is the cumulative move sequence on the DR stage's
-        # side, up to and including the DR stage.
-        seed = _stage_seed_history(
-            sk.scramble, sk.stages, dr_stage.side,
-        )
-        ext = _extend_to_htr_and_finish(
-            model, dr_end, axis, history_len, device, seed,
-            side=dr_stage.side,
-        )
-        if ext is not None:
-            extended.append(Skeleton(
-                scramble=sk.scramble, stages=sk.stages + ext,
-            ))
-        else:
+
+        # Sides to try for the HTR extension: the DR's own side always,
+        # plus the opposite side when NISS is enabled.
+        same_side: Side = dr_stage.side
+        try_sides: list[Side] = [same_side]
+        if use_niss:
+            other_side: Side = "inverse" if same_side == "normal" else "normal"
+            try_sides.append(other_side)
+
+        found_ext_for_sk = False
+        for htr_side in try_sides:
+            if htr_side == same_side:
+                start = dr_stage.end_state
+            else:
+                start = _cumulative_state(sk.scramble, sk.stages, htr_side)
+            seed = _stage_seed_history(sk.scramble, sk.stages, htr_side)
+            ext = _extend_to_htr_and_finish(
+                model, start, axis, history_len, device, seed,
+                side=htr_side,
+            )
+            if ext is not None:
+                extended.append(Skeleton(
+                    scramble=sk.scramble, stages=sk.stages + ext,
+                ))
+                found_ext_for_sk = True
+        if not found_ext_for_sk:
             extended.append(sk)
 
     # Rest of candidates unchanged.
