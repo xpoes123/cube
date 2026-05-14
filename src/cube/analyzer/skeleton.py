@@ -19,6 +19,7 @@ import torch
 from cube.analyzer.search import Solution, a_star_search, beam_search
 from cube.analyzer.triggers import has_dr_within, tail_to_dr
 from cube.classifier.features import Axis, best_eo_axis, is_dr, is_eo_solved
+from cube.engine.cancellation import cancel_moves
 from cube.classifier.htr import (
     dr_distance_to_htr,
     dr_group_moves,
@@ -94,6 +95,12 @@ class Skeleton:
 
     @property
     def total_moves(self) -> int:
+        """Move count AFTER stage-boundary cancellation."""
+        return len(self.cancelled_moves)
+
+    @property
+    def total_moves_raw(self) -> int:
+        """Raw move count, summed across stages without cancellation."""
         return sum(len(s.moves) for s in self.stages)
 
     @property
@@ -102,6 +109,11 @@ class Skeleton:
         for s in self.stages:
             out.extend(s.moves)
         return tuple(out)
+
+    @property
+    def cancelled_moves(self) -> tuple[Move, ...]:
+        """The full move sequence with local cancellations applied."""
+        return tuple(cancel_moves(self.flat_moves))
 
 
 # Stage parameter defaults. EO is shallow (humans usually find EO in <8
@@ -448,13 +460,15 @@ def format_skeleton(skeleton: Skeleton) -> str:
             f"  [{st.name:>12}] {len(st.moves):>2} moves  "
             f"log-prob={st.log_prob:>6.2f}{htr_tag}  →  {moves_str}"
         )
-    lines.append(f"  total: {skeleton.total_moves} moves")
+    saved = skeleton.total_moves_raw - skeleton.total_moves
+    saved_tag = f" (cancellation saved {saved})" if saved > 0 else ""
+    lines.append(f"  total: {skeleton.total_moves} moves{saved_tag}")
 
     final = skeleton.stages[-1].end_state
     if final == SOLVED:
         lines.append(f"  ✓ SOLVES the scramble in {skeleton.total_moves} moves")
-        # Full solution for copy/paste.
-        all_moves = " ".join(str(m) for m in skeleton.flat_moves)
+        # Full solution (with cancellation applied) for copy/paste.
+        all_moves = " ".join(str(m) for m in skeleton.cancelled_moves)
         lines.append(f"  full solution: {all_moves}")
     else:
         last = skeleton.stages[-1]
