@@ -324,30 +324,33 @@ def _dr_edge_to_htr_distance_table(
     frontier: deque[tuple[tuple[int, ...], int]] = deque(
         (ep, 0) for ep in htr_eps
     )
+    # Precompute each move's effect as a position-remapping tuple so the
+    # inner loop is pure-tuple arithmetic — no State allocation. For move
+    # m, `new_ep[i] = old_ep[perm[i]]` where perm = SOLVED.apply(m).ep.
+    # (SOLVED.ep is identity, so applying m to SOLVED gives the permutation
+    # encoded by m directly.)
     solved_eo = (0,) * 12
-    ep_move_cache: dict[tuple[tuple[int, ...], Move], tuple[int, ...]] = {}
-
-    def apply_ep(ep: tuple[int, ...], m: Move) -> tuple[int, ...]:
-        key = (ep, m)
-        cached = ep_move_cache.get(key)
-        if cached is not None:
-            return cached
-        s = State(
-            cp=SOLVED.cp, co=(0,) * 8, ep=ep,
+    move_perms: list[tuple[int, ...]] = []
+    for m in moves:
+        ref = State(
+            cp=SOLVED.cp, co=(0,) * 8, ep=tuple(range(12)),
             eo=solved_eo, eo_fb=solved_eo, eo_rl=solved_eo,
-        )
-        new_ep = s.apply(m).ep
-        ep_move_cache[key] = new_ep
-        return new_ep
+        ).apply(m)
+        move_perms.append(ref.ep)
 
     while frontier:
         ep, d = frontier.popleft()
-        for m in moves:
-            new_ep = apply_ep(ep, m)
+        next_d = d + 1
+        for perm in move_perms:
+            new_ep = (
+                ep[perm[0]], ep[perm[1]], ep[perm[2]], ep[perm[3]],
+                ep[perm[4]], ep[perm[5]], ep[perm[6]], ep[perm[7]],
+                ep[perm[8]], ep[perm[9]], ep[perm[10]], ep[perm[11]],
+            )
             if new_ep in distance:
                 continue
-            distance[new_ep] = d + 1
-            frontier.append((new_ep, d + 1))
+            distance[new_ep] = next_d
+            frontier.append((new_ep, next_d))
     return distance
 
 
