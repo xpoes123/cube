@@ -158,3 +158,61 @@ def test_dr_group_moves_count():
     moves = dr_group_moves(Axis.UD)
     # U/D get 3 turns each (CW, CCW, HALF), other 4 faces get 1 (HALF).
     assert len(moves) == 2 * 3 + 4 * 1 == 10
+
+
+def test_htr_pdb_size():
+    """HTR group order is 663,552."""
+    from cube.classifier.htr import htr_pdb
+    pdb = htr_pdb()
+    assert len(pdb) == 663_552
+
+
+def test_htr_pdb_diameter():
+    """HTR diameter is finite and reasonable (literature: ~15 moves)."""
+    from cube.classifier.htr import htr_pdb
+    pdb = htr_pdb()
+    max_d = max(d for d, _ in pdb.values())
+    # Match cube literature: HTR diameter is exactly 15 half-turns.
+    assert max_d == 15
+
+
+def test_htr_solve_on_random_walks():
+    """Apply k random half-turns to SOLVED; htr_solve should return ≤k moves."""
+    import random
+    from cube.classifier.htr import htr_solve
+    rng = random.Random(0)
+    half_turns = [Move(f, Turn.HALF) for f in Face]
+    for _ in range(50):
+        k = rng.randint(0, 10)
+        seq = [rng.choice(half_turns) for _ in range(k)]
+        state = SOLVED.apply_alg(seq)
+        sol = htr_solve(state)
+        assert sol is not None, f"htr_solve returned None for HTR-reachable state"
+        assert len(sol) <= k
+        # Verify solution actually solves.
+        verify = state.apply_alg(sol)
+        assert verify == SOLVED
+
+
+def test_htr_solve_returns_only_half_turns():
+    """The solve sequence must use only half turns (HTR group)."""
+    import random
+    from cube.classifier.htr import htr_solve
+    rng = random.Random(1)
+    half_turns = [Move(f, Turn.HALF) for f in Face]
+    for _ in range(20):
+        k = rng.randint(1, 12)
+        seq = [rng.choice(half_turns) for _ in range(k)]
+        state = SOLVED.apply_alg(seq)
+        sol = htr_solve(state)
+        assert sol is not None
+        for m in sol:
+            assert m.turn == Turn.HALF, f"non-half-turn in HTR solve: {m}"
+
+
+def test_htr_solve_on_non_htr_returns_none():
+    """A single quarter turn leaves HTR — solver should refuse."""
+    from cube.classifier.htr import htr_solve
+    for face in Face:
+        state = SOLVED.apply(Move(face, Turn.CW))
+        assert htr_solve(state) is None

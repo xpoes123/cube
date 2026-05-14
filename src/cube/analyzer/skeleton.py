@@ -19,7 +19,7 @@ import torch
 from cube.analyzer.search import Solution, beam_search
 from cube.analyzer.triggers import has_dr_within, tail_to_dr
 from cube.classifier.features import Axis, best_eo_axis, is_dr, is_eo_solved
-from cube.classifier.htr import dr_distance_to_htr
+from cube.classifier.htr import dr_distance_to_htr, dr_group_moves, htr_solve, is_htr
 from cube.engine.moves import Face, Move, Turn
 from cube.engine.state import SOLVED, State
 from cube.training.encoding import encode_move
@@ -52,6 +52,13 @@ def _eo_preserving_moves(axis: Axis) -> tuple[int, ...]:
 
 _EO_PRESERVING: dict[Axis, tuple[int, ...]] = {
     a: _eo_preserving_moves(a) for a in Axis
+}
+
+
+# DR-group move indices (axis-specific): the set of moves that preserve DR
+# on that axis. UD axis = ⟨U, D, R², L², F², B²⟩ = 10 moves.
+_DR_PRESERVING: dict[Axis, tuple[int, ...]] = {
+    a: tuple(encode_move(m) for m in dr_group_moves(a)) for a in Axis
 }
 
 
@@ -210,9 +217,94 @@ def _try_axis(
                 end_state=dr_end,
                 htr_distance=htr_dist,
             )
-            skeletons.append(Skeleton(scramble=scramble_t, stages=(eo_stage, dr_stage)))
+
+            # Stage 3: DR → HTR via beam search in DR-group moves.
+            # Only attempt for UD axis (the only one where HTR PDB applies
+            # directly). FB/RL get the skeleton up to DR only.
+            stages: tuple[Stage, ...] = (eo_stage, dr_stage)
+            if axis == Axis.UD:
+                htr_extension = _extend_to_htr_and_finish(
+                    model, dr_end, axis,
+                    history_len, device,
+                    scramble_t + eo_sol.moves + full_dr_moves,
+                )
+                if htr_extension is not None:
+                    stages = (eo_stage, dr_stage) + htr_extension
+
+            skeletons.append(Skeleton(scramble=scramble_t, stages=stages))
 
     return skeletons
+
+
+def _extend_to_htr_and_finish(
+    model: PolicyTransformer,
+    dr_end_state: State,
+    axis: Axis,
+    history_len: int,
+    device: torch.device | str,
+    seed_history: tuple[Move, ...],
+) -> tuple[Stage, ...] | None:
+    """Search DR → HTR via beam, then HTR → SOLVED via PDB lookup.
+
+    Returns (htr_stage, finish_stage) on success, or None if the DR → HTR
+    search didn't reach HTR within budget. UD axis only for now (HTR PDB
+    is rooted at SOLVED which is on the UD orientation).
+    """
+    if is_htr(dr_end_state):
+        # No DR→HTR moves needed; just finish.
+        finish = htr_solve(dr_end_state)
+        if finish is None:
+            return None
+        return (
+            Stage(
+                name=f"HTR ({axis.value})",
+                moves=(),
+                log_prob=0.0,
+                end_state=dr_end_state,
+            ),
+            Stage(
+                name="Finish",
+                moves=tuple(finish),
+                log_prob=0.0,
+                end_state=dr_end_state.apply_alg(finish),
+            ),
+        )
+
+    # DR → HTR beam search restricted to DR-group moves.
+    htr_sols = beam_search(
+        model,
+        start_state=dr_end_state,
+        target_predicate=is_htr,
+        beam_width=512,
+        max_depth=12,
+        history_len=history_len,
+        device=device,
+        seed_history=seed_history,
+        allowed_move_indices=_DR_PRESERVING[axis],
+    )
+    if not htr_sols:
+        return None
+
+    htr_sol = htr_sols[0]
+    htr_end = dr_end_state.apply_alg(list(htr_sol.moves))
+    finish = htr_solve(htr_end)
+    if finish is None:
+        return None
+
+    return (
+        Stage(
+            name=f"HTR ({axis.value})",
+            moves=htr_sol.moves,
+            log_prob=htr_sol.log_prob,
+            end_state=htr_end,
+        ),
+        Stage(
+            name="Finish",
+            moves=tuple(finish),
+            log_prob=0.0,
+            end_state=htr_end.apply_alg(finish),
+        ),
+    )
 
 
 def find_skeleton(
@@ -256,11 +348,27 @@ def find_skeleton(
     #    "good subset beats short DR" criterion from the FMC method docs.
     # 3. Tiebreak by total moves, then policy log-prob.
     def _rank(sk: Skeleton) -> tuple[int, int, int, float]:
-        last = sk.stages[-1]
-        htr_d = last.htr_distance if last.htr_distance is not None else 99
-        expected_total = sk.total_moves + htr_d
+        # Skeletons that include a full Finish stage have known actual
+        # length. Skeletons stopping at DR estimate via htr_distance.
+        is_solved = (
+            len(sk.stages) >= 1 and sk.stages[-1].end_state == SOLVED
+        )
+        if is_solved:
+            expected_total = sk.total_moves
+        else:
+            # Find DR stage's htr_distance (last stage with htr_distance set).
+            htr_d = 99
+            for st in reversed(sk.stages):
+                if st.htr_distance is not None:
+                    htr_d = st.htr_distance
+                    break
+            expected_total = sk.total_moves + htr_d
         return (
+            # Prefer solved skeletons over partial.
+            0 if is_solved else 1,
+            # Prefer more stages.
             -len(sk.stages),
+            # Prefer lower expected total.
             expected_total,
             sk.total_moves,
             -sum(s.log_prob for s in sk.stages),
@@ -289,20 +397,25 @@ def format_skeleton(skeleton: Skeleton) -> str:
         if st.htr_distance is not None:
             htr_tag = f"  +{st.htr_distance}→HTR"
         lines.append(
-            f"  [{st.name:>9}] {len(st.moves):>2} moves  "
+            f"  [{st.name:>12}] {len(st.moves):>2} moves  "
             f"log-prob={st.log_prob:>6.2f}{htr_tag}  →  {moves_str}"
         )
-    lines.append(f"  skeleton total: {skeleton.total_moves} moves")
-    last = skeleton.stages[-1]
-    if last.htr_distance is not None:
-        expected = skeleton.total_moves + last.htr_distance
-        lines.append(
-            f"  expected to HTR: {expected} moves "
-            f"(skeleton {skeleton.total_moves} + corner-distance {last.htr_distance})"
-        )
+    lines.append(f"  total: {skeleton.total_moves} moves")
 
-    # Sanity: best EO/DR fact about the final state.
     final = skeleton.stages[-1].end_state
-    axis, count = best_eo_axis(final)
-    lines.append(f"  final state: best EO axis = {axis.value} ({count} bad edges)")
+    if final == SOLVED:
+        lines.append(f"  ✓ SOLVES the scramble in {skeleton.total_moves} moves")
+        # Full solution for copy/paste.
+        all_moves = " ".join(str(m) for m in skeleton.flat_moves)
+        lines.append(f"  full solution: {all_moves}")
+    else:
+        last = skeleton.stages[-1]
+        if last.htr_distance is not None:
+            expected = skeleton.total_moves + last.htr_distance
+            lines.append(
+                f"  expected to HTR: {expected} moves "
+                f"(partial: {skeleton.total_moves} + corner-distance {last.htr_distance})"
+            )
+        axis, count = best_eo_axis(final)
+        lines.append(f"  final state: best EO axis = {axis.value} ({count} bad edges)")
     return "\n".join(lines)

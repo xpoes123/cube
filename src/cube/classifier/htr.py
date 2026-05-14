@@ -278,3 +278,66 @@ def dr_distance_to_htr(state: State, axis: Axis = Axis.UD) -> int | None:
         # Multi-axis subset tables are a follow-up; for now, only UD.
         return None
     return _dr_corner_to_htr_distance_table().get(state.cp)
+
+
+# ---------- HTR pattern database (full HTR-group enumeration) ----------
+
+
+@lru_cache(maxsize=1)
+def htr_pdb() -> dict[tuple[tuple[int, ...], tuple[int, ...]], tuple[int, Move | None]]:
+    """Pattern database: for every HTR-reachable state, store
+    (distance_to_SOLVED, parent_move).
+
+    Key: (cp, ep) tuple. CO and EO are always zero in HTR.
+    Value: (distance, move). `move` is the half-turn applied at the
+    parent that produced this state in the BFS expansion.
+
+    First call BFS's the full HTR subgroup (663,552 states). ~20s.
+    Cached after that.
+    """
+    pdb: dict[tuple[tuple[int, ...], tuple[int, ...]], tuple[int, Move | None]] = {}
+    pdb[(SOLVED.cp, SOLVED.ep)] = (0, None)
+    frontier: deque[tuple[State, int]] = deque([(SOLVED, 0)])
+    while frontier:
+        s, d = frontier.popleft()
+        for m in _HALF_TURN_MOVES:
+            child = s.apply(m)
+            key = (child.cp, child.ep)
+            if key in pdb:
+                continue
+            pdb[key] = (d + 1, m)
+            frontier.append((child, d + 1))
+    return pdb
+
+
+def htr_distance(state: State) -> int | None:
+    """Exact moves to SOLVED for an HTR-state, or None if not in HTR."""
+    if not is_htr(state):
+        return None
+    pdb = htr_pdb()
+    entry = pdb.get((state.cp, state.ep))
+    return entry[0] if entry else None
+
+
+def htr_solve(state: State) -> list[Move] | None:
+    """Optimal half-turn solve from an HTR-state to SOLVED.
+
+    Returns None if state is not in HTR.
+
+    Algorithm: from `state`, repeatedly find the parent move that brought
+    BFS to this state, apply it (self-inverse for half-turns), until
+    SOLVED is reached.
+    """
+    if not is_htr(state):
+        return None
+    pdb = htr_pdb()
+    solution: list[Move] = []
+    cur = state
+    while cur != SOLVED:
+        entry = pdb.get((cur.cp, cur.ep))
+        if entry is None or entry[1] is None:
+            return None
+        _, m = entry
+        solution.append(m)
+        cur = cur.apply(m)  # half turns are self-inverse
+    return solution
