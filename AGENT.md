@@ -139,12 +139,24 @@ Total: ~1 week of focused work, or 2-3 weekends of casual.
 ## Status
 
 - [x] Design doc
-- [ ] Tool module skeleton
-- [ ] Anthropic agent loop
-- [ ] First end-to-end attempt
-- [ ] Iterate on failure modes
+- [x] Tool module skeleton (state, algebra, policy, library, search — 11 tools)
+- [x] Anthropic agent loop (Sonnet 4.5 default; Opus 4.5 swappable)
+- [x] First end-to-end attempt — **scramble 2: 25 moves, $0.23, 14 tool calls**
+- [x] Iteration: scramble-as-JSON fix, HTR+Finish tool, anti-degenerate prompt
+- [ ] Stable solves on all 3 hand-picked test scrambles
 - [ ] 10-scramble eval
 - [ ] Video recording
+
+## Live results
+
+| Scramble | Model | Solved? | Moves | Tool calls | Cost | Notes |
+|---|---|---|---|---|---|---|
+| 2 | Sonnet 4.5 | ✓ | 25 | 14 | $0.23 | Clean: multi-axis EO → trigger DR → HTR+Finish |
+| 1 | Sonnet 4.5 | ✓ | 25 trivial | 14 | $0.21 | Used invert(scramble); fixed in prompt |
+| 1 | Sonnet 4.5 | timeout | — | 27 | ~$8 | Found real EO; ran out of wall time at DR |
+| 3 | Sonnet 4.5 | timeout | 34 interim | 25 | ~$10 | Found 34 but kept searching for shorter |
+| 2 | Opus 4.5 | (in flight) | — | — | — | Comparison run |
+| 1 | Sonnet 4.5 | (in flight) | — | — | — | 40-min wall, 60 calls |
 
 ---
 
