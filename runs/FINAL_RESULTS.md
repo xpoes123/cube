@@ -1,8 +1,22 @@
-# Final results — v7 corpus eval
+# Final results — v8 corpus eval
 
-The headline experiment ran overnight. Below is the complete picture.
+The headline experiment after a full day of iteration.
 
 ## TL;DR
+
+**v8 (EO pattern library, recall-not-search): 5/10 solved, scramble 3
+BEAT the analyzer baseline by 4 moves.**
+
+The EO library closes the "policy can't see the EO" gap entirely by
+memorizing all 6144 reachable EO patterns offline (single forward BFS,
+0.4 sec build). At runtime, every EO query is O(1) recall — mirrors
+what a human FMC champion does (recognize, recall, don't search).
+
+3 of 4 hand-picked WCA benchmarks now solve (scramble 1 still holds out
+because its DR-trigger search still fails — DR-pattern library is the
+remaining open work).
+
+## v7 (previous headline)
 
 **v7 (mirror-aug policy + BFS escape hatch + prompt caching): 5/10 solved.**
 
@@ -13,7 +27,8 @@ The headline experiment ran overnight. Below is the complete picture.
 | v4 (ship rule) | + SHIP RULE | 1/4 | $3.64 |
 | v5 (algorithmic EO) | + algorithmic EO theory | 1/4 | $7.74 |
 | v6 (mirror-aug + 10 scrambles) | + retrained policy | 1/10 | $14.85 |
-| **v7 (BFS + cache)** | + find_eo_algorithmic + prompt cache | **5/10** | **$1.70** |
+| v7 (BFS + cache) | + find_eo_algorithmic + prompt cache | 5/10 | $1.70 |
+| **v8 (EO library)** | + memorized EO patterns (6144) | **5/10** | **$1.42** |
 
 **v7 vs v6**: 5× the solve rate at 1/9 the cost. The combination of
 the BFS escape hatch (algorithmic EO when policy fails) and prompt

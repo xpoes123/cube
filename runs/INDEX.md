@@ -38,6 +38,10 @@ Every transcript in `runs/` with key stats. Auto-generated.
 | corpus_eval_v7_bfs | scramble2 | ✓ | 35 | 58 | 296s | 486s | 42,607 | 6,396 | 533,751 | $0.474 |  | [json](corpus_eval_v7_bfs/scramble2_20260515_044744.json) [md](corpus_eval_v7_bfs/scramble2_20260515_044744.md) |
 | corpus_eval_v7_bfs | scramble3 | ✗ | — | 60 | 760s | 965s | 37,623 | 5,848 | 474,686 | $0.424 | max_tool_calls | [json](corpus_eval_v7_bfs/scramble3_20260515_045550.json) [md](corpus_eval_v7_bfs/scramble3_20260515_045550.md) |
 | corpus_eval_v7_bfs | scramble5 | ✓ | 33 | 58 | 1014s | 962s | 34,019 | 6,819 | 551,659 | $0.441 |  | [json](corpus_eval_v7_bfs/scramble5_20260515_051155.json) [md](corpus_eval_v7_bfs/scramble5_20260515_051155.md) |
+| corpus_eval_v8_lib | scramble1 | ✗ | — | 60 | 357s | 909s | 38,448 | 6,597 | 757,765 | $0.495 | max_tool_calls | [json](corpus_eval_v8_lib/scramble1_20260515_180411.json) [md](corpus_eval_v8_lib/scramble1_20260515_180411.md) |
+| corpus_eval_v8_lib | scramble2 | ✓ | 32 | 16 | 152s | 357s | 9,416 | 2,811 | 108,185 | $0.140 |  | [json](corpus_eval_v8_lib/scramble2_20260515_181920.json) [md](corpus_eval_v8_lib/scramble2_20260515_181920.md) |
+| corpus_eval_v8_lib | scramble3 | ✓ | 27 | 31 | 241s | 609s | 19,578 | 5,479 | 219,411 | $0.253 |  | [json](corpus_eval_v8_lib/scramble3_20260515_182517.json) [md](corpus_eval_v8_lib/scramble3_20260515_182517.md) |
+| corpus_eval_v8_lib | scramble5 | ✓ | 35 | 16 | 155s | 303s | 9,207 | 2,683 | 107,242 | $0.136 |  | [json](corpus_eval_v8_lib/scramble5_20260515_183526.json) [md](corpus_eval_v8_lib/scramble5_20260515_183526.md) |
 | runs | sim_20260514_235035 | ✗ | — | 60 | 418s | 179s | 565,556 | 5,716 | 0 | $1.782 | max_tool_calls | [json](runs/sim_20260514_235035.json) [md](—) |
 | runs | sim_20260514_235618 | ✗ | — | 60 | 374s | 211s | 590,754 | 5,376 | 0 | $1.853 | max_tool_calls | [json](runs/sim_20260514_235618.json) [md](—) |
 | runs | sim_20260514_235620 | ✗ | — | 60 | 414s | 242s | 585,324 | 5,334 | 0 | $1.836 | max_tool_calls | [json](runs/sim_20260514_235620.json) [md](—) |
@@ -48,5 +52,6 @@ Every transcript in `runs/` with key stats. Auto-generated.
 | runs | sim_20260515_021554 | ✓ | 33 | 16 | 154s | 280s | 79,788 | 2,473 | 0 | $0.276 |  | [json](runs/sim_20260515_021554.json) [md](—) |
 | runs | sim_20260515_034617 | ✗ | — | 40 | 129s | 66s | 212,454 | 3,642 | 0 | $0.692 | max_tool_calls | [json](runs/sim_20260515_034617.json) [md](—) |
 | runs | sim_20260515_035458 | ✗ | — | 40 | 601s | 601s | 23,067 | 3,970 | 287,675 | $-0.648 | max_tool_calls | [json](runs/sim_20260515_035458.json) [md](—) |
+| runs | sim_20260515_180342 | ✗ | — | 40 | 340s | 849s | 22,508 | 4,271 | 391,232 | $0.305 | max_tool_calls | [json](runs/sim_20260515_180342.json) [md](—) |
 
-**Total transcripts**: 44
+**Total transcripts**: 49
