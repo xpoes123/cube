@@ -62,11 +62,16 @@ _COST_SUBSET_LOOKUP_MISS = 15.0
 _COST_HTR_SUBSET = 2.0
 
 # Search budgets — tighter than the unconstrained loop.
+# DR-trigger defaults bumped after the first sim run: at tail=2 the policy
+# couldn't surface scramble 2's DR even at sw=512; at tail=3, sw=32 finds
+# a 9-move DR (vs the unconstrained 7-move). This is the realistic
+# operating point — wider tail recognizing more trigger states is more
+# human-like than wider beam.
 _SIM_LOOKAHEAD_WIDTH = 5
 _SIM_LOOKAHEAD_DEPTH = 4
-_SIM_DR_TRIGGER_SETUP_WIDTH = 20
-_SIM_DR_TRIGGER_SETUP_DEPTH = 6
-_SIM_DR_TRIGGER_TAIL = 2
+_SIM_DR_TRIGGER_SETUP_WIDTH = 32
+_SIM_DR_TRIGGER_SETUP_DEPTH = 8
+_SIM_DR_TRIGGER_TAIL = 3
 
 _TOTAL_SIM_BUDGET = 3600.0  # one competition hour
 _MAX_SLOTS = 3

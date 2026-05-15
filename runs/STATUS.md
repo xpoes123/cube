@@ -79,20 +79,22 @@ exploration). The clean solve is dirt cheap; failures are expensive.
   subset finish
 - `runs/*.json` — raw transcripts (gitignored)
 
-## Next concrete step
+## Sim mode results so far
 
-The realistic-FMC mode is built and unit-tested (scramble 2's DR state
-correctly maps to the 14-move HTR finish via `lookup_subset_finish`).
-First live API run is pending — needs `ANTHROPIC_API_KEY` in the shell.
+| Run | Width | Tail | Result | Moves | Cost |
+|---|---|---|---|---|---|
+| 1 (initial) | 20 | 2 | timeout, 0 moves | — | ~$1.80 |
+| 2 (sweep) | 64 | 2 | timeout, 0 moves | — | ~$1.50 |
+| 3 (sweep) | 256 | 2 | timeout, 0 moves | — | ~$1.50 |
+| **4** | **32** | **3** | **✓ solved** | **38** | **~$1.50** |
 
-```fish
-set -x ANTHROPIC_API_KEY ...
-uv run python -m cube.agent.simulated_fmc \
-  "R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F" \
-  --verbose --wall-limit-s 1200
-```
+The realistic-FMC mode works at sim defaults sw=32 sd=8 tail=3. Same
+scramble the unconstrained mode solves in 25 moves; sim mode solves in
+38 moves, 8 min wall, $1.50 cost. See `runs/sim_scramble2_solved.md`
+for the side-by-side breakdown.
 
-After the first sim run completes, distill the transcript into
-`runs/sim_scramble2.md` and compare directly with the unconstrained
-`runs/example_solve_scramble2.md`. That side-by-side is the heart of
-the video.
+Key empirical finding: at default `tail_length=2`, the DR-trigger
+search now needs `setup_width=1024` to find scramble 2's DR — the
+recorded unconstrained 25-move transcript was probably solved under
+an older `tail_length=3` default. Sim mode commits to tail=3 as the
+honest budget.
