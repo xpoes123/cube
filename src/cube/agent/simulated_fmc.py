@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, eo_bfs, library, policy, search, state
+from cube.tools import algebra, eo_bfs, eo_pattern_lib, library, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -339,6 +339,20 @@ def _build_handlers(
         budget.charge("lookahead", _COST_LOOKAHEAD, slot=slot.name, target=args["target"])
         return out
 
+    def _h_eo_pattern_lookup(args):
+        """Recall a memorized EO sequence for the current bad-edge-slot pattern.
+
+        Mirrors what a human FMC champion does: recognize the
+        configuration, recall the fix. O(1) library lookup, no search.
+        This is the PRIMARY EO tool — try it before lookahead or BFS.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = eo_pattern_lib.eo_pattern_lookup(sc, hist, axis=args["axis"])
+        # Cost: ~3s simulated (recognition + recall, like subset lookup).
+        budget.charge("eo_pattern_lookup", 3.0, slot=slot.name, axis=args["axis"])
+        return out
+
     def _h_find_eo_algorithmic(args):
         """Plain BFS for short EO sequences on `axis`. No policy ranking.
         Mirrors a human methodically trying setups when intuition fails.
@@ -531,6 +545,7 @@ def _build_handlers(
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "lookahead_wide": _h_lookahead_wide,
+        "eo_pattern_lookup": _h_eo_pattern_lookup,
         "find_eo_algorithmic": _h_find_eo_algorithmic,
         "find_dr_via_trigger": _h_find_dr_via_trigger,
         "probe_dr_after_eo": _h_probe_dr,
@@ -607,6 +622,25 @@ def _tool_schemas() -> list[dict]:
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                 },
                 "required": ["slot", "target"],
+            },
+        },
+        {
+            "name": "eo_pattern_lookup",
+            "description": (
+                "PRIMARY EO TOOL — recall a memorized EO sequence for the "
+                "current bad-edge-slot pattern. Like a human champion: "
+                "recognize the configuration, recall the fix. O(1) lookup. "
+                "Covers all 6144 reachable EO patterns across the 3 axes. "
+                "Always try this first; if it misses (shouldn't), fall back "
+                "to find_eo_algorithmic. Cost: 3s simulated."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "axis"],
             },
         },
         {
@@ -853,13 +887,15 @@ JSON form (always pass this to verify_solved, never retype the scramble):
   scramble = {scramble_json}
 
 # Pipeline (the realistic version)
-1. **EO scan** — call lookahead(target='eo', axis=X) for ALL THREE axes
-   (UD, FB, RL). You're enumerating candidate openings, not committing
-   yet. Costs ~24s simulated total but is essential.
-   **If ALL THREE axes return found=0**: the policy's intuition is empty
-   here. Fall back to find_eo_algorithmic(axis=X) which does a plain
-   BFS (no policy) — slow but guaranteed to find any sub-6 EO. 60s
-   simulated cost; use sparingly. Try the lowest bad-edge axis first.
+1. **EO scan** — call eo_pattern_lookup(axis=X) for ALL THREE axes
+   (UD, FB, RL). This is the PRIMARY EO tool: recognizes the bad-edge-
+   slot pattern and recalls the memorized optimal EO sequence. Like a
+   human champion who has seen every configuration before. O(1) lookup,
+   3s simulated each. Covers 6144 EO patterns (all reachable ones).
+   You will get HITS on every axis with `found=1` and an optimal-length
+   `moves` sequence. Pick the axis with shortest len(moves) — that's
+   your candidate EO. (Fallbacks: if for some reason eo_pattern_lookup
+   misses, use lookahead then find_eo_algorithmic. Should never happen.)
 2. **DR probe BEFORE committing to EO** — this is the most important
    strategy rule. For each axis that found a short EO, call
    probe_dr_after_eo(slot='main', eo_alg=[that EO's moves], axis=X).
