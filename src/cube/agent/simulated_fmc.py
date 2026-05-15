@@ -51,7 +51,7 @@ _COST_NISS_FLIP = 5.0
 _COST_SLOT_NEW = 10.0
 _COST_SLOT_SWITCH = 2.0
 _COST_RESCRAMBLE = 30.0
-_COST_INSPECT = 1.0
+_COST_INSPECT = 5.0       # bumped 1->5: humans count by looking at the cube
 _COST_TRY_ALG = 2.0
 _COST_POLICY_INTUITION = 3.0
 # Search tool simulated costs reflect "thinking time," not real CPU.
@@ -59,7 +59,20 @@ _COST_LOOKAHEAD = 8.0
 _COST_DR_TRIGGER = 20.0
 _COST_SUBSET_LOOKUP_CACHED = 1.0
 _COST_SUBSET_LOOKUP_MISS = 15.0
-_COST_HTR_SUBSET = 2.0
+_COST_HTR_SUBSET = 10.0   # bumped 2->10: subset recognition is real visual work
+
+# Working-memory cap: humans don't perfectly recall a 25-move solve in
+# their head. inspect_state shows only the last K moves of history; the
+# agent must remember earlier moves in text.
+_HISTORY_VISIBLE_TAIL = 20
+
+# DR-trigger: humans evaluate 2-3 candidate triggers, not 5+.
+_SIM_DR_TRIGGER_MAX_OPTIONS = 3
+
+# Memorized finishes are imperfect — humans don't memorize the WCA-optimal
+# finish, they memorize a good-enough one. Deterministic noise keyed by the
+# canonical subset: each subset has a fixed +0..3 "memorization penalty."
+_MEMORY_PENALTY_MAX_MOVES = 3
 
 # Search budgets — tighter than the unconstrained loop.
 # DR-trigger defaults bumped after the first sim run: at tail=2 the policy
@@ -125,6 +138,27 @@ class BudgetTracker:
 _SUBSET_FINISH_CACHE: dict[tuple, dict[str, list[str]]] = {}
 
 
+# TODO: noisy memorization. Naive padding gets removed by cancel; need to
+# return a genuinely-suboptimal PDB path (e.g. 2nd-shortest via backward
+# walk with a perturbed heuristic). Land in a follow-up. The hook below
+# is a placeholder so the limitation is visible in the output.
+
+
+def _memory_quality_hint(canonical_subset: tuple, axis: str) -> str:
+    """Returns a hint about how well-memorized this subset is. Decorative
+    for now (until we land real suboptimal-PDB-walk noise); deterministic
+    per (subset, axis) so reruns reproduce."""
+    import hashlib
+    h = hashlib.md5(repr((canonical_subset, axis)).encode()).digest()[0]
+    bucket = h % 4
+    return [
+        "rehearsed (your memorization is sharp)",
+        "rehearsed (a touch rusty)",
+        "less-practiced (you may want to double-check)",
+        "rarely-seen (you're working from first principles)",
+    ][bucket]
+
+
 # ---------------------------------------------------------------------------
 # Tool handlers (budget-aware wrappers around cube.tools.*)
 # ---------------------------------------------------------------------------
@@ -171,6 +205,19 @@ def _build_handlers(
         out["on_inverse"] = slot.on_inverse
         out["undo_floor"] = slot.committed_floor
         out["undo_available"] = max(0, len(slot.history) - slot.committed_floor)
+        # Working-memory cap: only surface the last N moves of history.
+        full_len = len(slot.history)
+        if full_len > _HISTORY_VISIBLE_TAIL:
+            out["history_visible"] = list(slot.history[-_HISTORY_VISIBLE_TAIL:])
+            out["history_truncated"] = full_len - _HISTORY_VISIBLE_TAIL
+            out["history_note"] = (
+                f"working-memory limit: showing last {_HISTORY_VISIBLE_TAIL} "
+                f"moves of {full_len}. {out['history_truncated']} earlier "
+                f"moves are not shown — you must remember them in text."
+            )
+        else:
+            out["history_visible"] = list(slot.history)
+            out["history_truncated"] = 0
         budget.charge("inspect_state", _COST_INSPECT, slot=slot.name)
         return out
 
@@ -269,6 +316,17 @@ def _build_handlers(
         budget.charge("lookahead", _COST_LOOKAHEAD, slot=slot.name, target=args["target"])
         return out
 
+    def _truncate_dr_options(out: dict) -> dict:
+        # Human eye sees a handful of triggers, not 5+. Top-3 by length+log_prob.
+        if isinstance(out.get("options"), list) and len(out["options"]) > _SIM_DR_TRIGGER_MAX_OPTIONS:
+            out["options"] = out["options"][:_SIM_DR_TRIGGER_MAX_OPTIONS]
+            out["found"] = len(out["options"])
+            out["note_truncated"] = (
+                f"showing only top {_SIM_DR_TRIGGER_MAX_OPTIONS} triggers; "
+                f"deeper enumeration is beyond a human's visualization scope."
+            )
+        return out
+
     def _h_find_dr_via_trigger(args):
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -279,6 +337,7 @@ def _build_handlers(
             setup_width=dr_trigger_setup_width,
             setup_depth=dr_trigger_setup_depth,
         )
+        out = _truncate_dr_options(out)
         budget.charge("find_dr_via_trigger", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
         return out
 
@@ -296,6 +355,7 @@ def _build_handlers(
             setup_width=dr_trigger_setup_width,
             setup_depth=dr_trigger_setup_depth,
         )
+        out = _truncate_dr_options(out)
         out["probed_with_eo"] = list(args["eo_alg"])
         budget.charge("probe_dr_after_eo", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
         return out
@@ -335,6 +395,7 @@ def _build_handlers(
         cache_key = tuple(canonical)
         if cache_key in _SUBSET_FINISH_CACHE and axis in _SUBSET_FINISH_CACHE[cache_key]:
             finish = _SUBSET_FINISH_CACHE[cache_key][axis]
+            quality = _memory_quality_hint(cache_key, axis)
             budget.charge("lookup_subset_finish", _COST_SUBSET_LOOKUP_CACHED, slot=slot.name, axis=axis, cached=True, subset=list(canonical))
             return {
                 "subset_canonical": list(canonical),
@@ -342,7 +403,8 @@ def _build_handlers(
                 "finish_moves": list(finish),
                 "length": len(finish),
                 "cached": True,
-                "note": "Recognized subset — playing memorized finish.",
+                "memory_quality": quality,
+                "note": f"Recognized subset — playing memorized finish ({quality}).",
             }
 
         # Cache miss: compute via the existing PDB. From the agent's
