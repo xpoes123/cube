@@ -737,6 +737,18 @@ JSON form (always pass this to verify_solved, never retype the scramble):
 6. verify_solved(solution=full_history_in_solve_order).
 
 # Strategy notes
+
+**SHIP RULE (read this twice)**: the primary goal is producing a
+SOLVED solution within budget. Any verified solve under 50 moves
+beats a timeout. Once you have a working complete solution
+(EO + DR + finish, verified by verify_solved), CALL FINAL_SOLUTION
+and STOP. Do NOT keep searching for shorter alternatives unless you
+have a very specific reason (e.g. you can see your current solution
+has 4+ obviously cancellable moves and a quick try_alg would confirm).
+The FMC theory targets ("sub-15 DR is advanced", etc.) are aspirational
+for STRONG HUMANS over many practice solves — not requirements for
+this attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.
+
 - **Test before commit**: a 4-move EO probed with find_dr_via_trigger is
   cheaper than a 2-move EO followed by 30 tool calls of manual DR
   exploration that goes nowhere. Always test ALL viable EO axes' DR
