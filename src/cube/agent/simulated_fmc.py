@@ -145,7 +145,17 @@ def _materialize(scramble: list[str], slot: Slot) -> tuple[list[str], list[str]]
     return list(scramble), list(slot.history)
 
 
-def _build_handlers(scramble: list[str], slots: dict[str, Slot], budget: BudgetTracker):
+def _build_handlers(
+    scramble: list[str],
+    slots: dict[str, Slot],
+    budget: BudgetTracker,
+    *,
+    lookahead_width: int = _SIM_LOOKAHEAD_WIDTH,
+    lookahead_depth: int = _SIM_LOOKAHEAD_DEPTH,
+    dr_trigger_setup_width: int = _SIM_DR_TRIGGER_SETUP_WIDTH,
+    dr_trigger_setup_depth: int = _SIM_DR_TRIGGER_SETUP_DEPTH,
+    dr_trigger_tail: int = _SIM_DR_TRIGGER_TAIL,
+):
     """Return a name -> handler map closed over scramble/slots/budget."""
 
     def _h_inspect_state(args):
@@ -249,7 +259,7 @@ def _build_handlers(scramble: list[str], slots: dict[str, Slot], budget: BudgetT
         out = search.lookahead(
             sc, hist,
             target=args["target"], axis=args.get("axis"),
-            width=_SIM_LOOKAHEAD_WIDTH, depth=_SIM_LOOKAHEAD_DEPTH,
+            width=lookahead_width, depth=lookahead_depth,
         )
         budget.charge("lookahead", _COST_LOOKAHEAD, slot=slot.name, target=args["target"])
         return out
@@ -260,9 +270,9 @@ def _build_handlers(scramble: list[str], slots: dict[str, Slot], budget: BudgetT
         out = search.find_dr_via_trigger(
             sc, hist,
             axis=args["axis"],
-            tail_length=_SIM_DR_TRIGGER_TAIL,
-            setup_width=_SIM_DR_TRIGGER_SETUP_WIDTH,
-            setup_depth=_SIM_DR_TRIGGER_SETUP_DEPTH,
+            tail_length=dr_trigger_tail,
+            setup_width=dr_trigger_setup_width,
+            setup_depth=dr_trigger_setup_depth,
         )
         budget.charge("find_dr_via_trigger", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
         return out
@@ -570,11 +580,17 @@ def solve(
     transcript_path: Path | None = None,
     wall_limit_s: float = 3600.0,
     sim_budget: float = _TOTAL_SIM_BUDGET,
+    dr_trigger_setup_width: int = _SIM_DR_TRIGGER_SETUP_WIDTH,
+    dr_trigger_setup_depth: int = _SIM_DR_TRIGGER_SETUP_DEPTH,
 ) -> dict:
     client = anthropic.Anthropic()
     slots: dict[str, Slot] = {"main": Slot(name="main")}
     budget = BudgetTracker(sim_budget=sim_budget, wall_limit_s=wall_limit_s)
-    handlers = _build_handlers(scramble, slots, budget)
+    handlers = _build_handlers(
+        scramble, slots, budget,
+        dr_trigger_setup_width=dr_trigger_setup_width,
+        dr_trigger_setup_depth=dr_trigger_setup_depth,
+    )
     tool_schemas = _tool_schemas()
 
     scramble_json = json.dumps(scramble)
@@ -763,6 +779,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--thinking-budget", type=int, default=3000)
     parser.add_argument("--wall-limit-s", type=float, default=3600.0)
     parser.add_argument("--sim-budget", type=float, default=_TOTAL_SIM_BUDGET)
+    parser.add_argument(
+        "--dr-trigger-setup-width", type=int, default=_SIM_DR_TRIGGER_SETUP_WIDTH,
+        help="Beam width for find_dr_via_trigger setup search. Sweepable.",
+    )
+    parser.add_argument(
+        "--dr-trigger-setup-depth", type=int, default=_SIM_DR_TRIGGER_SETUP_DEPTH,
+    )
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -785,6 +808,8 @@ def main(argv: list[str] | None = None) -> int:
         transcript_path=transcript_path,
         wall_limit_s=args.wall_limit_s,
         sim_budget=args.sim_budget,
+        dr_trigger_setup_width=args.dr_trigger_setup_width,
+        dr_trigger_setup_depth=args.dr_trigger_setup_depth,
     )
     elapsed = time.time() - t0
 
