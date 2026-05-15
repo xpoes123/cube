@@ -852,11 +852,30 @@ def solve(
     tool_calls = 0
     input_tokens = 0
     output_tokens = 0
+    cache_read_tokens = 0
+    cache_create_tokens = 0
     final_solution: list[str] = []
     solves = False
     halt_reason: str | None = None
+    per_turn_usage: list[dict] = []
+    turn_idx = 0
+
+    def _slot_snapshot() -> dict:
+        return {
+            n: {
+                "history": list(s.history),
+                "on_inverse": s.on_inverse,
+                "move_count": len(s.history),
+                "undo_available": max(0, len(s.history) - s.committed_floor),
+            }
+            for n, s in slots.items()
+        }
 
     def _snapshot() -> dict:
+        # Compute cost estimate with Sonnet 4.5 pricing (cached ~$0.30/M, non-cached $3/M in, $15/M out).
+        cached = cache_read_tokens
+        fresh_in = input_tokens - cached
+        cost_estimate = (cached * 0.30 + fresh_in * 3.0 + output_tokens * 15.0) / 1_000_000
         return {
             "scramble": scramble,
             "model": model,
@@ -869,10 +888,14 @@ def solve(
             "sim_budget": budget.sim_budget,
             "wall_elapsed_s": round(time.time() - budget.real_start, 1),
             "budget_events": budget.events,
-            "slots_final": {n: {"history": list(s.history), "on_inverse": s.on_inverse} for n, s in slots.items()},
+            "slots_final": _slot_snapshot(),
             "transcript": transcript,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "cache_read_tokens": cache_read_tokens,
+            "cache_create_tokens": cache_create_tokens,
+            "per_turn_usage": per_turn_usage,
+            "cost_estimate_usd": round(cost_estimate, 4),
         }
 
     def _checkpoint() -> None:
@@ -905,12 +928,44 @@ def solve(
         )
         if thinking_budget > 0:
             api_kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+        turn_t0 = time.time()
         resp = client.messages.create(**api_kwargs)
-        input_tokens += resp.usage.input_tokens
-        output_tokens += resp.usage.output_tokens
+        turn_elapsed = time.time() - turn_t0
+        turn_idx += 1
+        usage = resp.usage
+        turn_in = usage.input_tokens
+        turn_out = usage.output_tokens
+        turn_cache_read = getattr(usage, "cache_read_input_tokens", 0) or 0
+        turn_cache_create = getattr(usage, "cache_creation_input_tokens", 0) or 0
+        input_tokens += turn_in
+        output_tokens += turn_out
+        cache_read_tokens += turn_cache_read
+        cache_create_tokens += turn_cache_create
+        per_turn_usage.append({
+            "turn": turn_idx,
+            "wall_s_elapsed": round(time.time() - budget.real_start, 2),
+            "turn_wall_s": round(turn_elapsed, 2),
+            "sim_spent_at_turn": round(budget.sim_spent, 2),
+            "input_tokens": turn_in,
+            "output_tokens": turn_out,
+            "cache_read_tokens": turn_cache_read,
+            "cache_create_tokens": turn_cache_create,
+            "stop_reason": resp.stop_reason,
+        })
 
         assistant_content = [b.model_dump() for b in resp.content]
-        transcript.append({"type": "assistant", "content": assistant_content, "stop_reason": resp.stop_reason})
+        transcript.append({
+            "type": "assistant",
+            "turn": turn_idx,
+            "wall_s_elapsed": round(time.time() - budget.real_start, 2),
+            "turn_wall_s": round(turn_elapsed, 2),
+            "input_tokens": turn_in,
+            "output_tokens": turn_out,
+            "cache_read_tokens": turn_cache_read,
+            "cache_create_tokens": turn_cache_create,
+            "content": assistant_content,
+            "stop_reason": resp.stop_reason,
+        })
         messages.append({"role": "assistant", "content": assistant_content})
 
         if verbose:
@@ -949,10 +1004,14 @@ def solve(
                 })
                 transcript.append({
                     "type": "tool_call",
+                    "turn": turn_idx,
+                    "tool_index": tool_calls,
                     "name": tu.name,
                     "input": tu.input,
                     "result": result,
                     "sim_spent": round(budget.sim_spent, 2),
+                    "wall_s_elapsed": round(time.time() - budget.real_start, 2),
+                    "slots_after": _slot_snapshot(),
                 })
                 if tool_calls >= max_tool_calls:
                     break

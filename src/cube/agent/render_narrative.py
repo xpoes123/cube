@@ -82,6 +82,9 @@ def render(transcript_json_path: Path, *, include_system: bool = False) -> str:
     in_tok = data.get("input_tokens", 0)
     out_tok = data.get("output_tokens", 0)
 
+    cache_read = data.get("cache_read_tokens", 0)
+    cost = data.get("cost_estimate_usd")
+    wall_elapsed = data.get("wall_elapsed_s")
     lines.append(f"# Run — {transcript_json_path.name}")
     lines.append("")
     lines.append(f"**Scramble**: `{' '.join(scramble)}`  ")
@@ -90,12 +93,31 @@ def render(transcript_json_path: Path, *, include_system: bool = False) -> str:
     lines.append(f"**Result**: {status} ({total_moves} moves, {tool_calls} tool calls)  ")
     if sim_spent is not None:
         lines.append(f"**Sim budget**: {sim_spent:.0f}s / {sim_budget:.0f}s  ")
+    if wall_elapsed is not None:
+        lines.append(f"**Wall time**: {wall_elapsed:.0f}s  ")
     if halt:
         lines.append(f"**Halt**: {halt}  ")
-    lines.append(f"**Tokens**: {in_tok:,} in, {out_tok:,} out  ")
+    lines.append(f"**Tokens**: {in_tok:,} in ({cache_read:,} cached), {out_tok:,} out  ")
+    if cost is not None:
+        lines.append(f"**Cost estimate**: ${cost:.3f}  ")
     if data.get("final_solution"):
         lines.append(f"**Solution**: `{' '.join(data['final_solution'])}`  ")
     lines.append("")
+
+    # Budget event totals by kind (for a quick "where did the time go" view).
+    events = data.get("budget_events") or []
+    if events:
+        by_kind: dict[str, tuple[int, float]] = {}
+        for e in events:
+            k = e.get("kind", "?")
+            count, cost_s = by_kind.get(k, (0, 0.0))
+            by_kind[k] = (count + 1, cost_s + e.get("cost", 0.0))
+        lines.append("**Sim-time spent by tool**:")
+        lines.append("")
+        for k in sorted(by_kind, key=lambda x: -by_kind[x][1]):
+            count, cost_s = by_kind[k]
+            lines.append(f"- `{k}`: {count}× = {cost_s:.0f}s")
+        lines.append("")
     lines.append("---")
     lines.append("")
 
@@ -123,6 +145,22 @@ def render(transcript_json_path: Path, *, include_system: bool = False) -> str:
         elif kind == "assistant":
             turn_idx += 1
             blocks = entry.get("content", [])
+            # Per-turn cost annotation (only if captured).
+            turn_in = entry.get("input_tokens")
+            turn_out = entry.get("output_tokens")
+            turn_cache = entry.get("cache_read_tokens")
+            turn_wall = entry.get("turn_wall_s")
+            if turn_in is not None and turn_in > 0:
+                fresh = turn_in - (turn_cache or 0)
+                turn_cost = (
+                    (turn_cache or 0) * 0.30 + fresh * 3.0 + (turn_out or 0) * 15.0
+                ) / 1_000_000
+                wall_part = f", {turn_wall:.1f}s API" if turn_wall else ""
+                lines.append(
+                    f"_(turn {turn_idx}: {turn_in:,} in / {turn_out:,} out / "
+                    f"{turn_cache or 0:,} cached, ~${turn_cost:.4f}{wall_part})_"
+                )
+                lines.append("")
             for block in blocks:
                 btype = block.get("type")
                 if btype == "thinking":
@@ -152,9 +190,22 @@ def render(transcript_json_path: Path, *, include_system: bool = False) -> str:
                 input_repr = input_repr[:117] + "..."
             summary = _summarize_tool_result(name, entry.get("result", {}))
             sim = entry.get("sim_spent")
-            sim_str = f" [sim={sim:.0f}s]" if sim is not None else ""
-            lines.append(f"- `tool#{tool_counter}` **{name}**({input_repr}){sim_str}")
+            wall = entry.get("wall_s_elapsed")
+            tag = []
+            if sim is not None:
+                tag.append(f"sim={sim:.0f}s")
+            if wall is not None:
+                tag.append(f"wall={wall:.0f}s")
+            tag_str = f" [{', '.join(tag)}]" if tag else ""
+            lines.append(f"- `tool#{tool_counter}` **{name}**({input_repr}){tag_str}")
             lines.append(f"  → {summary}")
+            # If a slot history changed, surface it (compact form).
+            slots_after = entry.get("slots_after") or {}
+            for sname, sstate in slots_after.items():
+                if sstate.get("move_count", 0) > 0 and name in {"apply_moves", "undo_moves", "reset_slot", "niss_flip"}:
+                    hist = sstate.get("history", [])
+                    on_inv = " [INV]" if sstate.get("on_inverse") else ""
+                    lines.append(f"  slot={sname}{on_inv} hist({sstate['move_count']}m): `{' '.join(hist)}`")
         elif kind == "verify":
             sol = entry.get("solution", [])
             res = entry.get("result", {})

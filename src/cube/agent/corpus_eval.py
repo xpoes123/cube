@@ -21,7 +21,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from cube.agent import render_narrative, simulated_fmc
+from cube.agent import build_index, render_narrative, simulated_fmc
 
 # 4 hand-picked scrambles from benchmarks/test_scrambles.md.
 DEFAULT_CORPUS = [
@@ -172,6 +172,15 @@ def main(argv: list[str] | None = None) -> int:
 
     summary_path = write_summary(args.out_dir, summaries, args.model)
     print(f"\nwrote {summary_path}")
+    # Regenerate the top-level runs index so new transcripts surface immediately.
+    try:
+        runs_root = args.out_dir if args.out_dir.parent.name == "runs" else args.out_dir.parent
+        if runs_root.name == "runs":
+            idx_md = build_index.build(runs_root)
+            (runs_root / "INDEX.md").write_text(idx_md)
+            print(f"refreshed {runs_root / 'INDEX.md'}")
+    except Exception as e:
+        print(f"warn: could not regenerate INDEX.md ({e})")
     return 0
 
 
