@@ -70,7 +70,29 @@ exploration). The clean solve is dirt cheap; failures are expensive.
 ## Files
 
 - `runs/example_solve_scramble2.md` — the working transcript
+- `runs/sim_design.md` — realistic-FMC simulation design + how to run
 - `AGENT.md` — design doc + live results
-- `src/cube/tools/` — 11 tools
-- `src/cube/agent/loop.py` — Anthropic API loop
+- `src/cube/tools/` — 11 tools (unconstrained)
+- `src/cube/agent/loop.py` — Anthropic API loop (unconstrained)
+- `src/cube/agent/simulated_fmc.py` — budget-constrained loop, 14 tools
+  with simulated-time accounting, 3 slots, 4-move undo, memoized HTR
+  subset finish
 - `runs/*.json` — raw transcripts (gitignored)
+
+## Next concrete step
+
+The realistic-FMC mode is built and unit-tested (scramble 2's DR state
+correctly maps to the 14-move HTR finish via `lookup_subset_finish`).
+First live API run is pending — needs `ANTHROPIC_API_KEY` in the shell.
+
+```fish
+set -x ANTHROPIC_API_KEY ...
+uv run python -m cube.agent.simulated_fmc \
+  "R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F" \
+  --verbose --wall-limit-s 1200
+```
+
+After the first sim run completes, distill the transcript into
+`runs/sim_scramble2.md` and compare directly with the unconstrained
+`runs/example_solve_scramble2.md`. That side-by-side is the heart of
+the video.
