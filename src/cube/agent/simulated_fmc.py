@@ -541,12 +541,16 @@ def _tool_schemas() -> list[dict]:
         },
         {
             "name": "lookahead",
-            "description": f"Bounded look-ahead from a slot (width={_SIM_LOOKAHEAD_WIDTH}, depth={_SIM_LOOKAHEAD_DEPTH}) — about what a human can visualize. target=eo|dr|htr|solved; axis required for non-solved targets.",
+            "description": (
+                f"Bounded look-ahead from a slot (width={_SIM_LOOKAHEAD_WIDTH}, depth={_SIM_LOOKAHEAD_DEPTH}) — about what a human "
+                f"can visualize. ONLY for target=eo or target=solved. For DR use find_dr_via_trigger; "
+                f"for HTR/finish use htr_subset then lookup_subset_finish."
+            ),
             "input_schema": {
                 "type": "object",
                 "properties": {
                     "slot": _SLOT,
-                    "target": {"type": "string", "enum": ["eo", "dr", "htr", "solved"]},
+                    "target": {"type": "string", "enum": ["eo", "solved"]},
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                 },
                 "required": ["slot", "target"],
@@ -651,8 +655,13 @@ JSON form (always pass this to verify_solved, never retype the scramble):
    step, try NISS or reset_slot and try a different EO axis. Do NOT
    manually build DR setup chains by guessing — that burns 10+ tool
    calls. Reset and try the next axis instead.
-5. **HTR**: call htr_subset to identify the canonical subset, then
-   lookup_subset_finish(axis=X) for the rehearsed finish. Apply it.
+5. **HTR**: this is a TWO-STEP process, no exceptions.
+   a) htr_subset(slot='main') — identifies the canonical subset.
+   b) lookup_subset_finish(slot='main', axis=X) — returns the
+      memorized finish_moves.
+   Then apply_moves(finish_moves). Do NOT call lookahead(target='htr')
+   or any DR-search after DR is reached — it will not work and wastes
+   tool calls. Trust the lookup.
 6. verify_solved(solution=full_history_in_solve_order).
 
 # Strategy notes
