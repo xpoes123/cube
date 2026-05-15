@@ -58,10 +58,12 @@ def enumerate_subset_representatives() -> list[tuple[tuple[int, ...], State]]:
     return representatives
 
 
-def build_cache(axes: tuple[str, ...] = ("UD",)) -> dict[tuple, dict[str, list[str]]]:
+def build_cache(axes: tuple[str, ...] = ("UD",), limit: int = 420) -> dict[tuple, dict[str, list[str]]]:
     cache: dict[tuple, dict[str, list[str]]] = {}
     reps = enumerate_subset_representatives()
-    print(f"Found {len(reps)} canonical HTR subsets reachable from DR-UD.")
+    if limit < len(reps):
+        reps = reps[:limit]
+    print(f"Computing finishes for {len(reps)} canonical HTR subsets.")
     t0 = time.time()
     for i, (canonical, rep) in enumerate(reps, 1):
         for axis in axes:
@@ -110,9 +112,11 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--out", type=Path, default=CACHE_PATH)
     p.add_argument("--axes", nargs="+", default=["UD"], help="Axes to compute (UD/FB/RL).")
+    p.add_argument("--limit", type=int, default=420,
+                   help="Cap on subsets to compute (default 420 = full).")
     args = p.parse_args(argv)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    cache = build_cache(axes=tuple(args.axes))
+    cache = build_cache(axes=tuple(args.axes), limit=args.limit)
     with args.out.open("wb") as f:
         pickle.dump(cache, f)
     sizes = [len(moves) for axis_map in cache.values() for moves in axis_map.values()]

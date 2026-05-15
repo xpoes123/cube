@@ -1019,10 +1019,18 @@ def solve(
         }
 
     def _snapshot() -> dict:
-        # Compute cost estimate with Sonnet 4.5 pricing (cached ~$0.30/M, non-cached $3/M in, $15/M out).
-        cached = cache_read_tokens
-        fresh_in = input_tokens - cached
-        cost_estimate = (cached * 0.30 + fresh_in * 3.0 + output_tokens * 15.0) / 1_000_000
+        # Anthropic reports usage as:
+        #   input_tokens     = uncached input tokens (fresh)
+        #   cache_read_input_tokens   = read from prompt cache (charged ~$0.30/M)
+        #   cache_creation_input_tokens = created cache (charged ~1.25x normal input)
+        # So total input volume = input + cache_read + cache_create.
+        # NOTE: these are NOT summed in input_tokens — they're independent counters.
+        cost_estimate = (
+            input_tokens * 3.0
+            + cache_read_tokens * 0.30
+            + cache_create_tokens * 3.75
+            + output_tokens * 15.0
+        ) / 1_000_000
         return {
             "scramble": scramble,
             "model": model,

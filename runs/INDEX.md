@@ -23,7 +23,17 @@ Every transcript in `runs/` with key stats. Auto-generated.
 | corpus_eval_v3_theory | scramble3 | ✗ | — | 50 | 386s | 405s | 262,260 | 4,553 | 0 | $0.855 | max_tool_calls | [json](corpus_eval_v3_theory/scramble3_20260515_030054.json) [md](corpus_eval_v3_theory/scramble3_20260515_030054.md) |
 | corpus_eval_v3_theory | scramble5 | ✗ | — | 50 | 235s | 130s | 386,480 | 4,890 | 0 | $1.233 | max_tool_calls | [json](corpus_eval_v3_theory/scramble5_20260515_030739.json) [md](corpus_eval_v3_theory/scramble5_20260515_030739.md) |
 | corpus_eval_v4_ship | scramble1 | ✗ | — | 50 | 344s | 98s | 268,623 | 4,305 | 0 | $0.870 | max_tool_calls | [json](corpus_eval_v4_ship/scramble1_20260515_031033.json) [md](corpus_eval_v4_ship/scramble1_20260515_031033.md) |
-| corpus_eval_v4_ship | scramble2 | ✗ | — | 4 | 29s | 11s | 11,528 | 509 | 0 | $0.042 |  | [json](corpus_eval_v4_ship/scramble2_20260515_031211.json) [md](—) |
+| corpus_eval_v4_ship | scramble2 | ✓ | 33 | 21 | 200s | 371s | 153,107 | 3,015 | 0 | $0.505 |  | [json](corpus_eval_v4_ship/scramble2_20260515_031211.json) [md](corpus_eval_v4_ship/scramble2_20260515_031211.md) |
+| corpus_eval_v4_ship | scramble3 | ✗ | — | 50 | 484s | 491s | 436,813 | 6,455 | 0 | $1.407 | max_tool_calls | [json](corpus_eval_v4_ship/scramble3_20260515_031822.json) [md](corpus_eval_v4_ship/scramble3_20260515_031822.md) |
+| corpus_eval_v4_ship | scramble5 | ✗ | — | 50 | 346s | 252s | 261,430 | 4,623 | 0 | $0.854 | max_tool_calls | [json](corpus_eval_v4_ship/scramble5_20260515_032633.json) [md](corpus_eval_v4_ship/scramble5_20260515_032633.md) |
+| corpus_eval_v5_algoEO | scramble1 | ✗ | — | 60 | 178s | 197s | 1,215,199 | 6,937 | 0 | $3.750 | max_tool_calls | [json](corpus_eval_v5_algoEO/scramble1_20260515_033052.json) [md](corpus_eval_v5_algoEO/scramble1_20260515_033052.md) |
+| corpus_eval_v5_algoEO | scramble2 | ✓ | 33 | 23 | 210s | 378s | 197,321 | 3,271 | 0 | $0.641 |  | [json](corpus_eval_v5_algoEO/scramble2_20260515_033409.json) [md](corpus_eval_v5_algoEO/scramble2_20260515_033409.md) |
+| corpus_eval_v5_algoEO | scramble3 | ✗ | — | 60 | 498s | 688s | 611,684 | 5,810 | 0 | $1.922 | max_tool_calls | [json](corpus_eval_v5_algoEO/scramble3_20260515_034027.json) [md](corpus_eval_v5_algoEO/scramble3_20260515_034027.md) |
+| corpus_eval_v5_algoEO | scramble5 | ✗ | — | 60 | 223s | 121s | 448,915 | 5,285 | 0 | $1.426 | max_tool_calls | [json](corpus_eval_v5_algoEO/scramble5_20260515_035155.json) [md](corpus_eval_v5_algoEO/scramble5_20260515_035155.md) |
+| corpus_eval_v6_full | scramble1 | ✗ | — | 60 | 167s | 108s | 379,953 | 5,535 | 0 | $1.223 | max_tool_calls | [json](corpus_eval_v6_full/scramble1_20260515_034350.json) [md](corpus_eval_v6_full/scramble1_20260515_034350.md) |
+| corpus_eval_v6_full | scramble2 | ✓ | 33 | 16 | 154s | 282s | 123,650 | 2,479 | 0 | $0.408 |  | [json](corpus_eval_v6_full/scramble2_20260515_034538.json) [md](corpus_eval_v6_full/scramble2_20260515_034538.md) |
+| corpus_eval_v6_full | scramble3 | ✗ | — | 60 | 212s | 277s | 461,026 | 5,878 | 0 | $1.471 | max_tool_calls | [json](corpus_eval_v6_full/scramble3_20260515_035020.json) [md](corpus_eval_v6_full/scramble3_20260515_035020.md) |
+| corpus_eval_v6_full | scramble5 | ✗ | — | 4 | 29s | 11s | 13,272 | 556 | 0 | $0.048 |  | [json](corpus_eval_v6_full/scramble5_20260515_035456.json) [md](—) |
 | runs | sim_20260514_235035 | ✗ | — | 60 | 418s | 179s | 565,556 | 5,716 | 0 | $1.782 | max_tool_calls | [json](runs/sim_20260514_235035.json) [md](—) |
 | runs | sim_20260514_235618 | ✗ | — | 60 | 374s | 211s | 590,754 | 5,376 | 0 | $1.853 | max_tool_calls | [json](runs/sim_20260514_235618.json) [md](—) |
 | runs | sim_20260514_235620 | ✗ | — | 60 | 414s | 242s | 585,324 | 5,334 | 0 | $1.836 | max_tool_calls | [json](runs/sim_20260514_235620.json) [md](—) |
@@ -32,5 +42,7 @@ Every transcript in `runs/` with key stats. Auto-generated.
 | runs | sim_20260515_013725 | ✓ | 34 | 16 | 176s | 410s | 72,571 | 2,503 | 0 | $0.255 |  | [json](runs/sim_20260515_013725.json) [md](—) |
 | runs | sim_20260515_014602 | ✓ | 33 | 28 | 269s | 454s | 178,294 | 3,702 | 0 | $0.590 |  | [json](runs/sim_20260515_014602.json) [md](—) |
 | runs | sim_20260515_021554 | ✓ | 33 | 16 | 154s | 280s | 79,788 | 2,473 | 0 | $0.276 |  | [json](runs/sim_20260515_021554.json) [md](—) |
+| runs | sim_20260515_034617 | ✗ | — | 40 | 129s | 66s | 212,454 | 3,642 | 0 | $0.692 | max_tool_calls | [json](runs/sim_20260515_034617.json) [md](—) |
+| runs | sim_20260515_035458 | ✗ | — | 1 | 5s | 5s | 374 | 204 | 0 | $0.004 |  | [json](runs/sim_20260515_035458.json) [md](—) |
 
-**Total transcripts**: 28
+**Total transcripts**: 40
