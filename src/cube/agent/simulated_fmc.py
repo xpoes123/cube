@@ -67,8 +67,8 @@ _COST_HTR_SUBSET = 2.0
 # a 9-move DR (vs the unconstrained 7-move). This is the realistic
 # operating point — wider tail recognizing more trigger states is more
 # human-like than wider beam.
-_SIM_LOOKAHEAD_WIDTH = 5
-_SIM_LOOKAHEAD_DEPTH = 4
+_SIM_LOOKAHEAD_WIDTH = 10
+_SIM_LOOKAHEAD_DEPTH = 5
 _SIM_DR_TRIGGER_SETUP_WIDTH = 32
 _SIM_DR_TRIGGER_SETUP_DEPTH = 8
 _SIM_DR_TRIGGER_TAIL = 3
@@ -282,6 +282,30 @@ def _build_handlers(
         budget.charge("find_dr_via_trigger", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
         return out
 
+    def _h_probe_dr(args):
+        """Run find_dr_via_trigger as if `eo_alg` were appended to history,
+        WITHOUT modifying the slot. Lets the agent compare DR feasibility
+        across candidate EOs before committing to one."""
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        hypothetical_hist = list(hist) + list(args["eo_alg"])
+        out = search.find_dr_via_trigger(
+            sc, hypothetical_hist,
+            axis=args["axis"],
+            tail_length=dr_trigger_tail,
+            setup_width=dr_trigger_setup_width,
+            setup_depth=dr_trigger_setup_depth,
+        )
+        out["probed_with_eo"] = list(args["eo_alg"])
+        budget.charge("probe_dr_after_eo", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
+        return out
+
+    def _h_cancel(args):
+        out = algebra.cancel(args["moves"])
+        # Charge a tiny bookkeeping cost; cancellation is mechanical so don't penalize it.
+        budget.charge("cancel", 1.0, n_before=len(args["moves"]))
+        return out
+
     def _h_htr_subset(args):
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -394,6 +418,8 @@ def _build_handlers(
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "find_dr_via_trigger": _h_find_dr_via_trigger,
+        "probe_dr_after_eo": _h_probe_dr,
+        "cancel": _h_cancel,
         "htr_subset": _h_htr_subset,
         "lookup_subset_finish": _h_lookup_subset_finish,
         "verify_solved": _h_verify_solved,
@@ -466,8 +492,30 @@ def _tool_schemas() -> list[dict]:
         },
         {
             "name": "find_dr_via_trigger",
-            "description": f"Trigger-then-tail DR search (setup_width={_SIM_DR_TRIGGER_SETUP_WIDTH}, setup_depth={_SIM_DR_TRIGGER_SETUP_DEPTH}). EO on `axis` must already be solved.",
+            "description": f"Trigger-then-tail DR search (setup_width={_SIM_DR_TRIGGER_SETUP_WIDTH}, setup_depth={_SIM_DR_TRIGGER_SETUP_DEPTH}). EO on `axis` must already be solved in the slot.",
             "input_schema": {"type": "object", "properties": {"slot": _SLOT, "axis": {"type": "string", "enum": ["UD", "FB", "RL"]}}, "required": ["slot", "axis"]},
+        },
+        {
+            "name": "cancel",
+            "description": "Apply local move cancellation (same-face merge, through-axis-commute). Mechanical, cheap. Use just before submitting to collapse the final solution.",
+            "input_schema": {"type": "object", "properties": {"moves": _MOVE_LIST}, "required": ["moves"]},
+        },
+        {
+            "name": "probe_dr_after_eo",
+            "description": (
+                "Run find_dr_via_trigger AS IF the given eo_alg were appended to the slot's history, "
+                "WITHOUT actually modifying the slot. Use this to compare DR feasibility across "
+                "candidate EOs before committing. Same simulated cost as find_dr_via_trigger."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "eo_alg": {**_MOVE_LIST, "description": "Hypothetical EO moves to test."},
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "eo_alg", "axis"],
+            },
         },
         {
             "name": "htr_subset",
@@ -524,17 +572,42 @@ JSON form (always pass this to verify_solved, never retype the scramble):
   scramble = {scramble_json}
 
 # Pipeline (the realistic version)
-1. EO: lookahead(slot='main', target='eo', axis=X) — pick the shortest hit,
-   apply_moves it to commit.
-2. DR: find_dr_via_trigger(slot='main', axis=X). Apply the winning option.
-   If no DR is found, try NISS or a different EO axis.
-3. HTR subset: call htr_subset(slot='main') after DR — note the canonical
-   form, then lookup_subset_finish(slot='main', axis=X). Apply the finish.
-4. verify_solved(solution=full_history_in_solve_order).
+1. **EO scan** — call lookahead(target='eo', axis=X) for ALL THREE axes
+   (UD, FB, RL). You're enumerating candidate openings, not committing
+   yet. Costs ~24s simulated total but is essential.
+2. **DR probe BEFORE committing to EO** — this is the most important
+   strategy rule. For each axis that found a short EO, call
+   probe_dr_after_eo(slot='main', eo_alg=[that EO's moves], axis=X).
+   This tells you "if I commit this EO, can I find DR?" without
+   actually committing. Pick the EO whose probe returns the shortest
+   total = len(eo_alg) + best DR length. The shortest EO alone is NOT
+   the best — a 4-move EO that probes to a 7-move DR (= 11 total) beats
+   a 2-move EO that probes to no DR (force NISS / fail).
+3. **Commit EO**: apply_moves with the chosen axis's EO sequence.
+4. **DR**: find_dr_via_trigger(axis=X) — apply the winning option (the
+   probe already proved it works). If somehow no DR is found at this
+   step, try NISS or reset_slot and try a different EO axis. Do NOT
+   manually build DR setup chains by guessing — that burns 10+ tool
+   calls. Reset and try the next axis instead.
+5. **HTR**: call htr_subset to identify the canonical subset, then
+   lookup_subset_finish(axis=X) for the rehearsed finish. Apply it.
+6. verify_solved(solution=full_history_in_solve_order).
 
 # Strategy notes
+- **Test before commit**: a 4-move EO probed with find_dr_via_trigger is
+  cheaper than a 2-move EO followed by 30 tool calls of manual DR
+  exploration that goes nowhere. Always test ALL viable EO axes' DR
+  options first.
+- **apply_moves has NO upper cap** — you can apply as many moves as you
+  want. Only undo_moves is capped at {undo_limit} per call. If you commit
+  10 moves you can't undo all 10; use reset_slot if you need to.
+- **try_alg is your cheap probe** (2s sim). Use it constantly to look
+  at after-states without committing. It does NOT modify the slot.
 - Slots are precious. Don't proliferate. Default: do everything in 'main'.
 - NISS is cheap (~{cost_niss}s) and powerful — use it when stuck.
+- **Before submitting**: call cancel(moves=your_full_solution) to collapse
+  any adjacent same-face moves (e.g. `U U2` → `U'`). It's cheap and often
+  saves 1-3 moves.
 - Submit by calling verify_solved AND outputting on its own line:
     FINAL_SOLUTION: ["R", "U'", ...]
 - The inverse-of-scramble is the trivial floor and does NOT count.
