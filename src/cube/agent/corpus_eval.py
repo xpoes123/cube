@@ -21,7 +21,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from cube.agent import build_index, render_narrative, simulated_fmc
+from cube.agent import build_index, render_narrative, scramble_gen, simulated_fmc
 
 # 4 hand-picked scrambles from benchmarks/test_scrambles.md.
 DEFAULT_CORPUS = [
@@ -38,6 +38,15 @@ ANALYZER_BASELINE = {
     "scramble3": 31,
     "scramble5": 33,
 }
+
+
+def build_corpus(extra: int = 0, seed: int = 100) -> list[tuple[str, str]]:
+    """Default 4 + optional N freshly-generated WCA-style scrambles."""
+    out = list(DEFAULT_CORPUS)
+    for i in range(extra):
+        gen = scramble_gen.make_scramble(seed=seed + i)
+        out.append((f"random{i+1}", " ".join(gen)))
+    return out
 
 
 def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
@@ -143,6 +152,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--wall-limit-s", type=float, default=900.0)
     parser.add_argument("--max-tool-calls", type=int, default=50)
     parser.add_argument("--out-dir", type=Path, default=Path("runs/corpus_eval"))
+    parser.add_argument("--extra-random", type=int, default=0,
+                        help="Append N freshly-generated WCA-style scrambles to the default 4.")
+    parser.add_argument("--random-seed", type=int, default=100,
+                        help="Base seed for generated scrambles (each uses seed+i).")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -150,8 +163,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    corpus = build_corpus(extra=args.extra_random, seed=args.random_seed)
     summaries: list[dict] = []
-    for scramble_id, scramble in DEFAULT_CORPUS:
+    for scramble_id, scramble in corpus:
         try:
             summaries.append(run_one(
                 scramble_id, scramble,
