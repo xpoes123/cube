@@ -3,21 +3,36 @@
 Sonnet 4.5 on the same scramble. Two runs, one model, one toolset —
 just different budgets.
 
-| | Unconstrained `loop.py` | Simulated `simulated_fmc.py` |
+| | Unconstrained `loop.py` | Simulated `simulated_fmc.py` (v6) |
 |---|---:|---:|
-| **Result** | 25 moves | **38 moves** |
-| Tool calls | 14 | 42 |
+| **Result** | 25 moves | **33 moves** |
+| Tool calls | 14 | 28 |
 | Real wall | 5 min | 8 min |
-| Sim budget spent | n/a | 339 / 3600s |
-| API cost | $0.23 | ~$1.50 |
-| EO | 4 moves (UD axis) | 2 moves (FB axis) |
-| DR setup | 7 moves | 14 moves |
-| HTR finish | 15 moves (A* + 663,552-PDB) | 22 moves (cached lookup from non-canonical state) |
+| Sim budget spent | n/a | 269 / 3600s |
+| API cost | $0.23 | ~$0.50 |
+| EO | 4 moves (UD axis) | 4 moves (UD axis, after probing both) |
+| DR setup | 7 moves | 9 moves |
+| HTR finish | 15 moves (A* + 663,552-PDB) | 21 moves (cached lookup) |
 | DR-trigger budget | sw=512 sd=8 **tl=2** | sw=32 sd=8 **tl=3** |
+| Lookahead budget | w=20 d=5 | w=10 d=5 |
 
-**The wedge: 13 extra moves and 6.5× the cost** is what the LLM gives
-up when we take away the parts of the tool surface that humans don't
-have.
+**The wedge: 8 extra moves and 2× the cost** is what the LLM gives up
+when we take away the parts of the tool surface that humans don't have.
+
+**Iteration history** (same scramble, same model):
+- v0 (sw=20, tl=2, w=5, no probe): failed at 0 moves
+- v3 first solve (sw=32, tl=3, w=5, no probe): 38 moves, $1.50
+- v5 (added probe_dr_after_eo, lookahead w=10): 34 moves
+- **v6 (added cancel)**: 33 moves, $0.50
+
+The improvements weren't about reducing constraints — they were about
+giving the LLM the tools and the cue to USE the right strategy. The
+single biggest move was `probe_dr_after_eo`, which lets the agent
+test "would committing this EO lead to DR?" without actually
+committing. The unconstrained agent didn't need this because
+find_dr_via_trigger's fast-fail at width=512 acted as the implicit
+probe; at sim widths the fast-fail signal is noisier, so an explicit
+hypothesis-test tool helps.
 
 ## The simulated solution
 

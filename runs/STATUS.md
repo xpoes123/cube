@@ -79,22 +79,26 @@ exploration). The clean solve is dirt cheap; failures are expensive.
   subset finish
 - `runs/*.json` — raw transcripts (gitignored)
 
-## Sim mode results so far
+## Sim mode results so far (scramble 2)
 
-| Run | Width | Tail | Result | Moves | Cost |
-|---|---|---|---|---|---|
-| 1 (initial) | 20 | 2 | timeout, 0 moves | — | ~$1.80 |
-| 2 (sweep) | 64 | 2 | timeout, 0 moves | — | ~$1.50 |
-| 3 (sweep) | 256 | 2 | timeout, 0 moves | — | ~$1.50 |
-| **4** | **32** | **3** | **✓ solved** | **38** | **~$1.50** |
+| Run | Lookahead w | DR sw/tl | Probe | Cancel | Result | Moves | Cost |
+|---|---|---|---|---|---|---|---|
+| v0 initial | 5 | 20 / 2 | no | no | timeout | 0 | $1.80 |
+| v1 sweep | 5 | 64 / 2 | no | no | timeout | 0 | $1.50 |
+| v2 sweep | 5 | 256 / 2 | no | no | timeout | 0 | $1.50 |
+| v3 1st solve | 5 | 32 / 3 | no | no | ✓ | 38 | $1.50 |
+| v5 probe+w=10 | 10 | 32 / 3 | yes | no | ✓ | 34 | $0.30 |
+| **v6 +cancel** | 10 | 32 / 3 | yes | yes | ✓ | **33** | $0.50 |
+| Unconstrained | 20 | 512 / 2 | (n/a) | yes | ✓ | 25 | $0.23 |
 
-The realistic-FMC mode works at sim defaults sw=32 sd=8 tail=3. Same
-scramble the unconstrained mode solves in 25 moves; sim mode solves in
-38 moves, 8 min wall, $1.50 cost. See `runs/sim_scramble2_solved.md`
-for the side-by-side breakdown.
+The realistic-FMC mode now solves scramble 2 reliably in ~33 moves
+under honest budgets. The 8-move gap to the unconstrained baseline is
+*entirely* policy-quality: sim finds a 9-move DR where unconstrained
+finds 7, which cascades to a 6-move-worse HTR finish.
 
-Key empirical finding: at default `tail_length=2`, the DR-trigger
-search now needs `setup_width=1024` to find scramble 2's DR — the
-recorded unconstrained 25-move transcript was probably solved under
-an older `tail_length=3` default. Sim mode commits to tail=3 as the
-honest budget.
+The biggest single fix was `probe_dr_after_eo`, a hypothesis-test
+tool that lets the agent ask "if I commit this EO, can DR be found?"
+without paying for the commitment. The unconstrained agent didn't
+need it because at w=512 the trigger search's fast-fail was an
+implicit probe; at sim w=32 the signal is noisier and the explicit
+probe is needed.
