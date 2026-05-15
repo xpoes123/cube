@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, library, policy, search, state
+from cube.tools import algebra, eo_bfs, library, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -339,6 +339,34 @@ def _build_handlers(
         budget.charge("lookahead", _COST_LOOKAHEAD, slot=slot.name, target=args["target"])
         return out
 
+    def _h_find_eo_algorithmic(args):
+        """Plain BFS for short EO sequences on `axis`. No policy ranking.
+        Mirrors a human methodically trying setups when intuition fails.
+        Expensive in sim time (60s) — only use when normal lookahead returns
+        found=0 across all axes."""
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = eo_bfs.find_eo_bfs(sc, hist, axis=args["axis"], max_depth=args.get("max_depth", 6))
+        budget.charge("find_eo_algorithmic", 60.0, slot=slot.name, axis=args["axis"])
+        return out
+
+    def _h_lookahead_wide(args):
+        """Wider, slower look-ahead. Costs ~4x normal lookahead in sim time.
+
+        Mirrors a human really studying the cube when their intuition is
+        coming up empty. width=30 depth=6 still well below brute force
+        but wider than first-pass visualization.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = search.lookahead(
+            sc, hist,
+            target=args["target"], axis=args.get("axis"),
+            width=30, depth=6,
+        )
+        budget.charge("lookahead_wide", _COST_LOOKAHEAD * 4, slot=slot.name, target=args["target"])
+        return out
+
     def _truncate_dr_options(out: dict) -> dict:
         # Human eye sees a handful of triggers, not 5+. Top-3 by length+log_prob.
         if isinstance(out.get("options"), list) and len(out["options"]) > _SIM_DR_TRIGGER_MAX_OPTIONS:
@@ -502,6 +530,8 @@ def _build_handlers(
         "policy_intuition": _h_policy_intuition,
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
+        "lookahead_wide": _h_lookahead_wide,
+        "find_eo_algorithmic": _h_find_eo_algorithmic,
         "find_dr_via_trigger": _h_find_dr_via_trigger,
         "probe_dr_after_eo": _h_probe_dr,
         "cancel": _h_cancel,
@@ -568,6 +598,43 @@ def _tool_schemas() -> list[dict]:
                 f"Bounded look-ahead from a slot (width={_SIM_LOOKAHEAD_WIDTH}, depth={_SIM_LOOKAHEAD_DEPTH}) — about what a human "
                 f"can visualize. ONLY for target=eo or target=solved. For DR use find_dr_via_trigger; "
                 f"for HTR/finish use htr_subset then lookup_subset_finish."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "target": {"type": "string", "enum": ["eo", "solved"]},
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "target"],
+            },
+        },
+        {
+            "name": "find_eo_algorithmic",
+            "description": (
+                "Plain BFS for short EO sequences on `axis`. No policy ranking. "
+                "Mirrors a human methodically trying setups when intuition fails. "
+                "Expensive simulated cost (60s — 'I'm really thinking now'). "
+                "Use when normal lookahead returns found=0 across all axes. "
+                "Returns up to 5 shortest sequences."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                    "max_depth": {"type": "integer", "minimum": 1, "maximum": 7, "default": 6},
+                },
+                "required": ["slot", "axis"],
+            },
+        },
+        {
+            "name": "lookahead_wide",
+            "description": (
+                "Wider, slower lookahead (width=30 depth=6) at 4x normal "
+                "sim cost. Use when normal lookahead returns found=0 across "
+                "all axes — mirrors a human really studying the cube when "
+                "intuition is coming up empty."
             ),
             "input_schema": {
                 "type": "object",
@@ -789,6 +856,10 @@ JSON form (always pass this to verify_solved, never retype the scramble):
 1. **EO scan** — call lookahead(target='eo', axis=X) for ALL THREE axes
    (UD, FB, RL). You're enumerating candidate openings, not committing
    yet. Costs ~24s simulated total but is essential.
+   **If ALL THREE axes return found=0**: the policy's intuition is empty
+   here. Fall back to find_eo_algorithmic(axis=X) which does a plain
+   BFS (no policy) — slow but guaranteed to find any sub-6 EO. 60s
+   simulated cost; use sparingly. Try the lowest bad-edge axis first.
 2. **DR probe BEFORE committing to EO** — this is the most important
    strategy rule. For each axis that found a short EO, call
    probe_dr_after_eo(slot='main', eo_alg=[that EO's moves], axis=X).
