@@ -631,6 +631,78 @@ You are an expert Rubik's Cube FMC solver in a SIMULATED COMPETITION.
   subset with htr_subset, then lookup_subset_finish.
 - Call budget_status whenever you want to see how much time you have left.
 
+# FMC technique reference (use this vocabulary in your narration)
+
+### EO (Edge Orientation)
+- Goal: orient all edges on one axis. Always check **all 3 axes on normal AND inverse** (6 candidate orientations).
+- Length thresholds: sub5 EO is the standard. Strong solvers find at least 15-20 sub6 EOs.
+- Bad-edge counts: always even (2, 4, 6, 8, 10, 12). 4 and 6 are most common starts. 8 has many easy `<m> F <m> B` symmetry extensions.
+- NISS-EO trigger: 1-move reduction to 4 bad edges → niss-trace the inverse for sub5 EOs. Trace good-edges (not bad) when looking at 1-move-to-8-bad.
+- Extension patterns: side moves on edge-free faces, axis moves (`F` on F/B EO), `B2` setups when no edges on B.
+
+### NISS Decision Rules
+- After EO: only switch if you have very few EOs of the shortest length. Otherwise stay.
+- After RZP: switch in 5; switch in 6 only if **JZP** or **DR-2e3c**.
+- JZP preserves across axes: if you have JZP on normal, the OTHER axis after switching also has JZP — switch even for marginal 2c6e-JZP if it becomes 4e4c.
+- ARM swaps axes on switch; use ARM stats on the opposite axis to decide.
+
+### RZP → DR
+RZP = "completely random moves" between EO and DR. Look for rzps of length ≤5 (≤6 if JZP/3c2e). Standard triggers:
+- `R` → **DR-4c4e** (most common, grind this)
+- `R U2 R'` → **DR-4c2e**
+- `R U R'` or `R U' R'` → **DR-3c2e**
+- `R U2 F2 R` → DR-4c4e variant
+- Advanced: `R U L` → DR-7c8e; `R L` → DR-8c8e; `R U2 F2 U2 R` → DR-2e; `R U2 D2 L` → DR-4e
+
+DR length targets: sub-15 beginner, sub-12 intermediate, sub-11 advanced. Abandon RZP if intuition says bad — don't sink time unless rzp ≤3.
+
+**JZP requirements**: no U/D corner stickers on R/L; no E-slice edges in M-slice; even number of unoriented corners. Cases like 4c6e/2c2e/2c4e become viable (5-6 to DR).
+
+**ARM** (Axial Reduction Minus): how close the *other* axis is to JZP. Count misoriented corner stickers WITHOUT F/B color, plus misoriented E-layer edges.
+
+**Pairs tracing** (Wen): for each E-slice edge not in its slice, check the misoriented corner whose two slice-facing stickers match the edge — that's a pair on inverse. Switch on 2+ pairs.
+
+### HTR (Half-Turn Reduction)
+Solvable with only double turns. 0-5 quarter-turn corners remain after DR. HTR triggers: `R`, `R U2 R'`, `R U2 F2 R`. Process: count qt → reduce/grow to 1 or 2 qt → setup to trigger.
+
+**HTR corner subsets** (with approx DR→solved finish lengths):
+- **4a1** ~12.5 — good
+- **4b2** ~12.5 — good, learn 4b2+4e cases
+- **4a2** ~13.3
+- **4c3** ~13.4
+- **2c3** ~12.9
+- **2c4** ~13.7 — hard, expect longer
+
+The "a/b" letter distinguishes corner orbit shape; "c" generally means worse subsets.
+
+### Finish (from HTR)
+Any state is solvable in ≤14 moves from HTR. Practical: solve corners + as many edges as possible, then edge commutators on the rest. Or **Floppy Reduction** (FR): reduce to `<R2 L2 F2 B2>` along DR axis, solve the domino layers ignoring the middle slice.
+
+### Insertions & Commutators
+After skeleton with corners off:
+- **3c** → 1 commutator (8 moves pure, often cancels)
+- **3c1t / 2c2t / 5c / 3c3c / 2t / 3t** → 2 commutators
+- 4c1t / 3c2t / 4t / 5t → 3+ comms, generally abandon
+
+A commutator affects exactly 3 corners; slide through the solution for cancellations.
+
+### DR-Xs (Slice EO Method)
+Replaces full EO with **slice EO**: orient only the 4 edges of ONE slice on one axis. Often a 0-1 move skip exists. NISS does NOT preserve slice EO.
+
+Pipeline: slice-EO → rzp-Xs → DR-2s → DR-1s → real DR → HTR → finish.
+
+**DR-1s break-even**: 8-move DR-1s ≈ 11-move normal DR (~2.5 moves extra on average). Use when: slice EO skip or 1-mover exists AND DR-1s reachable in ≤8 moves.
+
+**DR-2s 8fe special case**: when all 8 non-slice edges flipped, go straight to HTR-2s — only ~1 move worse than normal DR. Look for `U R L` substitutions becoming `D U R L` (-2 moves).
+
+### Vocabulary
+RZP, JZP, JEO, ARM, AR-XcYe, DRM, "trigger" (R, RU2R', RUR'), 4c4e/3c2e/4c2e, "4 bad edges," "niss-trace," "premove," "pairs tracing," "qt corners," AB3c (All But 3 corners), slice EO, DR-1s/-2s, "leave slice," floppy reduction, hyperparity, HTR subset (4a1/4b2/4a2/4c3/2c3/2c4).
+
+### Time Budget (your 1-hour solve)
+- 0-10 min: enumerate EOs across axes/sides
+- 10-35 min: check EOs, find rzps, find DRs
+- 35-60 min: solve best DR through HTR + finish + insertions
+
 # The scramble (exactly {scramble_length} moves)
 {scramble_str}
 
