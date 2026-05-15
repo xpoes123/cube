@@ -995,10 +995,18 @@ def solve(
                 print(f"[sim] budget exhausted: {why}")
             break
 
+        # Prompt caching: the system prompt is ~3k tokens of static FMC
+        # theory + rules and doesn't change turn-to-turn. Marking it as
+        # ephemeral-cacheable means turn 2+ reads it at ~10% of normal cost
+        # (Anthropic's 5-min TTL prompt cache).
         api_kwargs: dict[str, Any] = dict(
             model=model,
             max_tokens=max(4096, thinking_budget + 2048),
-            system=system_prompt,
+            system=[{
+                "type": "text",
+                "text": system_prompt,
+                "cache_control": {"type": "ephemeral"},
+            }],
             tools=tool_schemas,
             messages=messages,
         )
