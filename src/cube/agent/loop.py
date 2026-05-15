@@ -524,6 +524,7 @@ def solve(
     model: str = DEFAULT_MODEL,
     max_tool_calls: int = 50,
     verbose: bool = False,
+    thinking_budget: int = 3000,
 ) -> dict:
     """Run the Anthropic agent loop on a scramble; return solution + stats.
 
@@ -556,22 +557,37 @@ def solve(
         print(f"[agent] model: {model}")
 
     while tool_calls < max_tool_calls:
-        resp = client.messages.create(
+        api_kwargs: dict[str, Any] = dict(
             model=model,
-            max_tokens=4096,
+            max_tokens=max(4096, thinking_budget + 2048),
             system=system_prompt,
             tools=_tool_schemas(),
             messages=messages,
         )
+        if thinking_budget > 0:
+            api_kwargs["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": thinking_budget,
+            }
+        resp = client.messages.create(**api_kwargs)
         input_tokens += resp.usage.input_tokens
         output_tokens += resp.usage.output_tokens
 
         # Record assistant content for transcript and conversation continuation.
+        # Extended thinking returns `thinking` blocks alongside `text` and
+        # `tool_use`; they MUST be passed back to the API in subsequent turns
+        # to preserve reasoning state.
         assistant_content = [b.model_dump() for b in resp.content]
         transcript.append({"type": "assistant", "content": assistant_content, "stop_reason": resp.stop_reason})
         messages.append({"role": "assistant", "content": assistant_content})
 
         if verbose:
+            for b in resp.content:
+                btype = getattr(b, "type", None)
+                if btype == "thinking":
+                    thinking_text = getattr(b, "thinking", "") or ""
+                    if thinking_text:
+                        print(f"\n[thinking]\n{thinking_text}")
             text_out = _format_text_blocks(resp.content)
             if text_out:
                 print(f"\n[claude]\n{text_out}")
@@ -673,6 +689,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Anthropic model name.")
     parser.add_argument("--max-tool-calls", type=int, default=50)
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--thinking-budget", type=int, default=3000,
+        help="Extended-thinking token budget per turn (0 to disable). "
+             "Surfaces the model's reasoning before each tool call.",
+    )
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -686,6 +707,7 @@ def main(argv: list[str] | None = None) -> int:
         model=args.model,
         max_tool_calls=args.max_tool_calls,
         verbose=args.verbose,
+        thinking_budget=args.thinking_budget,
     )
     elapsed = time.time() - t0
 
