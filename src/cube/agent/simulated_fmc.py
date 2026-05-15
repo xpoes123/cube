@@ -633,12 +633,65 @@ You are an expert Rubik's Cube FMC solver in a SIMULATED COMPETITION.
 
 # FMC technique reference (use this vocabulary in your narration)
 
-### EO (Edge Orientation)
-- Goal: orient all edges on one axis. Always check **all 3 axes on normal AND inverse** (6 candidate orientations).
-- Length thresholds: sub5 EO is the standard. Strong solvers find at least 15-20 sub6 EOs.
-- Bad-edge counts: always even (2, 4, 6, 8, 10, 12). 4 and 6 are most common starts. 8 has many easy `<m> F <m> B` symmetry extensions.
-- NISS-EO trigger: 1-move reduction to 4 bad edges → niss-trace the inverse for sub5 EOs. Trace good-edges (not bad) when looking at 1-move-to-8-bad.
-- Extension patterns: side moves on edge-free faces, axis moves (`F` on F/B EO), `B2` setups when no edges on B.
+### EO (Edge Orientation) — ALGORITHMIC, not search
+EO is fundamentally algorithmic. Each bad-edge configuration has known
+fix patterns; lookahead/policy are CONFIRMATION tools, not the primary
+finder. Workflow on the cube:
+
+1. Read `bad_edges_per_axis` AND `bad_edge_slots_per_axis` from inspect_state.
+2. The flipping moves per axis are:
+   - **UD-axis EO**: F, F', B, B' (quarter turns of F/B flip UD-EO)
+   - **FB-axis EO**: L, L', R, R' (quarter turns of L/R flip FB-EO)
+   - **RL-axis EO**: U, U', D, D' (quarter turns of U/D flip RL-EO)
+   Half turns and axis-moves preserve EO.
+3. A flip move toggles the 4 edges on its face. So a single flip move
+   changes bad-edge-count by ±4 or ±2 or 0 depending on how many of that
+   face's edges were already bad.
+
+**By bad-edge count (on chosen axis)**:
+- **0**: solved on this axis. Done.
+- **2**: ONE-MOVE solutions exist when the two bad edges sit on
+  perpendicular faces that share one flipping face. E.g., on UD-axis,
+  if the 2 bad edges are both on the F face (after-state) → F fixes
+  both. Bad edges on opposite sides of the same flipping axis → 2 moves
+  needed. Look at `bad_edge_slots_per_axis` and try the flipping move
+  that touches both slot names.
+- **4**: typically 1-3 moves. Strong cases:
+  - All 4 on one flipping face → 1 move (F or B on UD-axis).
+  - 2 on F, 2 on B → 2 moves (F + B or similar).
+  - Scattered → 3-4 moves using a setup. Common: `U B U'` shape that
+    rotates 2 edges onto F before the F flip.
+- **6**: usually 2-4 moves. The `<setup> F <setup'> B` symmetry pattern
+  works when the configuration is roughly symmetric on the flipping axis.
+- **8**: 3-5 moves. Classic `<m> F <m'> B` symmetry — find a 1-2 move
+  setup `<m>` that puts 4 bad edges on F, then `F <m'> B` flips both
+  4-groups. NISS-trace the inverse: 1-move-to-8-bad often gives sub5 EO.
+- **10**: rare. Usually NISS to inverse helps.
+- **12**: all-bad. Two flips on opposite faces don't cancel cleanly;
+  typically NISS.
+
+**Procedure** (per axis):
+1. Note the bad-edge count and slot names from inspect_state.
+2. Identify which flipping moves touch which bad edges (e.g., F touches
+   slots UF, FR, DF, FL). A single flip "fixes" any of those that were
+   bad and "breaks" any that were good.
+3. If a one-move fix exists, you'll see it directly: a single flipping
+   move where ALL the moves' affected slots were currently bad.
+4. Otherwise enumerate 2-3 move setups manually using try_alg. The
+   transformer's policy_intuition gives top-k starting moves; combine
+   with the algorithmic count to pick which try_alg to test.
+5. Once you have a candidate sequence, lookahead/probe_dr_after_eo
+   confirms it (or finds a 1-move-shorter alternative).
+
+**Axis selection rule of thumb**:
+- Smallest bad-edge count is usually shortest EO BUT not always.
+- A scrambled state with 2 bad edges on UD that DON'T share a flipping
+  face needs ~3-4 moves. A state with 4 bad edges on FB all clustered
+  may need only 1 move. **Check the slot pattern, not just the count.**
+
+NISS-EO trigger: 1-move reduction to 4 bad edges → niss-trace the
+inverse for sub5 EOs. Trace good-edges (not bad) when looking at
+1-move-to-8-bad.
 
 ### NISS Decision Rules
 - After EO: only switch if you have very few EOs of the shortest length. Otherwise stay.

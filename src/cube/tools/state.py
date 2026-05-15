@@ -27,6 +27,22 @@ def _state_after(scramble: list[str], history: list[str]) -> State:
     return s
 
 
+from cube.engine.state import EDGE_NAMES
+
+
+def _bad_edge_slots(state, axis: Axis) -> list[str]:
+    """Slot names of edges that are mis-oriented on the given axis."""
+    if axis == Axis.UD:
+        arr = state.eo
+    elif axis == Axis.FB:
+        arr = state.eo_fb
+    elif axis == Axis.RL:
+        arr = state.eo_rl
+    else:
+        return []
+    return [EDGE_NAMES[i] for i, v in enumerate(arr) if v]
+
+
 def inspect_state(scramble: list[str], history: list[str]) -> dict:
     """Classify the current cube state. The agent's primary 'look at the cube' tool.
 
@@ -47,6 +63,7 @@ def inspect_state(scramble: list[str], history: list[str]) -> dict:
     dr_axes = [a for a in Axis if is_dr(s, a)]
     return {
         "bad_edges_per_axis": {a.value: eo_count(s, a) for a in Axis},
+        "bad_edge_slots_per_axis": {a.value: _bad_edge_slots(s, a) for a in Axis},
         "bad_corners_per_axis": {a.value: co_count(s, a) for a in Axis},
         "eo_solved_axes": [a.value for a in eo_axes],
         "dr_solved_axes": [a.value for a in dr_axes],
