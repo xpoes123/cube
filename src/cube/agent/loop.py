@@ -466,6 +466,13 @@ Then output the final solution as a JSON array on its own line in this format:
 The runner parses that line and re-verifies. If verification fails, you'll \
 be told why and can keep working.
 
+# Reasoning style
+Before each tool call, briefly say WHY in 1-2 sentences: what hypothesis \
+you're testing, what the previous result told you, why you picked this \
+axis or this stage. Don't just dump tool calls — narrate the decision \
+process. This is being recorded for analysis; the reasoning is as \
+important as the result.
+
 Be concise in your reasoning. Use tools liberally. Don't get stuck explaining \
 yourself when you could be testing moves.
 """
@@ -525,6 +532,7 @@ def solve(
     max_tool_calls: int = 50,
     verbose: bool = False,
     thinking_budget: int = 3000,
+    transcript_path: Path | None = None,
 ) -> dict:
     """Run the Anthropic agent loop on a scramble; return solution + stats.
 
@@ -551,6 +559,27 @@ def solve(
     output_tokens = 0
     final_solution: list[str] = []
     solves = False
+
+    def _snapshot() -> dict:
+        return {
+            "scramble": scramble,
+            "final_solution": final_solution,
+            "solves": solves,
+            "total_moves": len(final_solution),
+            "tool_calls": tool_calls,
+            "transcript": transcript,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }
+
+    def _checkpoint() -> None:
+        if transcript_path is None:
+            return
+        try:
+            with transcript_path.open("w") as f:
+                json.dump(_snapshot(), f, indent=2, default=str)
+        except OSError:
+            pass
 
     if verbose:
         print(f"[agent] scramble: {' '.join(scramble)}")
@@ -617,6 +646,7 @@ def solve(
                 if tool_calls >= max_tool_calls:
                     break
             messages.append({"role": "user", "content": tool_results})
+            _checkpoint()
             continue
 
         # No tool calls — look for a final solution in the text output.
@@ -673,11 +703,12 @@ def solve(
 # ---------------------------------------------------------------------------
 
 
-def _save_transcript(result: dict) -> Path:
-    runs = Path("runs")
-    runs.mkdir(exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = runs / f"agent_{ts}.json"
+def _save_transcript(result: dict, path: Path | None = None) -> Path:
+    if path is None:
+        runs = Path("runs")
+        runs.mkdir(exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        path = runs / f"agent_{ts}.json"
     with path.open("w") as f:
         json.dump(result, f, indent=2, default=str)
     return path
@@ -701,6 +732,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     scramble = args.scramble.split()
+    runs = Path("runs")
+    runs.mkdir(exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    transcript_path = runs / f"agent_{ts}.json"
+
     t0 = time.time()
     result = solve(
         scramble,
@@ -708,10 +744,12 @@ def main(argv: list[str] | None = None) -> int:
         max_tool_calls=args.max_tool_calls,
         verbose=args.verbose,
         thinking_budget=args.thinking_budget,
+        transcript_path=transcript_path,
     )
     elapsed = time.time() - t0
 
-    path = _save_transcript(result)
+    # Final save (overwrites the incremental checkpoint).
+    path = _save_transcript(result, transcript_path)
     print(f"\n=== run complete ({elapsed:.1f}s) ===")
     print(f"  solves:        {result['solves']}")
     print(f"  total_moves:   {result['total_moves']}")
