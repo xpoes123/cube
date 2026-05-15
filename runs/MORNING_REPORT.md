@@ -1,8 +1,16 @@
-# Overnight progress (2026-05-15)
+# Overnight progress (2026-05-15) — FINAL
 
-Worked while you slept. Tracker for what landed and what's still going.
+Worked while you slept. v7 finished cleanly.
 
-## Headline
+## Headline: 5/10 SOLVED 🎉
+
+**v7 (the headline experiment) finished at 5/10 solved.** Up from v6's
+1/10. The combination of BFS escape hatch + prompt caching turned the
+project from "demo on scramble 2 only" to "solves half of random WCA
+scrambles." See [FINAL_RESULTS.md](FINAL_RESULTS.md) for the full
+writeup.
+
+## Headline (old)
 
 - **Mirror-aug retrain shipped**: val top1 0.261 → **0.285** (+9.3%),
   test top5 0.635 → **0.668** (+5.2%). Old checkpoint backed up to
