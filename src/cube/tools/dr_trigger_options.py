@@ -57,6 +57,28 @@ _FAMILY_RANK = {
     "DR-7C8E": 3, "DR-2C4E": 4, "DR-8C8E": 5,
 }
 
+# Empirical HTR-finish length by DR-substate, from the 333.fm corpus
+# research (runs/333fm_research_2026-05-16.md). The key insight: a short
+# DR landing in 4C4E is far worse than a longer DR landing in 3C2E, because
+# the HTR-finish length differs by 4 moves on average. Used by the
+# total-to-solved estimator in rank_key.
+#
+# Mapping (our trigger naming -> 333.fm tier):
+#   DR-3C2E = "2c3"     -> ~5 HTR moves (elite-tier substate)
+#   DR-4C2E = "4b2"     -> ~6 HTR moves (elite-tier substate)
+#   DR-2C4E = "2c4"     -> ~6 HTR moves
+#   DR-7C8E = mixed     -> ~7 HTR moves (uncommon)
+#   DR-4C4E = "4c4e"    -> ~9 HTR moves (the "settled-for-worst" trigger)
+#   DR-8C8E = degenerate -> ~10 HTR moves
+_FAMILY_EXPECTED_HTR = {
+    "DR-3C2E": 5,
+    "DR-4C2E": 6,
+    "DR-2C4E": 6,
+    "DR-7C8E": 7,
+    "DR-4C4E": 9,
+    "DR-8C8E": 10,
+}
+
 
 def _family_of(label: str) -> str:
     return label.split(" ", 1)[0]
@@ -128,13 +150,18 @@ def dr_trigger_options(
                 pre_state = state.apply_alg(list(path)) if path else state
                 pre_c = co_count(pre_state, ax)
                 pre_e = slice_misplaced_count(pre_state, ax)
+                family = _family_of(label)
+                expected_htr = _FAMILY_EXPECTED_HTR.get(family, 8)
+                total_to_dr = plen + len(moves)
                 best[label] = {
                     "trigger_family": label,
                     "canonical_alg": alg_str,
                     "setup_moves": [str(m) for m in path],
                     "setup_length": plen,
                     "trigger_length": len(moves),
-                    "total_to_dr": plen + len(moves),
+                    "total_to_dr": total_to_dr,
+                    "expected_htr_moves": expected_htr,
+                    "expected_total_to_solved": total_to_dr + expected_htr,
                     "pre_trigger_signature": trigger_label(pre_c, pre_e),
                     "jzp_eligible": is_jzp_eligible(pre_state),
                     "top_pairs_on_inverse": count_top_pairs(pre_state),
@@ -155,8 +182,13 @@ def dr_trigger_options(
     def rank_key(o: dict):
         family = _family_of(o["trigger_family"])
         return (
-            o["total_to_dr"],
+            # PRIMARY: total expected moves to SOLVED (DR + HTR-finish).
+            # Per 333.fm corpus: a 1-move 4C4E DR (HTR ≈9) is worse than a
+            # 4-move 3C2E DR (HTR ≈5). Total = 10 vs 9.
+            o["expected_total_to_solved"],
+            # SECONDARY: JZP-eligible first (free cancellations downstream).
             0 if o["jzp_eligible"] else 1,
+            # TERTIARY: substate quality at equal expected-total.
             _FAMILY_RANK.get(family, 99),
             o["setup_length"],
         )
@@ -167,9 +199,11 @@ def dr_trigger_options(
         "options": options[:6],
         "max_setup_searched": max_setup,
         "note": (
-            f"Ranked by: shortest total → JZP first → family preference "
-            f"(4C4E > 3C2E > 4C2E > 7C8E). Setup limit: {max_setup} moves. "
-            f"If no options returned, the named-trigger DR is beyond {max_setup} "
-            f"setup moves; fall back to dr_recognize for the optimal sequence."
+            f"Ranked by: expected_total_to_solved (DR + HTR-finish, "
+            f"empirical from 333.fm corpus) -> JZP-eligible -> substate. "
+            f"Setup limit: {max_setup}. expected_htr_moves: "
+            f"3C2E=5, 4C2E=6, 2C4E=6, 7C8E=7, 4C4E=9, 8C8E=10. "
+            f"AVOID 4C4E when a longer DR lands in 3C2E or 4C2E — "
+            f"the 4-move HTR savings outweigh the extra DR setup."
         ),
     }
