@@ -137,10 +137,13 @@ class BudgetTracker:
 # hits are cheap. This is the "human memorized this subset" abstraction.
 _SUBSET_FINISH_CACHE: dict[tuple, dict[str, list[str]]] = {}
 
-# Phase-separated cache: canonical HTR subset -> {axis -> {"htr_moves": [...],
-# "finish_moves": [...]}}. The phase split mirrors how a champion verbalizes
-# the finish: "first the corner reduction, then the half-turn finish."
-_SUBSET_PHASE_CACHE: dict[tuple, dict[str, dict[str, list[str]]]] = {}
+# Set of (canonical_subset, axis) we've already encountered — used ONLY for
+# cost-tracking (first vs repeat exposure). We never reuse cached moves across
+# states because two distinct full-states can share a canonical_subset (notably,
+# all canonical-HTR states have canonical == identity). The "memorized finish"
+# narrative is preserved at the cost layer; the moves themselves are always
+# computed for the current state.
+_SUBSET_SEEN: set[tuple[tuple, str]] = set()
 
 
 def _load_subset_cache_from_disk() -> None:
@@ -504,28 +507,24 @@ def _build_handlers(
         return out
 
     def _compute_subset_phases(s, sc, hist, axis: str, canonical: tuple) -> dict | None:
-        """Populate _SUBSET_PHASE_CACHE for (canonical, axis) if missing.
-        Returns {"htr_moves": [...], "finish_moves": [...]} or None on error.
-        """
-        cached = _SUBSET_PHASE_CACHE.get(canonical, {}).get(axis)
-        if cached is not None:
-            return cached
+        """Compute fresh phases for the CURRENT state. Returns
+        {"htr_moves": [...], "finish_moves": [...]} or None on error.
+        Always recomputes — different states with the same canonical_subset
+        can need different finish moves (canonical drops EP info), so caching
+        the moves would silently give wrong answers."""
         if not is_htr_ud(s):
             full = search.solve_htr_and_finish_from_dr(sc, hist, axis=axis)
             if "error" in full:
                 return None
-            phases = {
+            return {
                 "htr_moves": list(full["htr_moves"]),
                 "finish_moves": list(full["finish_moves"]),
             }
-        else:
-            from cube.classifier.htr import htr_solve
-            finish = htr_solve(s)
-            if finish is None:
-                return None
-            phases = {"htr_moves": [], "finish_moves": [str(m) for m in finish]}
-        _SUBSET_PHASE_CACHE.setdefault(canonical, {})[axis] = phases
-        return phases
+        from cube.classifier.htr import htr_solve
+        finish = htr_solve(s)
+        if finish is None:
+            return None
+        return {"htr_moves": [], "finish_moves": [str(m) for m in finish]}
 
     def _subset_describe(canonical: tuple) -> dict:
         """Human-friendly structural description of the corner subset."""
@@ -582,12 +581,13 @@ def _build_handlers(
         if canonical is None:
             return {"error": "current state is not in DR-corner subgroup; reach DR first."}
         cache_key = tuple(canonical)
-
-        cached_before = cache_key in _SUBSET_PHASE_CACHE and axis in _SUBSET_PHASE_CACHE[cache_key]
+        seen_key = (cache_key, axis)
+        cached_before = seen_key in _SUBSET_SEEN
         phases = _compute_subset_phases(s, sc, hist, axis, cache_key)
         if phases is None:
             budget.charge("htr_classify", _COST_SUBSET_LOOKUP_MISS, slot=slot.name, axis=axis, cached=False)
             return {"error": "could not compute HTR phases for this subset."}
+        _SUBSET_SEEN.add(seen_key)
 
         cost = _COST_SUBSET_LOOKUP_CACHED if cached_before else _COST_SUBSET_LOOKUP_MISS
         budget.charge("htr_classify", cost, slot=slot.name, axis=axis, cached=cached_before, subset=list(canonical))
