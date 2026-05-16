@@ -1,274 +1,123 @@
 # cube
 
-**An LLM agent equipped with FMC tools.** The current direction is to
-expose this project's classifiers, policy network, and search primitives
-as tools that an LLM can call to reason its way through a Fewest Moves
-Challenge scramble — using only operations a strong human FMC solver
-has access to.
+**An LLM-orchestrated Rubik's-cube Fewest-Moves-Challenge agent.** A
+Claude model (Sonnet 4.5 by default) is given a small set of
+human-scale FMC tools — pattern lookups, named-trigger menus,
+NISS-scout, HTR subset classifiers — and asked to solve WCA-grade
+scrambles within the same cognitive constraints a strong human FMC
+solver operates under.
 
-See [`AGENT.md`](AGENT.md) for the design doc, what's "fair vs cheating,"
-and the LLM-with-tools architecture.
+> "Can an LLM solve a Rubik's cube as well as a human FMC champion?
+> I gave Claude the same tools a human uses and watched it try."
 
-Originally framed as "analyzer / solver" — that work is preserved as the
-baseline against which the agent gets compared. See "baseline analyzer"
-below for the staged EO→DR→HTR→Finish pipeline + benchmarks.
+See [`AGENT.md`](AGENT.md) for the design doc and the
+"fair vs. cheating" axioms.
 
-> "Can an LLM solve a Rubik's cube as well as a human FMC champion? I
-> gave Claude the same tools a human uses and watched it try."
+## Current corpus results
 
-## Why the pivot
+5 WCA-competition scrambles (from `api.333.fm`), 80-tool-call budget
+per solve. Model: `claude-sonnet-4-5-20250929`.
 
-Cubelib + mallard already do classical FMC analysis very well — Rust,
-SIMD, pipeline richness exceed what we'd ship in pure Python. Competing
-on move-count is a losing fight. But neither has a learned policy or
-an LLM reasoning layer. **That intersection is the wedge.**
+| Iter | Headline change | Solved | Avg moves | Gap vs WCA-champion (20.8) |
+|------|-----------------|--------|-----------|----------------------------|
+| v13  | skeleton + insertion tools | 4/5 | 28.2 | +7.4 |
+| v14a | budget-gated `replace_and_shorten` | 5/5 | 29.4 | +8.6 |
+| v14b | DR-quality (4C4E trap warning) | 4/5 | 28.5 | +7.7 |
+| **v16** | **`niss_scout` — 6-row scout of normal × inverse × 3 axes** | **5/5** | **28.2** | **+7.4** |
+| v17  | `compose_niss_solution`, free `quick_check` | 5/5 | 28.6 | +7.8 |
+| v18  | tool-side `rs_recommend` | 5/5 | 29.4 | +8.6 |
+| v19  | corpus_eval `--n-best N` (variance probe) | 5/5 | 29.4 | +8.6 |
+| v20  | Opus 4.7 model A/B + prewarm cache | 5/5 | 29.2 | +8.4 |
+| v21+v22 | few-shot exemplars + joint EO+DR scout | 5/5 | 29.6 | +8.8 |
+| **v23a** | **strip oracle recommendations** | **5/5** | **28.4** | **+7.6** |
 
-## Current agent results
+Transcripts and per-scramble narratives in `runs/corpus_eval_*/`.
+Each iter's reasoning + tradeoffs are documented in `runs/V*_RESULTS.md`.
 
-| Scramble | Solved? | Moves | Tool calls | Cost | Notes |
-|---|---|---|---|---|---|
-| 2 (`R' U' F B' U2 F' U2 R2 B' R2 …`) | ✓ | **25** | 14 | $0.23 | Multi-axis EO scan → trigger DR → HTR+Finish; matches analyzer baseline |
-| 1 (`R' U' F L' R U2 F2 L2 R U2 …`) | ✓ | 25 (trivial) | 14 | $0.21 | Found degenerate invert(scramble); prompt updated to disallow |
-| 3 (`R' U' F R2 B2 D2 R F2 L D2 …`) | ✗ | — | 25 (timeout) | ~$10 | Got interim 34-move solve but timed out exploring |
+## Key findings
 
-Model: `claude-sonnet-4-5-20250929`. Transcripts at `runs/*.md`.
+1. **DR-quality dominates the move-count gap, not insertion technique.**
+   A research subagent harvested 942 elite WCA-FMC submissions
+   (`runs/333fm_research_2026-05-16.md`); sub-22-move solves had
+   DR ≤6 moves 85.7% of the time; NONE had DR ≥10. Elite insertion
+   rate is 0.7% (long-solve rate is 15.8% — insertions are a
+   *failure*-mode tool). This invalidated our original v14b plan
+   (slice insertions) and pivoted the agent toward better DR scouting.
 
-## Why
+2. **Tool-side recommendations were doing the LLM's work.** When the
+   smarter Opus 4.7 matched Sonnet 4.5 within noise (29.2 vs 29.4),
+   that was evidence the agent's *judgment* wasn't engaging — tools
+   were pre-cooking the decisions via `expected_total_to_solved`,
+   `niss_scout.recommendation`, `rs_recommend` fields. v23a stripped
+   these oracles and the corpus average *improved* to 28.4. Tools
+   should expose observable information; the LLM should judge.
 
-Optimal solvers are useless to humans: they suggest 24-move solutions that
-no person could reproduce because they require search depth no human has.
-Existing FMC tutors are prescriptive — they teach a method, not a way to
-think about a specific scramble.
+3. **Move-count variance per scramble is 3-5 moves.** Single-run
+   averages bounce ±1-2 moves between iterations. Prompt-strength
+   tweaks within the current model + tool surface are mostly noise.
+   Real gains come from capability additions (new tools, richer
+   knowledge), not prompt engineering.
 
-This project sits in that gap. Given a scramble (or scramble + a partial
-attempt), the engine produces:
-
-1. A best **human-findable** continuation.
-2. A tree of branches at each state, scored by **value × findability**.
-3. Annotated phase breakdown: where an attempt diverged from the
-   strong-solver path, what alternatives were available, what stage
-   transitions were taken.
-
-A partial attempt is treated as a **soft preference**, never a hard
-constraint — FMC routinely benefits from breaking partial structure
-(EO/DR/block) when a clever insertion pays off.
-
-## Project status
-
-| Phase | Status |
-|-------|--------|
-| 1. Engine + state classifier + corpus pipeline | done |
-| 2. Stage segmenter + method inference | done |
-| 3. Training data + non-ML baselines | done |
-| 4. Findability policy v0 (transformer) | done — 65% top-5 |
-| 5. Analyzer MVP (M1: full-pipeline solves) | done |
-| 6. M2: leave-slice / better finishes | partial |
-| **7. NISS + multi-axis HTR distance tables** | **done** |
-| 8. M3: insertions, optimizer | in progress |
-| 9. Calibration + 4×4 | future |
-
-### Current capability
-
-Three hand-picked WCA-grade scrambles, all produce engine-verified
-full solves on a single 4060:
-
-| Scramble (`R' U' F` start/end) | Result | Stages |
-|---|---|---|
-| `B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F` | **25 moves** | EO 4 + DR 8 + HTR 7 + Finish 8 (normal) |
-| `L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F` | **30 moves** | EO 4 + DR 7 + HTR 10 + Finish 10 (NISS — entire pipeline on the inverse side) |
-| `R2 B2 D2 R F2 L D2 B2 R B2 U2 R F' L D' B U B' R' F' D' R' U' F` | **31 moves** | EO 5 + DR 8 + HTR 7 + Finish 12 (RL axis — needed the multi-axis HTR fix) |
-
-Sample full breakdown (the 25-move solve):
+## Architecture
 
 ```
-[ EO (UD) ]  4 moves   →  R B D' B'
-[ DR (UD) ]  8 moves   →  B2 U' B2 R F2 R' F2 R       (+4→HTR)
-[ HTR (UD) ]  7 moves  →  R2 U R2 B2 U2 L2 U
-[ Finish ]  8 moves    →  B2 U2 F2 U2 F2 R2 D2 L2
+┌─────────────────────────────────────────────────────┐
+│  LLM (Sonnet 4.5)                                    │
+│  • narration + decision                              │
+│  • 80-tool-call budget per scramble                  │
+└──────────────────────┬───────────────────────────────┘
+                       │ tool calls
+┌──────────────────────┴───────────────────────────────┐
+│  Agent tool layer  (src/cube/agent/simulated_fmc.py)│
+│  • inspect_state, quick_check (free state class)    │
+│  • niss_scout (6-12 rows, normal × inverse × axes)  │
+│  • eo_pattern_lookup, dr_trigger_options            │
+│  • htr_classify, apply_htr_phase                     │
+│  • analyze_residual, derive_corner_3cycle           │
+│  • replace_and_shorten (gated 1-call)               │
+│  • compose_niss_solution                             │
+│  • brain_suggest (state-conditioned, new)           │
+└──────────────────────┬───────────────────────────────┘
+                       │
+┌──────────────────────┴───────────────────────────────┐
+│  Knowledge layer                                     │
+│  • EO pattern library (6144 entries)                 │
+│  • DR pattern library (3.25M — being retired)       │
+│  • HTR subset cache (176 entries, pre-warmed)       │
+│  • 432-entry corner-3-cycle commutator table         │
+│  • named DR trigger catalog (10 per axis)            │
+│  • brain models — eo/dr/htr/finish (~86k params each)│
+└──────────────────────────────────────────────────────┘
 ```
 
-Each scramble has its own story:
-- **#1** is normal-side easy — short EO, clean DR, fully solved on
-  normal pipeline only.
-- **#2** required NISS — normal-side EO is reachable but DR is
-  structurally deep (>=7 moves over EO-preserving moves at width 8192).
-  The inverse-side pipeline finds a clean 4-move EO and 7-move DR.
-- **#3** required multi-axis HTR tables — the best DR is on the RL
-  axis, not UD. Before the fix, the A\* DR→HTR heuristic returned
-  `None` for non-UD axes and the finish silently failed.
+## The brain (v1, training-stage)
 
-Search wall time on GPU: **~5 min with `--fast`** (no NISS, lean beams),
-**10–25 min with NISS-on** (default, all hybrids).
+Replaces the legacy 91k history-conditioned transformer policy. The
+new brain is **state-conditioned**: the model sees the cube state
+(cubie permutations + orientations), not a sequence of past moves.
+Per-step output heads predict the next move from each step's legal
+alphabet:
 
-### Random WCA corpus benchmark
+| Step   | Alphabet | Trained val-loss | Val top-1 acc |
+|--------|----------|------------------|---------------|
+| EO     | 18 face moves | 1.625 | 57% |
+| DR     | 14 EO-preserving | 2.178 | 31% |
+| HTR    | 10 DR-preserving | 1.264 | 55% |
+| Finish | 6 half-turns | 1.138 | 57% |
 
-10 random scrambles (seed=0), single 4060 GPU:
+Trained on per-step optimal-move distributions extracted from
+[nissy](https://sebastiano.tronto.net/nissy/) via
+`cube.brain.gen_training_data`. v1 used 1000 scrambles × ~36
+records/scramble; planned scaling: 10K-100K scrambles.
 
-| mode | full solves | mean moves | best | wall budget |
-|---|---|---|---|---|
-| pre-NISS (CPU) | 0/10 | — | — | 5 min |
-| `--fast` (no NISS, dr-beam 2048) | **5/10** | 31.0 | 27 | 10 min |
-| NISS-on (dr-beam 2048) | **7/10** | 32.7 | **24** | 20 min |
+Architecture: small transformer over 20 cubie tokens (8 corner +
+12 edge), each token a sum of `slot_emb + cubie_emb + orient_emb`.
+2 encoder layers, d_model=64, ~86k params per step model. See
+`src/cube/brain/{state_encoder,model,train,infer}.py`.
 
-- **Beats the human reconstruction**: 2/5 with `--fast`, 2/7 with NISS-on.
-- The best result so far: 24 moves on a scramble where the human did 20.
-- NISS rescues 4 scrambles that `--fast` got EO-only on; cost is ~2× wall time.
-- 3 scrambles still time out at 20 min with NISS-on — the hard tail.
-
-Files at `benchmarks/`:
-- `baseline_cpu_pre_niss.md` — pre-NISS baseline
-- `baseline_gpu_fast.md` — `--fast` results
-- `baseline_gpu_niss_2048.md` — NISS-on results
-- `test_scrambles.md` — hand-picked scrambles
-
-### NISS (Normal-Inverse Scramble Switch)
-
-The pipeline now searches on **both the normal and inverse scrambles**,
-plus the hybrids where EO is found on one side and DR is found on the
-other. Every FMC solution under 22 moves uses this switch at least once.
-
-Mathematically: if `N` are the normal-side moves and `I` are the
-inverse-side moves, the final solution is `N + invert(I)`. Stages
-record which side they were found on; cancellation handles the seam.
-
-### Multi-axis HTR
-
-The corner+edge distance PDBs are now built per-axis (UD, RL, FB) via
-`lru_cache(maxsize=3)`. Before this fix, the A\* DR→HTR heuristic
-returned `None` for non-UD DRs and degraded to blind BFS — silently
-killing the finish on any scramble whose best DR was on RL or FB.
-
----
-
-# The ML system
-
-The core ML object is a **transformer policy** that predicts the next move
-given (cube state, history). It's used as a prior during beam search and
-A\* — the algorithm explores the tree, the policy ranks branches.
-
-This was the question that started the project: *is a transformer the
-right thing for cube state?* MLP felt wrong, RNN felt slow, GNN felt
-ceremony. I settled on a small Transformer encoder.
-
-## Tokenization (it's the whole game)
-
-The trick to making a transformer work on cube state is **picking a token
-set that lines up with the symmetries you care about**.
-
-Every example becomes a sequence of `1 + 8 + 12 + K` tokens:
-
-```
-  [CLS]  [corner_0 … corner_7]  [edge_0 … edge_11]  [hist_{K-1} … hist_0]
-  └─1─┘  └─────── 8 ────────┘  └──────── 12 ──────┘  └─── K (=32) ────┘
-```
-
-- **CLS** — a learned parameter; its final hidden state is the readout.
-- **Corner tokens (8)** — one per *position*. Content = sum of two
-  embeddings: `cp_emb[cp[i]]` (which corner piece is here, 0–7) and
-  `co_emb[co[i]]` (its twist, 0–2). The model never sees raw indices — it
-  sees a vector that encodes "the piece UFL is sitting at slot 3 with
-  twist 1."
-- **Edge tokens (12)** — one per position. Sum of `ep_emb[ep[i]]` plus
-  **three EO embeddings** (`eo`, `eo_fb`, `eo_rl`), each a 2-vocab
-  embedding. Three EO arrays are tracked in parallel by the engine
-  (multi-axis EO — see the algebra section); the model sees all three at
-  every edge, so DR potential on any axis is first-class.
-- **History tokens (K=32)** — last 32 moves, 19-entry vocab (18 face
-  moves + 1 PAD). Left-padded so the rightmost token is the most recent.
-
-A **shared learned positional embedding** is added to every token. This
-lets the model distinguish "corner 3" from "edge 3" from "history slot 3"
-— position encodes token *kind* (state vs. history) as well as position
-within kind.
-
-**Why three EO embeddings instead of one?** Because the cube has three
-EO axes (UD, FB, RL) and any of them can be the DR target. If you
-collapse to one EO array, you've committed to an axis before the model
-even sees the state. The disjoint flip sets are clean: F/B quarters flip
-UD-EO; L/R quarters flip FB-EO; U/D quarters flip RL-EO. Hand-derived
-from Kociemba conventions, cross-validated against pycuber on 1000
-random states.
-
-## Encoder
-
-Pre-norm Transformer encoder. v0 default:
-
-| param | value |
-|-------|-------|
-| `d_model` | 96 |
-| layers | 3 |
-| heads | 4 |
-| FFN | 288 (3× d_model) |
-| dropout | 0.1 |
-| history_len `K` | 32 |
-| activation | GELU |
-| norm | pre-LN |
-
-~91k parameters. Single forward pass over ~61 tokens. CLS hidden state is
-layer-normed and projected to 18 logits with a single linear layer.
-Trained with cross-entropy against the actual next move.
-
-## Training data: the corpus
-
-2,439 WCA-competition FMC reconstructions ingested from `api.333.fm`. Each
-gets parsed into `(scramble, normal_solution, inverse_solution, per_move
-phase labels)`. The **flat solution** is `normal + invert(inverse)` —
-NISS gets unrolled into a single linear sequence. This way the model
-trains on every move in solver order, regardless of which side it was
-originally found on.
-
-`split.py` partitions by `source_id` with a stable content-addressed
-hash: new solves don't reshuffle existing splits, and all moves from one
-solve stay together. No leak from later moves in train appearing earlier
-in val.
-
-## LR-mirror augmentation
-
-This is the small but real ML lift. The cube has a left-right symmetry:
-mirror through the FB plane and `(R, L, U, D, F, B)` → `(L, R, U, D, F,
-B)` with appropriate twist sign flips. Every training example has an
-LR-mirrored partner that's semantically identical. We feed both, **with
-the same loss**, doubling effective dataset size at zero risk of leakage
-(both moves are still ground-truth labels).
-
-UD-mirror and FB-mirror also exist but were not used — the EO axis
-conventions break cleanly under LR-mirror but get tangled under the
-others.
-
-## Performance
-
-Top-1 / top-5 on val, partial corpus:
-
-| Model | top-1 | top-5 |
-|-------|-------|-------|
-| Frequency (global) | 0.078 | 0.390 |
-| Frequency (per-phase) | 0.059 | 0.363 |
-| Bigram (P(move \| prev_move)) | 0.114 | 0.464 |
-| Bigram + phase | 0.101 | 0.441 |
-| **Transformer v0** | **0.288** | **0.650** |
-
-The transformer is the bar by a large margin. ~2.5× the bigram baseline
-on both metrics; absolute top-5 of 0.65 means "the right next move is in
-the top 5 candidates two-thirds of the time," which is what makes
-policy-guided beam search actually work.
-
-## How the policy is used in search
-
-The analyzer is **not** an autoregressive sampler. The policy is a
-**prior** that ranks expansions; search is structured:
-
-- **Beam search** (EO stage, DR triggers): keep top-W states by
-  `Σ log π(move | state, history)`. Beam=256 for EO, beam=8192 for DR.
-- **A\*** (DR → HTR, HTR → Finish): cost = depth + heuristic; the
-  policy is a soft tiebreaker via `policy_weight`. Empirically the
-  combined corner+edge PDB heuristic is tight enough that
-  `policy_weight=0` (pure A\*) is fastest — the policy added model-eval
-  overhead without improving solution quality.
-
-The lesson: **the policy matters where there's no admissible heuristic
-(EO, DR), and is dispensable where there is one (HTR, Finish)**.
-
----
+DR top-1 is the weakest (31%) — large alphabet + many equally-optimal
+first moves at any state. KL-divergence loss reflects distribution
+fit better than argmax accuracy for soft targets.
 
 # The algebra
 
@@ -298,8 +147,6 @@ zero on all 12 edges.
 `|G : EO_UD| = 2^11 = 2048` (one EO bit is parity-determined; 11 are
 free).
 
-Reaching EO from any scramble: 3–8 moves typically. Beam search finds it.
-
 ## DR: domino reduction
 
 A DR-UD state is in `EO_UD` AND every corner is **UD-axis oriented**
@@ -307,24 +154,17 @@ A DR-UD state is in `EO_UD` AND every corner is **UD-axis oriented**
 F², B²⟩` moves are needed from here on. This is the "domino" subgroup
 because the cube reduces to a 2-layer puzzle.
 
-`|EO_UD : DR_UD| = 2^7 · 3^7 / something` — computed as 256 corner-CO
-states times some edge constraint. We don't need the exact index because
-we use the **DR-group action** directly as a search alphabet.
-
 ## HTR: half-turn reduction
 
-The most algebraically rich stage.
-
-**HTR group** = `⟨U², D², R², L², F², B²⟩`. Generated by 6 half-turns. Has
-exactly **663,552 elements**. Diameter (worst case) = **15 half-turns**.
-We've enumerated all of it via BFS from SOLVED and stored a parent-pointer
-PDB:
+**HTR group** = `⟨U², D², R², L², F², B²⟩`. Generated by 6 half-turns.
+Has exactly **663,552 elements**. Diameter (worst case) = **15
+half-turns**. We've enumerated all of it via BFS from SOLVED and stored
+a parent-pointer PDB:
 
 ```python
 # cube/classifier/htr.py
 def htr_pdb() -> dict[StateKey, (distance, parent_move)]:
     # multi-source BFS, 6 half-turn moves
-    ...
 ```
 
 `663,552 = 96 · 6912 = |HTR_corner| · |HTR_edge|`. Both factors are
@@ -333,163 +173,124 @@ themselves cosets of the symmetric/alternating groups.
 ### The 96 HTR corner classes
 
 Half-turns act on corner permutations as a subgroup of `S_8` of order
-96. (`A_8` would be order 20,160, so this is much smaller — half-turn
-corner cycles are 2-cycles and pairs of 2-cycles, never 3-cycles or
-4-cycles.) These 96 perms are the corner perms reachable from solved
-via half-turns only.
+96. These 96 perms are the corner perms reachable from solved via
+half-turns only.
 
 ### DR-corner-set ⊃ HTR-corner-set
 
 The DR group `⟨U, D, R², L², F², B²⟩` acting on corners reaches the
-**full S_8 = 40,320**. (Not A_8 — U/D quarters generate odd cycles in
-combination with half-turn 2-cycles.)
+**full S_8 = 40,320**. So:
 
-So we have a coset structure:
 ```
 DR_corner_perms (40320)
   ⊇  HTR_corner_perms (96)
 ```
 
-Index `[DR : HTR] = 40,320 / 96 = 420` corner cosets.
-
-These 420 cosets are what the FMC community calls "subsets" — `4a1`,
-`4b2`, `2c3`, etc. Each subset has a known approximate HTR-completion
-length.
-
-### Pattern databases
-
-Two PDBs, each built by reverse BFS:
-
-1. **Corner→HTR distance**: 40,320 entries, diameter 11. Reverse BFS from
-   the 96 HTR corner perms (multi-source), expanding via DR-group moves.
-   Lookup is O(1) by cp tuple.
-
-2. **Edge→HTR distance**: 967,680 entries (8! · 6 = 967680 actually no:
-   it's the orbit under DR-group of solved edge perm), diameter 7. Same
-   reverse-BFS construction.
-
-The admissible heuristic for A\* DR→HTR is:
-
-```
-h(s) = max( corner_dist[s.cp], edge_dist[s.ep_signature] )
-```
-
-(Max of two PDBs is admissible because every move advances by at most
-one in either; one PDB always lower-bounds; max preserves admissibility.)
-
-This h is **tight enough that pure A\* finds DR→HTR in <0.1s** on every
-scramble we've tested. The transformer policy adds no value here.
-
-### Left vs right cosets: a subtle bug we caught
-
-A natural conjecture: distance-to-HTR is constant on each "HTR coset" of
-DR. But which coset — left `Hπ` or right `πH`?
-
-The Cayley graph with **right**-multiplication generators is
-**right**-translation invariant: `d(πg, Hg) = d(π, H)` for any `g ∈ G`.
-This means distance depends only on the **LEFT** coset `Hπ`. We
-initially wrote the test assuming right cosets and got failures — fixed
-by switching to left cosets and the invariant holds for all 420 cosets:
-
-```python
-# tests/classifier/test_htr.py::test_distance_constant_within_left_coset
-for canonical, distances in by_coset.items():
-    assert len(distances) == 1
-```
-
-The FMC community's "subset" labeling is actually the **right** coset
-`πH` (which states are reachable from `π` via HTR moves) — this cuts
-across distance classes. We use per-cp distance for ranking;
-right-coset partition is for naming.
-
-## The leave-slice idea
-
-After HTR, you finish with half-turns only (`htr_solve` looks up the
-PDB and walks back). But the canonical FMC technique is **leave a
-slice**: target a state with everything solved except the E-slice (4
-middle edges), then patch the slice with one slice-quarter (`M`, `M'`,
-or `M²`).
-
-Group-theoretically: leave-slice-solved = `{cp = e, ep_{0..7} = e,
-ep_{8..11} ∈ S_4 (constrained)}`. Multi-source BFS from these targets
-gives a PDB whose distances are shorter than `htr_solve`'s — but the
-slice fix adds 0–2 face moves, and the canonical `M = R' L` slice
-approximation in pure face-turn notation **disturbs the U/D layers**.
-True `M` slice as a 1-STM primitive would make this a clean win; in
-pure face-turn metric, leave-slice's value is mostly in cancellation
-opportunities with the surrounding skeleton.
-
-The PDB is built (663,552 reachable states, diameter 12) and the
-infrastructure is in place for the slice-primitive lift.
-
----
-
-# The search pipeline
-
-```
-scramble ─► EO (beam, multi-axis)
-            ├─► DR  (beam→trigger + DFS tail, multi-axis)
-            │   └─► A* DR→HTR (pure heuristic, DR-group moves)
-            │       └─► PDB finish (lookup)
-            │
-            └─► cancellation across all stage boundaries
-```
-
-**Multi-axis everything.** EO is tried on UD/FB/RL axes; the top 5 EO
-candidates per axis are kept. Each EO seeds a DR search on the matching
-axis. Best skeletons across axes are returned ranked by expected total.
-
-**Trigger-based DR.** Direct DR search is too deep for beam. Instead we
-beam-search to a "trigger state" — one that's within 2 moves of DR by
-DFS — and then enumerate the short tail explicitly. This mirrors how
-humans find DR (recognize a setup, complete the trigger).
-
-**Cancellation.** Stage boundaries often have same-face moves on either
-side (`U2 U` → `U'`). Through-commute is also handled (`U D U` → `D
-U²`). The cancelled length is what gets ranked; raw length is reported
-in parentheses.
-
-**Skeleton ranking.**
-1. Solved skeletons beat partial.
-2. More stages beat fewer.
-3. Lower `total_moves + htr_distance` (expected total length).
-4. Lower `total_moves` (cancelled).
-5. Higher policy log-prob.
-
----
+Index `[DR : HTR] = 40,320 / 96 = 420` corner cosets. These 420 cosets
+are what the FMC community calls "subsets" — `4a1`, `4b2`, `2c3`, etc.
 
 # Running it
 
+## Single solve
+
 ```bash
-uv sync
-uv run pytest                                        # 210+ tests
-# Best-quality solve with NISS (~10-25 min):
-uv run python -m cube.analyzer.skeleton_cli "SCRAMBLE..."
-# Fast triage, no NISS, lean beams (~5 min, lower quality):
-uv run python -m cube.analyzer.skeleton_cli --fast "SCRAMBLE..."
-# Corpus benchmark:
-uv run python -m cube.analyzer.validate \
-  --corpus data/raw/wca.jsonl --n 10 --seed 0 --time-budget 600 \
-  --device cuda --no-niss --dr-beam 2048 --dr-depth 10 \
-  --report benchmarks/results.md
+ANTHROPIC_API_KEY=sk-... PYTHONPATH=src uv run python -m cube.agent.simulated_fmc \
+  "R' U' F U2 L2 U2 D' F L2 B' D' R' F' U2 D2 R' U2 D2 R2 B2 U' R' U' F"
 ```
 
-Optional CLI flags: `--no-niss`, `--fast`, `--dr-beam`, `--dr-depth`,
-`--eo-beam`, `--eo-depth`, `--top`, `--device`.
+Transcripts emit to `runs/sim_TIMESTAMP.json` (full tool-call trace +
+narration) and a `.md` rendering alongside.
+
+## Corpus eval
+
+```bash
+# 5-WCA-scramble corpus eval (current standard benchmark)
+ANTHROPIC_API_KEY=sk-... PYTHONPATH=src uv run python -m cube.agent.corpus_eval \
+  --corpus-333fm data/corpus_333fm.json \
+  --out-dir runs/corpus_eval_v24 \
+  --max-tool-calls 80 \
+  --wall-limit-s 1500
+
+# Beat-the-variance (run each scramble N times, keep best)
+... --n-best 2
+
+# Opus A/B
+... --model claude-opus-4-7
+```
+
+## Training the brain
+
+```bash
+# 1. Install nissy: see https://sebastiano.tronto.net/nissy/
+nissy gen   # ~90 min, builds the optimal-solver pruning tables
+
+# 2. Generate training data via the nissy oracle (~1.5s/scramble)
+PYTHONPATH=src uv run python -m cube.brain.gen_training_data \
+  --n 10000 --out data/brain_training
+
+# 3. Train each step model (~5 min/step on CUDA)
+for step in eo dr htr finish; do
+  PYTHONPATH=src uv run python -m cube.brain.train --step $step --epochs 30
+done
+
+# 4. Pre-warm HTR subset finish cache (optional, ~1 hour)
+PYTHONPATH=src uv run python -m cube.agent.prewarm_subsets --axes UD FB RL
+```
+
+Checkpoints land in `checkpoints/brain_{step}.pt`. The agent's
+`brain_suggest` tool auto-detects them and falls back to the legacy
+policy otherwise.
 
 # Repo layout
 
 ```
 src/cube/
-  engine/        State, moves, notation, facelet ↔ cubie, cancellation
+  engine/        State, moves, notation, cancellation
   classifier/    rule-based EO/DR/HTR, PDBs, leave-slice scaffolding
   corpus/        parse/validate WCA reconstructions from 333.fm
-  segmenter/     per-move phase labels
-  training/      transformer policy, encoding, baselines
-  analyzer/      EO → DR → HTR → Finish pipeline, beam/A* search
-  cli.py
+  brain/         NEW — state-conditioned move predictor (v1)
+    state_encoder.py    State → 20 cubie tokens
+    model.py            BrainStepModel (small transformer)
+    gen_training_data.py  nissy oracle → JSONL per step
+    train.py            supervised training, KL loss
+    infer.py            policy_suggest() — agent-facing API
+  agent/         LLM-orchestrated agent
+    simulated_fmc.py    main agent (~1900 lines: tools + prompt + loop)
+    corpus_eval.py      multi-scramble eval CLI with --n-best
+    prewarm_subsets.py  HTR subset finish cache builder
+  tools/         agent's tool layer
+    eo_pattern_lib.py       6144-entry EO library
+    dr_trigger_options.py   named DR triggers, all 3 axes (v15)
+    niss_scout.py           6-12 row joint scout (v16+v22)
+    insertion_tools.py      analyze_residual / derive_corner_3cycle / r&s
+    nissy_oracle.py         nissy subprocess wrapper (v23)
+    dr_pattern_lib.py       legacy 3.25M-entry library (being retired)
+  analyzer/      legacy unconstrained pipeline (now a baseline)
+
 tests/           pytest, mirrors src layout
-data/raw/        gitignored — JSONL corpus
-data/cache/      gitignored — 333.fm API cache
-checkpoints/     gitignored — model weights
+data/            corpus_333fm.json + brain_training/ + cache (gitignored)
+checkpoints/     model weights (gitignored except brain_*.pt)
+runs/            per-iter eval transcripts + V*_RESULTS.md writeups
 ```
+
+# Honest accounting
+
+The agent is at ~28 moves on a 5-WCA-scramble corpus vs WCA-champion
+20.8. That ~7-move gap is roughly:
+
+- 5-6 moves: DR-quality (axis selection, NISS-quality judgment, JZP
+  exploitation) — what the brain v1 is being scaled to address
+- 1-2 moves: opportunistic insertions when residual cooperates
+
+The original premise — "this is human-shape solving with human-scale
+tools" — is partially compromised: the 3.25M-entry `dr_pattern_lib`
+is not human-scale, and was carrying real load on solve quality. v23a
+(stripping tool-side oracle recommendations) showed the LLM itself
+reasons better when not given pre-cooked judgments. The honest path
+forward is closing the DR-quality gap via the brain (trained on
+nissy-optimal moves at scale), retiring `dr_pattern_lib`, and
+expanding `dr_trigger_options` to ~20-40 named human-recall triggers.
+
+See `runs/OVERNIGHT_SUMMARY_2026-05-16.md` for the full v14a→v20
+iteration arc, plus `runs/V23a_RESULTS.md` (pending) for the oracle-
+stripping experiment.
