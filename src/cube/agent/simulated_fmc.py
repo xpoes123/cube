@@ -45,6 +45,13 @@ from cube.tools import algebra, dr_pattern_lib, dr_triggers, eo_bfs, eo_pattern_
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
+# Human-visualization limit: how many moves a champion can hold in their
+# head at once when recalling a pattern or lookahead-searching. Real FMC
+# solvers see ~3-5 moves ahead; longer sequences are composed by applying
+# what they can see and re-evaluating. We force the same on the agent:
+# every recall/search tool returns at most this many moves per call.
+MAX_HUMAN_RECALL = 4
+
 # Simulated-time costs (seconds of WCA wall, NOT real wall).
 _COST_APPLY_MOVE = 1.0
 _COST_NISS_FLIP = 5.0
@@ -80,8 +87,8 @@ _MEMORY_PENALTY_MAX_MOVES = 3
 # a 9-move DR (vs the unconstrained 7-move). This is the realistic
 # operating point — wider tail recognizing more trigger states is more
 # human-like than wider beam.
-_SIM_LOOKAHEAD_WIDTH = 10
-_SIM_LOOKAHEAD_DEPTH = 5
+_SIM_LOOKAHEAD_WIDTH = 5  # narrowed in v11: only top-K policy candidates per node
+_SIM_LOOKAHEAD_DEPTH = 4  # capped to MAX_HUMAN_RECALL: a human sees ~4 moves ahead
 _SIM_DR_TRIGGER_SETUP_WIDTH = 32
 _SIM_DR_TRIGGER_SETUP_DEPTH = 8
 _SIM_DR_TRIGGER_TAIL = 3
@@ -351,43 +358,35 @@ def _build_handlers(
         """Recall a memorized EO sequence for the current bad-edge-slot pattern.
 
         Mirrors what a human FMC champion does: recognize the
-        configuration, recall the fix. O(1) library lookup, no search.
-        This is the PRIMARY EO tool — try it before lookahead or BFS.
+        configuration, recall the fix. Returns at most MAX_HUMAN_RECALL
+        moves per call — if the full optimal is longer, you see the first
+        N moves toward the goal. Apply them, then re-query from the new
+        state to see the next chunk (which may be a different, shorter
+        path from there).
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         out = eo_pattern_lib.eo_pattern_lookup(sc, hist, axis=args["axis"])
-        # Cost: ~3s simulated (recognition + recall, like subset lookup).
+        if out.get("found") == 1 and out.get("options"):
+            full = out["options"][0]["moves"]
+            if len(full) > MAX_HUMAN_RECALL:
+                chunk = full[:MAX_HUMAN_RECALL]
+                out = {
+                    **out,
+                    "options": [{"moves": chunk, "length": len(chunk), "partial": True}],
+                    "full_optimal_length": len(full),
+                    "note": (
+                        f"Full optimal EO is {len(full)} moves — beyond your "
+                        f"{MAX_HUMAN_RECALL}-move visualization. You see the next "
+                        f"{len(chunk)} moves toward EO. Apply them, then re-query "
+                        f"from the new state for the next chunk."
+                    ),
+                }
         budget.charge("eo_pattern_lookup", 3.0, slot=slot.name, axis=args["axis"])
         return out
 
-    def _h_find_eo_algorithmic(args):
-        """Plain BFS for short EO sequences on `axis`. No policy ranking.
-        Mirrors a human methodically trying setups when intuition fails.
-        Expensive in sim time (60s) — only use when normal lookahead returns
-        found=0 across all axes."""
-        slot = _resolve_slot(slots, args["slot"])
-        sc, hist = _materialize(scramble, slot)
-        out = eo_bfs.find_eo_bfs(sc, hist, axis=args["axis"], max_depth=args.get("max_depth", 6))
-        budget.charge("find_eo_algorithmic", 60.0, slot=slot.name, axis=args["axis"])
-        return out
-
-    def _h_lookahead_wide(args):
-        """Wider, slower look-ahead. Costs ~4x normal lookahead in sim time.
-
-        Mirrors a human really studying the cube when their intuition is
-        coming up empty. width=30 depth=6 still well below brute force
-        but wider than first-pass visualization.
-        """
-        slot = _resolve_slot(slots, args["slot"])
-        sc, hist = _materialize(scramble, slot)
-        out = search.lookahead(
-            sc, hist,
-            target=args["target"], axis=args.get("axis"),
-            width=30, depth=6,
-        )
-        budget.charge("lookahead_wide", _COST_LOOKAHEAD * 4, slot=slot.name, target=args["target"])
-        return out
+    # (Removed in v11: find_eo_algorithmic and lookahead_wide — those were
+    # wide BFS / wide-beam searches not available to a human solver.)
 
     def _truncate_dr_options(out: dict) -> dict:
         # Human eye sees a handful of triggers, not 5+. Top-3 by length+log_prob.
@@ -401,45 +400,58 @@ def _build_handlers(
         return out
 
     def _h_dr_recognize(args):
-        """Recognize the DR pattern and split into setup + named trigger.
+        """Recognize the DR pattern. If the trigger is reachable within
+        MAX_HUMAN_RECALL moves, return setup_moves + trigger_moves + named
+        family. Otherwise return only the first MAX_HUMAN_RECALL moves of
+        the optimal path as `setup_progress` — partial setup toward an
+        eventual trigger. Apply, then re-query.
 
-        Returns:
-          - trigger_family: human-readable name (e.g. "X-U2-X' (DR-4c4e)")
-          - setup_moves: pre-trigger setup (may be empty)
-          - trigger_moves: the named trigger itself
-          - total_length: setup + trigger combined
-
-        Apply setup_moves and trigger_moves with SEPARATE apply_moves calls,
-        narrating "this is a 2-move setup into the R-U2-R' trigger" — that is
-        how a champion verbalizes their DR. Cost: 3s simulated.
+        This mirrors how a champion solves: see the trigger (R, R U2 R',
+        etc.) when it's close; or, if the trigger isn't yet in view,
+        apply a short setup chunk and look again.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         out = dr_pattern_lib.dr_pattern_lookup(sc, hist, axis=args["axis"])
         if out.get("found") == 1 and out.get("options") and out["options"][0]["moves"]:
             full_moves = out["options"][0]["moves"]
-            setup, trigger, trigger_name = dr_triggers.identify_trigger(full_moves)
-            out = {
-                "found": 1,
-                "axis": args["axis"],
-                "trigger_family": trigger_name,
-                "setup_moves": setup,
-                "trigger_moves": trigger,
-                "total_length": len(full_moves),
-                "note": (
-                    f"DR recognized: {trigger_name}. "
-                    f"{len(setup)}-move setup + {len(trigger)}-move trigger. "
-                    f"Apply setup_moves and trigger_moves as separate "
-                    f"apply_moves calls."
-                ),
-            }
+            if len(full_moves) <= MAX_HUMAN_RECALL:
+                setup, trigger, trigger_name = dr_triggers.identify_trigger(full_moves)
+                out = {
+                    "found": 1,
+                    "axis": args["axis"],
+                    "trigger_family": trigger_name,
+                    "setup_moves": setup,
+                    "trigger_moves": trigger,
+                    "total_length": len(full_moves),
+                    "note": (
+                        f"DR within visualization: {trigger_name}. "
+                        f"{len(setup)}-move setup + {len(trigger)}-move trigger."
+                    ),
+                }
+            else:
+                chunk = full_moves[:MAX_HUMAN_RECALL]
+                out = {
+                    "found": 0,
+                    "axis": args["axis"],
+                    "setup_progress": chunk,
+                    "full_optimal_length": len(full_moves),
+                    "note": (
+                        f"Trigger not yet in view — full optimal is "
+                        f"{len(full_moves)} moves, beyond your "
+                        f"{MAX_HUMAN_RECALL}-move visualization. You see "
+                        f"{len(chunk)} moves of useful setup. Apply them, "
+                        f"then re-query to see the trigger."
+                    ),
+                }
         budget.charge("dr_recognize", 3.0, slot=slot.name, axis=args["axis"])
         return out
 
     def _h_probe_dr_pattern(args):
-        """Run dr_recognize AS IF the given eo_alg were applied, WITHOUT
-        modifying the slot. Use to compare DR-library options across
-        candidate EOs by total length AND trigger family. Cost: 3s simulated.
+        """Estimate DR feasibility after a hypothetical EO. Reports the
+        TOTAL optimal DR length (for picking the best EO axis) and, if
+        within MAX_HUMAN_RECALL moves, the trigger family. Use to compare
+        EO options by DR total. Cost: 3s simulated.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -447,51 +459,22 @@ def _build_handlers(
         out = dr_pattern_lib.dr_pattern_lookup(sc, hypothetical_hist, axis=args["axis"])
         if out.get("found") == 1 and out.get("options") and out["options"][0]["moves"]:
             full_moves = out["options"][0]["moves"]
-            setup, trigger, trigger_name = dr_triggers.identify_trigger(full_moves)
-            out = {
+            res = {
                 "found": 1,
                 "axis": args["axis"],
-                "trigger_family": trigger_name,
-                "setup_length": len(setup),
-                "trigger_length": len(trigger),
-                "total_length": len(full_moves),
+                "total_dr_length": len(full_moves),
+                "within_visualization": len(full_moves) <= MAX_HUMAN_RECALL,
             }
+            if len(full_moves) <= MAX_HUMAN_RECALL:
+                _, _, trigger_name = dr_triggers.identify_trigger(full_moves)
+                res["trigger_family"] = trigger_name
+            out = res
         out["probed_with_eo"] = list(args["eo_alg"])
         budget.charge("probe_dr_pattern", 3.0, slot=slot.name, axis=args["axis"])
         return out
 
-    def _h_find_dr_via_trigger(args):
-        slot = _resolve_slot(slots, args["slot"])
-        sc, hist = _materialize(scramble, slot)
-        out = search.find_dr_via_trigger(
-            sc, hist,
-            axis=args["axis"],
-            tail_length=dr_trigger_tail,
-            setup_width=dr_trigger_setup_width,
-            setup_depth=dr_trigger_setup_depth,
-        )
-        out = _truncate_dr_options(out)
-        budget.charge("find_dr_via_trigger", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
-        return out
-
-    def _h_probe_dr(args):
-        """Run find_dr_via_trigger as if `eo_alg` were appended to history,
-        WITHOUT modifying the slot. Lets the agent compare DR feasibility
-        across candidate EOs before committing to one."""
-        slot = _resolve_slot(slots, args["slot"])
-        sc, hist = _materialize(scramble, slot)
-        hypothetical_hist = list(hist) + list(args["eo_alg"])
-        out = search.find_dr_via_trigger(
-            sc, hypothetical_hist,
-            axis=args["axis"],
-            tail_length=dr_trigger_tail,
-            setup_width=dr_trigger_setup_width,
-            setup_depth=dr_trigger_setup_depth,
-        )
-        out = _truncate_dr_options(out)
-        out["probed_with_eo"] = list(args["eo_alg"])
-        budget.charge("probe_dr_after_eo", _COST_DR_TRIGGER, slot=slot.name, axis=args["axis"])
-        return out
+    # (Removed in v11: find_dr_via_trigger and probe_dr_after_eo — those were
+    # wide beam searches with width=32 not available to a human solver.)
 
     def _h_cancel(args):
         out = algebra.cancel(args["moves"])
@@ -647,16 +630,32 @@ def _build_handlers(
         phases = _compute_subset_phases(s, sc, hist, axis, cache_key)
         if phases is None:
             return {"error": "could not compute HTR phases."}
-        moves = phases["htr_moves"] if phase == "htr_reduction" else phases["finish_moves"]
+        full = phases["htr_moves"] if phase == "htr_reduction" else phases["finish_moves"]
         budget.charge("apply_htr_phase", 1.0, slot=slot.name, axis=axis, phase=phase)
+        if len(full) <= MAX_HUMAN_RECALL:
+            return {
+                "phase": phase,
+                "axis": axis,
+                "moves": list(full),
+                "length": len(full),
+                "partial": False,
+                "note": (
+                    f"{phase}: {len(full)} moves, fully in view. Apply with apply_moves."
+                    + (" (Already in HTR — empty phase.)" if not full else "")
+                ),
+            }
+        chunk = full[:MAX_HUMAN_RECALL]
         return {
             "phase": phase,
             "axis": axis,
-            "moves": list(moves),
-            "length": len(moves),
+            "moves": list(chunk),
+            "length": len(chunk),
+            "full_phase_length": len(full),
+            "partial": True,
             "note": (
-                f"{phase}: {len(moves)} moves. Apply with apply_moves."
-                + (" (Already in HTR — empty phase.)" if not moves else "")
+                f"{phase}: {len(full)} moves total, but only {len(chunk)} "
+                f"fit in your visualization. Apply this chunk, then re-query "
+                f"to see the next {MAX_HUMAN_RECALL} moves from the new state."
             ),
         }
 
@@ -691,13 +690,9 @@ def _build_handlers(
         "policy_intuition": _h_policy_intuition,
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
-        "lookahead_wide": _h_lookahead_wide,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
-        "find_eo_algorithmic": _h_find_eo_algorithmic,
         "dr_recognize": _h_dr_recognize,
         "probe_dr_pattern": _h_probe_dr_pattern,
-        "find_dr_via_trigger": _h_find_dr_via_trigger,
-        "probe_dr_after_eo": _h_probe_dr,
         "cancel": _h_cancel,
         "htr_subset": _h_htr_subset,
         "htr_classify": _h_htr_classify,
@@ -760,9 +755,11 @@ def _tool_schemas() -> list[dict]:
         {
             "name": "lookahead",
             "description": (
-                f"Bounded look-ahead from a slot (width={_SIM_LOOKAHEAD_WIDTH}, depth={_SIM_LOOKAHEAD_DEPTH}) — about what a human "
-                f"can visualize. ONLY for target=eo or target=solved. For DR use find_dr_via_trigger; "
-                f"for HTR/finish use htr_subset then lookup_subset_finish."
+                f"Policy-pruned visualization (depth={_SIM_LOOKAHEAD_DEPTH}, "
+                f"width={_SIM_LOOKAHEAD_WIDTH} — top-K candidates per node from "
+                f"the trained transformer). This is your 'see ahead in your head' "
+                f"tool: what looks closest to target within the {_SIM_LOOKAHEAD_DEPTH}-move "
+                f"horizon. Targets: 'eo' or 'solved'. Not a deep search — a human visualization."
             ),
             "input_schema": {
                 "type": "object",
@@ -777,12 +774,12 @@ def _tool_schemas() -> list[dict]:
         {
             "name": "eo_pattern_lookup",
             "description": (
-                "PRIMARY EO TOOL — recall a memorized EO sequence for the "
-                "current bad-edge-slot pattern. Like a human champion: "
-                "recognize the configuration, recall the fix. O(1) lookup. "
-                "Covers all 6144 reachable EO patterns across the 3 axes. "
-                "Always try this first; if it misses (shouldn't), fall back "
-                "to find_eo_algorithmic. Cost: 3s simulated."
+                "Recognize a memorized EO pattern on `axis`. Returns at most "
+                f"{MAX_HUMAN_RECALL} moves per call (your visualization limit). "
+                "If the optimal full EO is ≤4 moves you see the full sequence; "
+                "otherwise you see the first 4 moves of progress. Apply them, "
+                "then re-query from the new state to see the next chunk. "
+                "Cost: 3s simulated."
             ),
             "input_schema": {
                 "type": "object",
@@ -791,43 +788,6 @@ def _tool_schemas() -> list[dict]:
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                 },
                 "required": ["slot", "axis"],
-            },
-        },
-        {
-            "name": "find_eo_algorithmic",
-            "description": (
-                "Plain BFS for short EO sequences on `axis`. No policy ranking. "
-                "Mirrors a human methodically trying setups when intuition fails. "
-                "Expensive simulated cost (60s — 'I'm really thinking now'). "
-                "Use when normal lookahead returns found=0 across all axes. "
-                "Returns up to 5 shortest sequences."
-            ),
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "slot": _SLOT,
-                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
-                    "max_depth": {"type": "integer", "minimum": 1, "maximum": 7, "default": 6},
-                },
-                "required": ["slot", "axis"],
-            },
-        },
-        {
-            "name": "lookahead_wide",
-            "description": (
-                "Wider, slower lookahead (width=30 depth=6) at 4x normal "
-                "sim cost. Use when normal lookahead returns found=0 across "
-                "all axes — mirrors a human really studying the cube when "
-                "intuition is coming up empty."
-            ),
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "slot": _SLOT,
-                    "target": {"type": "string", "enum": ["eo", "solved"]},
-                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
-                },
-                "required": ["slot", "target"],
             },
         },
         {
@@ -871,31 +831,9 @@ def _tool_schemas() -> list[dict]:
             },
         },
         {
-            "name": "find_dr_via_trigger",
-            "description": f"Trigger-then-tail DR search (setup_width={_SIM_DR_TRIGGER_SETUP_WIDTH}, setup_depth={_SIM_DR_TRIGGER_SETUP_DEPTH}). EO on `axis` must already be solved in the slot. Use as FALLBACK if dr_pattern_lookup misses.",
-            "input_schema": {"type": "object", "properties": {"slot": _SLOT, "axis": {"type": "string", "enum": ["UD", "FB", "RL"]}}, "required": ["slot", "axis"]},
-        },
-        {
             "name": "cancel",
             "description": "Apply local move cancellation (same-face merge, through-axis-commute). Mechanical, cheap. Use just before submitting to collapse the final solution.",
             "input_schema": {"type": "object", "properties": {"moves": _MOVE_LIST}, "required": ["moves"]},
-        },
-        {
-            "name": "probe_dr_after_eo",
-            "description": (
-                "Run find_dr_via_trigger AS IF the given eo_alg were appended to the slot's history, "
-                "WITHOUT actually modifying the slot. Use this to compare DR feasibility across "
-                "candidate EOs before committing. Same simulated cost as find_dr_via_trigger."
-            ),
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "slot": _SLOT,
-                    "eo_alg": {**_MOVE_LIST, "description": "Hypothetical EO moves to test."},
-                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
-                },
-                "required": ["slot", "eo_alg", "axis"],
-            },
         },
         {
             "name": "htr_subset",
@@ -1109,45 +1047,89 @@ RZP, JZP, JEO, ARM, AR-XcYe, DRM, "trigger" (R, RU2R', RUR'), 4c4e/3c2e/4c2e, "4
 JSON form (always pass this to verify_solved, never retype the scramble):
   scramble = {scramble_json}
 
-# Pipeline (the realistic version)
-1. **EO scan** — call eo_pattern_lookup(axis=X) for ALL THREE axes
-   (UD, FB, RL). This is the PRIMARY EO tool: recognizes the bad-edge-
-   slot pattern and recalls the memorized optimal EO sequence. Like a
-   human champion who has seen every configuration before. O(1) lookup,
-   3s simulated each. Covers 6144 EO patterns (all reachable ones).
-   You will get HITS on every axis with `found=1` and an optimal-length
-   `moves` sequence. Pick the axis with shortest len(moves) — that's
-   your candidate EO. (Fallbacks: if for some reason eo_pattern_lookup
-   misses, use lookahead then find_eo_algorithmic. Should never happen.)
-2. **DR probe BEFORE committing to EO** — call probe_dr_pattern for
-   each candidate EO. Returns trigger_family (e.g., "X-U2-X' (DR-4c4e)")
-   plus setup/trigger lengths and total. Pick the EO whose probe returns
-   the shortest joint EO + DR_total. Don't just compare totals — note
-   the trigger family for each axis; you'll narrate it in step 4.
-3. **Commit EO**: apply_moves with the chosen axis's EO sequence.
-4. **DR (two-step, narrated)**:
-   a) dr_recognize(axis=X) — returns trigger_family, setup_moves,
-      trigger_moves. NARRATE what you see: "this is a 2-move setup
-      into the X-U2-X' trigger (DR-4c4e)."
-   b) apply_moves(setup_moves) — commit the setup ONLY. Narrate why.
-   c) apply_moves(trigger_moves) — commit the trigger. Narrate it by
-      name: "Applying the R-U2-R' trigger now to reach DR."
-   The point: read the recognized pieces, NAME them, commit them
-   separately. Do NOT collapse setup+trigger into one apply_moves.
-5. **HTR (three-step, narrated)**:
-   a) htr_classify(slot='main', axis=X) — returns the subset name
-      ("4-swap axial", "2-swap 2-cycle", etc.), structural features,
-      and the lengths of the two finish phases. NARRATE the subset:
-      "This is the 4-swap axial subset, cycle structure (4,2,2);
-      htr_reduction is 9 moves, finish is 13 moves."
-   b) apply_htr_phase(phase='htr_reduction') then apply_moves(moves) —
-      commit the corner-reduction. Narrate what it's doing.
-   c) apply_htr_phase(phase='finish') then apply_moves(moves) — commit
-      the half-turn-only finish. Narrate it.
-   This is recognition + composition — exactly how a champion talks
-   through their solve. Do NOT call lookahead(target='htr') or any
-   DR-search after DR is reached.
-6. cancel(moves=full_solution) + verify_solved.
+# Human Tools (v11 — strict constraints)
+You are NOT a brute-force search engine. You have a HUMAN solver's tools:
+
+- **Vision**: inspect_state shows the cube and per-axis bad-edge counts.
+- **Trained intuition** (transformer policy): policy_intuition returns
+  top-K candidate moves. This is your "gut feeling" — the same kind of
+  trained pattern recognition a champion has after years of practice.
+- **Visualization** (depth 4): lookahead does policy-pruned beam search
+  to depth {MAX_HUMAN_RECALL}, width K. This is what a human can hold
+  in their head — 3-4 moves of mental visualization, not a deep search.
+- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_recognize,
+  apply_htr_phase return AT MOST {MAX_HUMAN_RECALL} moves per call. If
+  the optimal solution is longer, you see only the first 4 moves of
+  progress toward it. APPLY THEM, then RE-QUERY from the new state to
+  see the next chunk. This is the real human workflow: a champion sees
+  "OK these 3 moves get me much closer", commits, re-evaluates.
+- **What you DON'T have**: no wide BFS, no deep search, no oracle that
+  spits out the full solution. You compose by iterating.
+
+Your job is to narrate the FMC theory and reasoning as you go. The
+transcript is the product. Show your work.
+
+# Pipeline (the realistic-human version)
+
+1. **Inspect + EO scan**:
+   a) inspect_state(main).
+   b) For each axis (UD, FB, RL): eo_pattern_lookup(axis=X). You get
+      EITHER a full ≤4-move EO sequence, OR the first 4 moves of a
+      longer optimal path (with `partial: true`).
+   c) Pick the axis with shortest full_optimal_length (visible from
+      either the `length` field or the `full_optimal_length` field if
+      partial). Briefly EXPLAIN why this axis: relate bad-edge count,
+      slot positions, and FMC theory ("UD has 4 bad edges all on F,
+      classic 1-mover" or "FB has 2 bad edges on perpendicular faces,
+      ~3 moves").
+
+2. **Commit EO incrementally**:
+   - If the lookup returned the full sequence (≤4 moves): apply_moves
+     the whole thing in one call. Narrate the move purpose.
+   - If partial: apply_moves the visible chunk, narrate "this gets me
+     closer to EO on FB", then re-query eo_pattern_lookup(axis=X) on
+     the new state. Repeat until found=1 with no partial flag.
+
+3. **DR feasibility probe (before each EO axis decision is final)**:
+   For each plausible EO candidate, call probe_dr_pattern. It reports
+   total_dr_length and trigger_family (if within visualization). USE
+   this to pick the joint-shortest EO+DR axis. Note: total_dr_length
+   may be 5-10 moves — even though you can only SEE 4 moves at a time,
+   you know the TOTAL.
+
+4. **DR compose**:
+   a) dr_recognize(axis=X). If `found=1` with trigger_family: the DR is
+      within your visualization. Apply setup_moves and trigger_moves as
+      SEPARATE apply_moves calls, NARRATING the trigger family by name
+      ("R-U2-R' DR-4c4e — applying the setup, then the trigger").
+   b) If `found=0` with `setup_progress`: trigger isn't in view yet.
+      Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration
+      ("applying 4 moves of setup toward DR — let me re-look"), then
+      dr_recognize again on the new state.
+
+5. **HTR classify + phase compose**:
+   a) htr_classify(axis=X). Narrate the subset by name: "this is a
+      4-swap axial subset with cycle structure (2,2,2,2)."
+   b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the
+      reduction is longer than 4 moves; apply the visible chunk,
+      narrate ("4 moves of corner orbit reduction"), then re-query.
+      Loop until partial:false.
+   c) Same for apply_htr_phase(phase='finish'). Narrate: "applying
+      the half-turn-only finish in chunks of 4."
+
+6. **cancel + verify_solved**. Narrate the cancellations you spot.
+
+# Reasoning style — the deliverable
+
+Before EACH tool call, narrate in 2-4 sentences:
+- What you SEE (state of cube, what's left, what theory applies).
+- What you EXPECT to happen (which moves should help and why).
+- WHY this tool is the right next step.
+
+The whole transcript is the video. Verbalize FMC vocabulary: "bad
+edges on UF and DB share the F flipping face", "RZP setup of 2 moves
+into the R-U2-R' DR-4c4e trigger", "this is a 4-swap axial subset —
+3-cycle finish with one extra pair". This is the texture viewers want.
 
 # Strategy notes
 

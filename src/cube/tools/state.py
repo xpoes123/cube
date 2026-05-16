@@ -43,6 +43,40 @@ def _bad_edge_slots(state, axis: Axis) -> list[str]:
     return [EDGE_NAMES[i] for i, v in enumerate(arr) if v]
 
 
+# Which slots sit on each face (used to organize bad edges by face).
+# An edge sits on a face iff its name contains that face letter.
+_FACE_SLOTS: dict[str, list[str]] = {
+    "U": ["UR", "UF", "UL", "UB"],
+    "D": ["DR", "DF", "DL", "DB"],
+    "F": ["UF", "DF", "FR", "FL"],
+    "B": ["UB", "DB", "BL", "BR"],
+    "R": ["UR", "DR", "FR", "BR"],
+    "L": ["UL", "DL", "FL", "BL"],
+}
+
+# Which faces flip EO when turned a QUARTER, per axis. Quoting from
+# the EO theory: UD-EO is flipped by F/B quarters, FB-EO by L/R, RL-EO by U/D.
+_FLIPPING_FACES_PER_AXIS: dict[str, list[str]] = {
+    "UD": ["F", "B"],
+    "FB": ["L", "R"],
+    "RL": ["U", "D"],
+}
+
+
+def _bad_edges_by_flipping_face(
+    bad_slots: list[str], axis: Axis,
+) -> dict[str, list[str]]:
+    """For the EO axis's flipping faces, list which bad edges sit on each.
+    A quarter turn of that face flips exactly its 4 edges; the bad edges
+    among them tell the agent which face turns help vs. hurt."""
+    out: dict[str, list[str]] = {}
+    bad_set = set(bad_slots)
+    for face in _FLIPPING_FACES_PER_AXIS[axis.value]:
+        on_face = [s for s in _FACE_SLOTS[face] if s in bad_set]
+        out[face] = on_face
+    return out
+
+
 def inspect_state(scramble: list[str], history: list[str]) -> dict:
     """Classify the current cube state. The agent's primary 'look at the cube' tool.
 
@@ -61,9 +95,19 @@ def inspect_state(scramble: list[str], history: list[str]) -> dict:
     s = _state_after(scramble, history)
     eo_axes = [a for a in Axis if is_eo_solved(s, a)]
     dr_axes = [a for a in Axis if is_dr(s, a)]
+    bad_slots = {a.value: _bad_edge_slots(s, a) for a in Axis}
+    # For each EO axis, group its bad edges by the flipping face that would
+    # affect them. This lets the LLM SEE "F has 3 bad edges on UD-axis, so F
+    # quarter-turn fixes 3 (and breaks 1)" directly from the output, instead
+    # of having to mentally map slot names → faces.
+    bad_by_face = {
+        ax.value: _bad_edges_by_flipping_face(bad_slots[ax.value], ax)
+        for ax in Axis
+    }
     return {
         "bad_edges_per_axis": {a.value: eo_count(s, a) for a in Axis},
-        "bad_edge_slots_per_axis": {a.value: _bad_edge_slots(s, a) for a in Axis},
+        "bad_edge_slots_per_axis": bad_slots,
+        "bad_edges_by_flipping_face": bad_by_face,
         "bad_corners_per_axis": {a.value: co_count(s, a) for a in Axis},
         "eo_solved_axes": [a.value for a in eo_axes],
         "dr_solved_axes": [a.value for a in dr_axes],
