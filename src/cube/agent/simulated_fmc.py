@@ -1425,6 +1425,53 @@ You are NOT a brute-force search engine. You have a HUMAN solver's tools:
 Your job is to narrate the FMC theory and reasoning as you go. The
 transcript is the product. Show your work.
 
+# Elite-solver exemplars (v21 — read these before scouting)
+
+Three condensed reasoning patterns from elite WCA-FMC champions. They
+illustrate the *texture* of the solve narration you should imitate.
+Match the voice: tool calls + terse rationale + explicit rejection of
+inferior branches.
+
+### Exemplar A — Multi-side EO scouting before committing
+> Scramble loaded. niss_scout returns the 12-row joint table. UD-normal
+> top row: EO 4mv + DR-4C4E expected_total 18. But inverse-FB row 2 has
+> EO 5mv + DR-3C2E expected_total 17 (better HTR substate). Picking the
+> inverse branch: cost saved is 1 expected move, more importantly the
+> 3C2E substate finishes in ~5 vs ~9 for 4C4E. niss_flip, then apply EO
+> on the inverse frame. I did NOT take the row that gave a "free pseudo-
+> slot" — EO blocks are a trap, they constrain DR axis choice. Keep EO
+> clean, let DR do the structural work.
+
+### Exemplar B — Picking the longer DR for a cleaner substate
+> Post-EO on the inverse-FB axis. dr_trigger_options(axis='FB') returns
+> three candidates:
+> - DR-4C4E (U): 1mv setup, expected_total 11. Tempting but the
+>   substate is the worst case.
+> - DR-3C2E (U F U'): 3mv setup, expected_total 9 — 2 moves CHEAPER
+>   net despite 2 extra DR-setup moves.
+> - DR-2C4E (U L2 U): 3mv setup, expected_total 10.
+> Taking DR-3C2E. Length of DR is a red herring; what matters is
+> dr_moves + htr_moves + finish_moves, and the 3C2E substate is worth
+> ~3 moves of credit against any longer-DR comparison. A 4C2E DR
+> substate at zero-setup-to-HTR is similarly worth that credit.
+
+### Exemplar C — Branch journal with explicit rejection rationale
+> Logging branches as I scout.
+> **Branch 1 — UD axis DR (Branch I'm bookmarking):** dr_trigger_options
+> finds a 4-move setup to RZP, then a 3-move trigger gives DR in 11
+> total. Substate: 1 quarter-turn corner. HTR estimate 5 moves. Finish
+> leaves 2e2e (potential 1-move insertion via replace_and_shorten).
+> Projected total: 20-21. **Bookmarking.**
+> **Branch 2 — RL axis DR (scouted from same EO):** holding Branch 1
+> aside. dr_trigger_options(axis='RL') returns nothing under 7 moves —
+> corner orientation is wrong-parity for this axis. **Reject:** 7+ move
+> DR with a bad substate dominates Branch 1.
+> **Branch 3 — FB axis DR:** would require redoing EO from scratch.
+> **Reject** without scouting; the cost of re-EO is not recoverable.
+> Committing to Branch 1. **Lesson:** when a branch is rejected, write
+> *why* (parity, length, substate quality), not just "it lost." This
+> is the elite-FMC compare-before-commit pattern.
+
 # Branch journal (v14b, elite-solver behavior)
 
 Elite solvers literally log their rejected branches: "tried 4b2 on FB,

@@ -34,16 +34,18 @@ def _apply(scramble: list[str], history: list[str]) -> State:
     return s
 
 
-def _eo_then_dr(scramble: list[str], history: list[str], *, axis: str) -> dict:
-    """Return EO length + best DR option for one (side, axis) cell.
+def _eo_then_dr(
+    scramble: list[str], history: list[str], *, axis: str, dr_per_cell: int = 2
+) -> list[dict]:
+    """Return EO length + top-N DR options for one (side, axis) cell.
 
-    Returns dict with: eo_length, eo_moves, dr_option (best entry from
-    dr_trigger_options or None), expected_total_to_solved, jzp_eligible,
-    notes if any step failed.
+    Returns a list of dicts (one per DR option, up to dr_per_cell). v22:
+    surface multiple DR candidates per (side, axis) so the agent can
+    compare JOINT paths, not just (side, axis) winners.
     """
     eo = eo_pattern_lookup(scramble, history, axis=axis)
     if eo.get("found", 0) == 0:
-        return {
+        return [{
             "axis": axis,
             "eo_length": None,
             "eo_moves": [],
@@ -51,51 +53,52 @@ def _eo_then_dr(scramble: list[str], history: list[str], *, axis: str) -> dict:
             "expected_total_to_solved": None,
             "jzp_eligible": False,
             "note": "EO pattern not memorized for this axis",
-        }
+        }]
     eo_moves = list(eo["options"][0]["moves"])
     eo_len = len(eo_moves)
 
-    # Simulate applying EO and see what DR options open up. We pass
-    # eo_moves as an extension of history to dr_trigger_options.
     extended_history = list(history) + eo_moves
     dr = dr_trigger_options(scramble, extended_history, axis=axis, max_setup=5)
     if "error" in dr or not dr.get("options"):
-        return {
+        return [{
             "axis": axis,
             "eo_length": eo_len,
             "eo_moves": eo_moves,
             "dr_option": None,
-            "expected_total_to_solved": eo_len + 99,  # large sentinel so it sorts last
+            "expected_total_to_solved": eo_len + 99,
             "jzp_eligible": False,
             "note": dr.get("error", "no DR triggers within max_setup=5"),
-        }
-    best = dr["options"][0]
-    return {
-        "axis": axis,
-        "eo_length": eo_len,
-        "eo_moves": eo_moves,
-        "dr_option": {
-            "trigger_family": best["trigger_family"],
-            "setup_length": best["setup_length"],
-            "trigger_length": best["trigger_length"],
-            "total_to_dr": best["total_to_dr"],
-            "expected_htr_moves": best["expected_htr_moves"],
-        },
-        "expected_total_to_solved": eo_len + best["expected_total_to_solved"],
-        "jzp_eligible": best["jzp_eligible"],
-        "note": (
-            f"EO {eo_len}mv + {best['trigger_family']} "
-            f"(DR {best['total_to_dr']}mv) -> expected ~{eo_len + best['expected_total_to_solved']} total"
-        ),
-    }
+        }]
+    rows = []
+    for opt in dr["options"][:dr_per_cell]:
+        rows.append({
+            "axis": axis,
+            "eo_length": eo_len,
+            "eo_moves": eo_moves,
+            "dr_option": {
+                "trigger_family": opt["trigger_family"],
+                "setup_length": opt["setup_length"],
+                "trigger_length": opt["trigger_length"],
+                "total_to_dr": opt["total_to_dr"],
+                "expected_htr_moves": opt["expected_htr_moves"],
+            },
+            "expected_total_to_solved": eo_len + opt["expected_total_to_solved"],
+            "jzp_eligible": opt["jzp_eligible"],
+            "note": (
+                f"EO {eo_len}mv + {opt['trigger_family']} "
+                f"(DR {opt['total_to_dr']}mv) -> expected ~{eo_len + opt['expected_total_to_solved']} total"
+            ),
+        })
+    return rows
 
 
-def niss_scout(scramble: list[str], history: list[str]) -> dict:
-    """Scout EO + DR feasibility on both normal AND inverse, all 3 axes.
+def niss_scout(scramble: list[str], history: list[str], *, dr_per_cell: int = 2) -> dict:
+    """Scout EO + top-N DR options on both normal AND inverse, all 3 axes.
 
-    Returns a comparison table of 6 rows (side × axis), each with EO
-    length, best DR option, and expected_total_to_solved. The agent
-    reads this menu and commits to the lowest-expected_total row.
+    v22: returns up to 12 rows (2 sides × 3 axes × dr_per_cell DR options).
+    Surfaces the JOINT EO+DR comparison: a 4-move EO with a great DR
+    substate can beat a 2-move EO with a worse DR substate. The agent
+    reads the menu and picks the lowest-expected_total row.
 
     Read-only: does NOT modify any slot. The agent must still call
     niss_flip + apply_moves separately to commit to a row.
@@ -110,18 +113,18 @@ def niss_scout(scramble: list[str], history: list[str]) -> dict:
 
     # Normal side: use current scramble + history as-is.
     for axis in _AXES:
-        cell = _eo_then_dr(scramble, history, axis=axis)
-        cell["side"] = "normal"
-        rows.append(cell)
+        for cell in _eo_then_dr(scramble, history, axis=axis, dr_per_cell=dr_per_cell):
+            cell["side"] = "normal"
+            rows.append(cell)
 
     # Inverse side: invert the scramble; history is reset (mid-solve
     # scouting is not the use case for this tool).
     inv_moves = invert_alg(parse_alg(" ".join(scramble))) if scramble else []
     inv_scramble = [str(m) for m in inv_moves]
     for axis in _AXES:
-        cell = _eo_then_dr(inv_scramble, [], axis=axis)
-        cell["side"] = "inverse"
-        rows.append(cell)
+        for cell in _eo_then_dr(inv_scramble, [], axis=axis, dr_per_cell=dr_per_cell):
+            cell["side"] = "inverse"
+            rows.append(cell)
 
     # Sort by expected_total_to_solved. Rows that couldn't compute a DR
     # option get a large sentinel and sort last.
@@ -143,8 +146,11 @@ def niss_scout(scramble: list[str], history: list[str]) -> dict:
             else None
         ),
         "note": (
-            "Six-row scout (normal × {UD,FB,RL}, inverse × {UD,FB,RL}). "
-            "Pick the recommendation OR override with rationale. "
+            "v22 joint scout: up to 12 rows (2 sides × 3 axes × top-N DR triggers). "
+            "Surfaces the COMPLETE EO+DR joint comparison. A longer EO with a better "
+            "DR substate often beats a shorter EO with a 4C4E DR. "
+            "Pick the recommendation OR override with rationale (write the rejection "
+            "reasoning per [[exemplar-c-branch-journal]]). "
             "If you take the inverse side, call niss_flip BEFORE applying "
             "the EO moves; otherwise apply them on normal."
         ),
