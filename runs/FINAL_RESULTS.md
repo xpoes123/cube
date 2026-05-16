@@ -1,8 +1,20 @@
-# Final results — v8 corpus eval
+# Final results — v9 corpus eval
 
 The headline experiment after a full day of iteration.
 
 ## TL;DR
+
+**v9 (EO library + DR library, recall-not-search): 10/10 SOLVED, avg
+29.9 moves, $0.65 total.**
+
+Every scramble that had never solved in v1-v8 (scramble1, random1, 3, 4, 6)
+now solves cleanly in 16 tool calls. Avg gap to analyzer baseline on the
+4 hand-picked WCA scrambles: +1.0 move. The agent runs an end-to-end
+"champion-shaped" pipeline: EO library × 3 axes → DR probe × 3 → pick
+shortest joint EO+DR → DR library → HTR subset → memorized finish →
+cancel → ship.
+
+## v8 (previous headline)
 
 **v8 (EO pattern library, recall-not-search): 5/10 solved, scramble 3
 BEAT the analyzer baseline by 4 moves.**
@@ -28,7 +40,8 @@ remaining open work).
 | v5 (algorithmic EO) | + algorithmic EO theory | 1/4 | $7.74 |
 | v6 (mirror-aug + 10 scrambles) | + retrained policy | 1/10 | $14.85 |
 | v7 (BFS + cache) | + find_eo_algorithmic + prompt cache | 5/10 | $1.70 |
-| **v8 (EO library)** | + memorized EO patterns (6144) | **5/10** | **$1.42** |
+| v8 (EO library) | + memorized EO patterns (6144) | 5/10 | $1.42 |
+| **v9 (DR library)** | + memorized DR patterns (3.25M) | **10/10** | **$0.65** |
 
 **v7 vs v6**: 5× the solve rate at 1/9 the cost. The combination of
 the BFS escape hatch (algorithmic EO when policy fails) and prompt
