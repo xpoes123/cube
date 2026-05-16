@@ -1,0 +1,221 @@
+Hitchhiker’s Guide to FMC
+Yurii Riabov, March, 2024
+In this guide, I'll try to explain the iceberg that is the Fewest Moves Challenge - it's very easy to start, but no matter how deep you dig, there's always something new.
+I will describe step-by-step CFOP method (relatively easy to solve sub40), the blockbuilding method with insertions(relatively easy to reach 29-30 moves), and the dr+htr method(a method that top solvers use to solve in 21-22 moves), providing comments and resources. The main thing is to remember that practicing what you've learned is no less important than learning new techniques (just techniques, because there are few algorithms as you know them in fmc, and everything is based on techniques and their understanding)
+I'll mention some useful groups where you can get answers to your questions:
+https://discord.gg/cpF5ReAMJQ - discord server for fmc
+https://www.facebook.com/groups/1422080808012720/?ref=share - FB group on fmc
+1 The beginning
+What is a fmc?
+FMC stands for the Fewest Moves Challenge. According to the rules, you have an hour and up to 3 cubes to find and write down the most optimal solution to a certain state of the Rubik's Cube. You can solve using any method as long as your solution fits into 80 moves, so you can start without even learning anything new...
+CFOP
+Usually, people who start to be interested in FMC already know CFOP, at least partially, so I'll start here.
+CFOP is an absolutely normal method for solving for fewest moves, and until recently, the Ukrainian national record was set with a regular CFOP, with the addition of one technique, which we will come to later.
+I will not provide resources in this section, but I have a few recommendations.
+Firstly, try, and try a lot. You have a whole hour, make the most of it. Try solving from different colors, in different order of pairs, and by inserting them in different ways until you find something lucky, and even then, don't stop looking.
+Secondly, learn to write down solutions without rotations. At first it may seem unusual, but it is quite easy and convenient to memorize which color corresponds to which letter, and after a few sections it will become necessary. Without making rotations, you will not have problems like if you accidentally rotate while writing and do not know how to continue, do not see that the move is canceled, or even write the wrong rotation and get a DNF.
+2 Blockbuilding
+Blockbuilding
+The first and probably the easiest improvement that can be added to CFOP is the use of blocks. Instead of solving a cross and then pairs, you will solve a 2*2*1 "square", then add it to an edge and get a 2*2*2 block (a block like in x-cross without 2 cross elements solved), then a 2*2*3 adding another square to it (a block like in xx-cross without 1 cross element solved), and the last square to F2L-1, after which the solve can be finished as usual
+Resources:
+Block building - 3x3 Efficient Block Building Tutorial (FMC)
+Training - https://cubegrass.appspot.com/block_trainer/
+An extensive tutorial that will be useful for all topics up to the chapter on blockbuilding - Fewest Moves Complete Tutorial - Timestamps in Description for Every Topic (FMC)
+A large text tutorial that will also be useful for everything in this chapter - https://fmcsolves.cubing.net/fmc_tutorial_ENG.pdf
+EO
+Another relatively simple improvement would be to add eo - edge orientation. In short, there is a way to orient the edges of a cube at the beginning of the solve, so that in the case of a cfop solve, it can be completed without rotations and always with a cross OLL.
+Personally, I recommend always starting with eo up to 5 moves, and going through different ones until you get simple blocks, although I know that many people do quite well by doing it after blocks 222, 223, or even f2l-1.
+The main idea is that eo reduces the cube to a simpler position (an idea that will be expanded on in the next chapter on dr), and the cube in a solved state has edges oriented, so eo should be done anyway, consciously or unconsciously - and the sooner the better.
+When starting to learn dr i really recommend using the EO Trainer below in combination with full eo to study cases
+Resources:
+The ZZ method, of which eo is a part - 3x3 ZZ Method Speedsolving Tutorial (for CFOP Solvers)
+A tutorial on how to get a dr, of which eo is a part (we will return to this link) - https://www.speedsolving.com/threads/fmc-a-guide-for-finding-drs-domino-reduction-guide.87402/
+EO Trainer: https://ibbs620.github.io/eo-trainer/
+Advanced resources:
+Examples of eo - https://www.cuberoot.me/eo/
+More about EO in 4 moves - 4 move EO cases.pdf
+More about Eo with 6 bad edges - 6 bad edges, 5 move optimal cases
+More about EO with 8 bad edges - 8 bad edges, 5 move optimal cases
+Full sub6 eo - All 5 Move EO (and more)
+NISS
+NISS(which stands for “normal-inverse scramble switching) is basically a way to find the "beginning" and "end" of your final solution at the same time.
+Let the scramble be S
+Let's say you made some moves(let’s call them A)
+Then you can do A' S' and your solved pieces will remain solved, but the cube will be in a slightly different state
+Then you will do some moves(let’s call them B) after the inverted scramble
+After that, you can go back to the normal scramble by doing B' S A, and again to the inverse by doing A' S' B
+To get the final solution you just do A B'
+Doing A’ here means inverting all moves in A sequence, for example if A = R U R’ U’, then A’ = U R U’ R’, so doing A A’ will not change cube state as all moves cancel
+Resources:
+NISS - 3x3 Fewest Moves: Scramble Switch Tutorial (NISS) FMC
+Pseudo blocks - 3x3 Fewest Moves: FAKE Blocks (Pseudo Blocks) FMC
+Insertions
+The next improvement in block building is the use of insertions. After you have built a block of f2l-1 and eo, instead of doing f2l, oll, and pll, you solve... edges.
+If you have an eo and are lucky, just insert the last edge of the f2l so that the edges of the last layer are also solved. If you are unlucky and it is not possible to do this, try to create such a situation or solve f2l-1 in a different way.
+After f2l-1 and all the edges are solved, you only need to solve the corners, at most 5, and this is where the commutators come into play. You may have heard that commutators are what bld tops are using, and they are exactly that. "Pure" corner comms, that is, without an additional setup, take 8 moves, but the point is that the comm affects only 3 elements - 3 corners, so knowing which corners you need to solve, you can make the necessary comm at any time of solve, and the cube will be solved, so you can find a place where the comm will cancel some moves - undo or merge with the moves before and after it.
+After you have solved edges, you may have the following situations (c - corner, t - twisted)
+3c - 1 comm
+3s1t, 2s2s, 5s, 3s3s, 2t, 3t - 2 comms
+All other situations (4c1t, 3c2t, 4t, 5t, etc.) are solved in more than 2 comms, and therefore are not interesting in this context, and you need to find another solution for the edges.
+After that, use stickers or pencil markings on the matte cube to note the corner cycle(s), and solve them as efficiently as possible within the solve
+Resources:
+Commutators - Rubik's Cube: How Commutators Work!
+Inserts - 3x3 Fewest Moves: Skeletons & Insertions | FMC
+Insert finder - https://333.fm/if
+Insertion trainer - https://dgcubes.com/pages/extras/fmc/
+3 Domino Reduction
+Domino reduction
+Domino reduction, or simply dr, is a method of solving both world tops and scramble generators use. The idea of dr is not a gradual solving of elements, but a gradual "simplification" of the cube.
+The name comes from 3*3*2 cube, called domino cube, which can be solved only with the moves of U, D, R2, L2, F2, B2. This is the position to which the cube should be brought when solving with dr. It looks like this: the two opposite sides of the cube have only their colors, and the edges of the middle layer can be solved with double moves.
+The steps of bringing the cube to domino are the following: first, the eo is made, then in 0-3 moves the cube is brought, changing the orientation of the elements accordingly, to the so-called trigger - the position of the cube when a limited number of elements are not in the domino state, and then it is solved, leading to a standard trigger. The main triggers are R U/U' R' - DR-2E3C, R U2 R' - DR-2E4C, R - DR-4E4C. You can understand what these mean by making the appropriate moves and counting the elements of different types on the cube that do not correspond to the above state of the dr.
+To get a good dr, write down as many eo as possible, and go through them, trying to get to a trigger and then to a dr.
+The stage of changing number of misoriented pieces to match one of triggers is called RZP. It is worth looking for RZPs no longer than 6 moves, because otherwise it is quite difficult to get a short dr. That is, if you check the eo in 4 moves, then you should try to add 1-2 moves at this stage to change the number of oriented elements to one of the desired ones, not forgetting to check both axes.
+As for the use of niss when searching for dr, it is worth nissing at these stages:
+When searching for eo to find eo in 4, it is worth checking if there is an eo on the inverse in 3 moves using niss tracing if the side you are checking has a reduction to 4 bad edges in 1 move
+After an eo, it is worthwhile to make a switch only if there are several of them of the shortest length, for example, if there are only 2 3movers on the scramble, then it is worthwhile to switch after them
+After rzp in 5, or in 6 if it's a jzp or dr-2e3c
+Regarding the distribution of time between stages when solving in an hour:
+5-10 minutes: searching for and writing out eos
+Up to 30-35 minutes: checking eos and searching for DR
+Until the end of the solve: solving the best dr (this will take less time over time, so you will be able to choose a few of the best drs and work with them)
+In order to get comfortable with 4e4c trigger I highly recommend Tao Yu trainer in the resources below. You should set Domino Reduction and 1, 2 moves in checkboxes, then add 3 and so on as soon as you get solutions consistently
+My guide to DR: Hitchhiker’s Guide to DR
+Resources:
+How to get a dr (pay attention to niss eo) - https://www.speedsolving.com/threads/fmc-a-guide-for-finding-drs-domino-reduction-guide.87402/
+Video about dr - Domino Reduction Tutorial
+Nissy (a very useful tool for finding eo, dr, htr, and post-dr decisions) - Nissy (tronto.net)
+How to use NISSY - How to use NISSY for DR FMC analysis
+Mallard (another tool for finding solutions) - https://joba.me/mallard/
+CLI Mallard - https://github.com/Jobarion/cubelib/releases/latest
+Trigger training - https://torchlight.github.io/fmc/dr-trainer.html
+Nissy online (not available most of the time, but still) - https://cubingapp.com/nissy
+Useful algorithms for DR (pay special attention to edge switches) - DR algs with mnemonics
+SubX dr training - https://tao-yu.github.io/Alg-Trainer/
+Dr trigger setup training - https://evanbrown96.github.io/drm_doc/
+Statistics:
+Trigger statistics -DR moves + trigger stats
+The same with changing the last move - DR setup stats (switching last move)
+ARM/DRM stats - DRM/ARM average optimals
+ARM+Pairs stats - https://rodneykinney.github.io/DRM-ARM-stats/drm_trees/
+Advanced resources:
+Dr Theory - Domino Setup Theory
+A list of useful triggers in addition to the basic ones is available at https://www.cuberoot.me/dr-trigger/.
+Recommendations on advanced triggers from Jay- https://www.speedsolving.com/threads/fmc-advanced-guide-collection-of-tips-for-eo-dr.91676/
+List of all 5-move triggers - DR 5move triggers (in progress)
+Updated list of triggers - NEW - DR 5 MOVE TRIGGERS
+DR notes: Italian Mauro's notes on EO->DR
+Half turn reduction
+The next simplification of the cube after getting a dr is the htr, or Half Turn Reduction. As the name implies, this is the position of the cube when it can be solved only with double moves. If the cube is in the state of HTR, all the stickers are the same or opposite to the center of the side on which they are located, but this does not guarantee the presence of HTR. For example, N-perm and H-perm fall under this description, but the latter can be solved only by double moves (how is an exercise for the reader), and the former cannot.
+The idea of htr is that after getting a dr, there is a certain number of quarter turns (i.e. moves U, D', but not U2) left before you can solve the cube, and this number is from 0 to 5. In order to solve the htr, you must first determine how many qt you have after the dr, then reduce (or sometimes increase) this number to 1 or 2, and set up to one of the triggers R, R U2 R', R U2 F2 R.
+Here’s my guide for htr, but you should also check out other resources: Hitchhiker's Guide to HTR
+Resources:
+SCR video on htr, probably the best resource if you want to learn hyperparity - HTR (Half Turn Reduction) Tutorial for Fewest Moves Solving using Hyper Parity
+Jay’s article on htr - https://www.speedsolving.com/threads/fmc-a-guide-for-finding-htrs-once-youve-found-a-dr.87220/
+Overview tutorial of htr: HTR Tutorial for FMC
+The simplest method of corners, a table of all their possible positions (you don't need to learn all of them, just the basic ones simplify to them) - Corners in DR.pdf
+Advanced corner method, video about htr subsets - HTR subset recognition tutorial
+Table from Wen - HTR better smh (v2)
+Visualization of cases - HTR Corner Case Funnel
+Htr diagram - https://333.fm/tutorial/htr-diagram
+Htr trainer - https://speedcubedb.com/htr/
+DR Bounding - DR Bounding Tutorial
+Examples of solves:
+100 solves from Jack Love: 100 Example Solves (No worded explanation).pdf
+Explanation of Jay’s solves(1 part, others on the channel) - Road to WR 1/7 - First official mean with DR+HTR
+Full video of the Wen’s solve(other solves on the channel)- 20 fmc single
+Video of Radek's solves - https://www.youtube.com/channel/UC3AK9ETaWsUOrp5BnQRvI9Q
+Explanation of Cyprian's solves- FMC attempt with comments
+FMC League (a bunch of solves of top people of the same scrambles) - FMC League 2023
+FMC League Season 2 Tier 2 - [TIER 2] FMC League - Season 2 (2024)
+FMC League Season 2 Tier 1 - [TIER 1] FMC League - Season 2 (2024)
+FMC Team League - FMCTL
+FMC League Season 3 - FMCL S3
+FMC League Season 4 - FMCL S4
+FMC League Season 5 - FMCL S5
+Official sub22 means - Sub 22 Official Mean Stats
+Contests:
+FB group mentioned on the first page of the guide hosts weekly contest
+333.fm has both Weekly competition and Endless challenge which are great for practice
+https://www.speedsolving.com/ has a weekly mo3
+cubers.io has a weekly mo3
+https://www.fewest-moves.info/ has a weekly bo1 and monthly mo3
+https://sportcubing.in.ua/ has weekly bo1
+Statistics:
+Statistics for all subsets with edges -HTR Subset Stats
+Statistics on the number of qt - DR Finish Move Counts
+Rough htr paths probabilities for each subset - allcases
+Advanced resources:
+Expert Corner Method (document in description) - Using Hyper-Parity To Solve Corners In Domino Reduction
+Corner swaps for edge solution(document in the description) - Corner Swap Insertions
+4b2 4e trigger setups - 4b2 + 4e Cases
+Advanced HTR theory from the author of hyperparity (document in the description) - HTR Theory
+DR flipping - DR Flipping
+Variation hell recommendation: variation hell better smh
+Htr paths distribution: allcases
+After htr
+So, you've done the hardest part - you've reached the htr, but what do you do after that? Any cube position can be solved in 14 moves or less from htr, so the easiest answer is to find a direct solution by trying a lot of things.
+The easiest way to do this is to solve the corners and as many edges as possible, and then use the known edge comms.
+A more advanced way is to do what we did before, namely to make another simplification of the cube. It is called Floppy Reduction from the floppy cube - a 1*3*3 cube that is solved by the moves R2, L2, F2, B2. Not many of top solvers use FR, but it might be a very useful, although not as ultimate as HTR, technique for solving after htr, if you combine it with just building blocks. That is, along the axis that was the axis of our dr, you need to make such a reduction, and then solve the domino layers, ignoring the edges of the middle layer (next section)
+My general thoughts on usage of fr:
+If corner columns are already solved it's usually bad unless something like U2 R2 F2 R2 U2, with first move cancelling with last qt
+If it's 2e fr is pretty bad unless something like R2 U2 R2 U2 works but then you'll see with blocks if it's something short
+If it's 4 edges then count parity. If it's even try R S2 U2 R or for R F2 U2 L just switch to R B2 D2 R - that changes parity
+If edges are R2 L2 U2 from solved then it's only good when corners are U2 from columns, otherwise it's 5 moves to fr with something like R2 F2 L2 F2 U2
+If 4 edges are R2 F2 U2 from solved then you are good unless corners are U2 from columns or already columns, if corners are R2 U2 then you do F2 R2 U2, if F2 U2 then R2 F2 U2. Also changing last qt to opposite fixes parity so for this case it doesn't really matter
+If edges are R2 U2 from solved you are good when columns are R2 U2 away or U2 away, then solution is F2 R2 F2 U2
+Resources:
+Video about edge insertion after htr - Advanced Edge Insertion Tutorial [FMC DR/HTR]
+Floppy reduction document - Floppy Reduction
+Floppy reduction video - HTR to FR: Using Floppy Reduction to find optimal half-turn solutions
+Double slice reduction - HTR -> double slice
+Slice insertions (Leave slice)
+And finally, after you have solved the domino layers and left the middle layer aside, you need to solve it. To do this, after getting the dr, insert the corresponding middle layer moves inside the solution, which affects only the slice to solve it (if the dr was on U/D, these will be E moves). There are 2 main approaches to do this. If you’re not scared of learning some more theory to do this systematically, i recommend looking at VR, otherwise use rniss as in “slice better smh” by wen
+Resources:
+Slice insertions from the author of hyperparity - Using rNISS to Find E-Slice Insertions
+Slice theory from Sebastiano Tronto- https://sebastiano.tronto.net/speedcubing/slice-theory/
+Slice solution tutorial by Tom Nelson - https://youtu.be/coJpRoFaoCs
+Slice cancellation finder - https://333.fm/sf
+Example of solving slice by Wen - slice better smh
+VR: VR TUTORIALVR videos: https://www.youtube.com/playlist?list=PL0DmWpJUeHN-o0OKYhDe7w8O6GahIvOtx
+And finally
+This is definitely not all there is to say about solving dr, some topics I didn't even touch on because I don't know much about them, but I think if you watch and practice what's in this guide, you can more or less learn how to solve. I realize that it all seems very complicated, so if you have any questions, please feel free to post them in the groups I mentioned at the beginning. Good luck with your solves, and I hope to see you at FMC competition!
+Other terms not mentioned:
+RZP - Refers to the step between EO and DR where you simplify to something like DR-4e4c
+(in Polish) ruch(y) zupełnie przypadkowy = (in English) completely random move(s)
+DRM - Another name for RZP. Means DR minus or "Doing Random Moves"
+QT - Quarter turns (used in discussions about corner cases for DR and HTR subsets). 4qt corners means your corners require 4 qt to be solved, excluding half turns.
+Double Slice Reduction - Leaving the DR slice and another slice, usually one that can cancel with a move on the other side of the scramble with niss
+ABx - AB stands for "All But". AB3c stands for all but 3 corners
+//x+y - When you see this in a recon it usually means x = DR length, y = Number of qt in corner solution. E.g. U F2 U R //9+3 is a 9 move DR with 3qt corners
+4x - A skeleton that is off by 4 centers
+Bonus chapter
+JEO
+Quote by Caprian:
+"I wrote something via DMs with
+JEO - EO of a part of it (moves only on normal/inverse) which consists of only <FBR2U2L2D2> moves
+I'll assume further that there are some moves on normal leading to JZP on the contrary
+It turns out that there is a JZP on inverse if and only if both R/L and U/D EOs on normal can be achieved with <UDRLF2B2> moves which gives us a nice rule to follow
+JEOs have some interesting properties
+The main one I was thinking of is the orientation of the corners
+Let's say we want to reject every EO without RZP in ≤5 moves
+Then, we can sometimes refuse to check the JEO without switching
+When doing <FBR2U2L2D2> moves, the orientation of some corners does not change
+If there is a white or yellow sticker on F or B face, it will be there after finishing a JEO
+That means: if there are 5 or more of them, it is guaranteed that there won't be a 5-move RZP on U/D
+We can use NISS recognition to quickly check it
+The only thing we should look at is the number of green and blue corner stickers on U and D faces
+However, we always take care of 2 DR axes at once (I/D and L/R)
+Here's the problem: if more than 4 stickers appear on U/D, less than 4 appear on R/L so it may be worth checking
+I haven't figured out what the best criteria is yet
+I think this is something that needs research (check all cases) and relying on some probability
+I hope that it can be useful
+We can also look at edges but it's a bit more complicated."
+JZP
+For JZP, the DR setup must be solvable without using quarter turns on the faces you're solving DR on
+so for 4e4c you could have B2 R2 U2 R but not R2 U' R
+the requirements are having no U/D corner stickers on R/L, no E slice edges in the M slice, and an even number of unoriented corners (for EO on F/B + DR on U/D)
+and the property that makes it useful is that having JZP on one axis of DR means there will be JZP on the other axis after switching, so even if you have 2c6e jzp on normal which is pretty bad, but it’s 4e4c on the other axis, consider switching even if it’s in 6, because solutions for jzp are considerably shorter on average than on average
+ARM
+ARM stands for Axial reduction(another name for jzp) minus, which means that this is a representation of how close rzp is to jzp. R U will be AR-2C1E on white top, and AR-0C0E on red top for example, because on U/D axis there is 1 edge that is on M layer and 2 corners facing outwards, while on R/L there are no such elements. If you learn statistics for arm, presented in dr stats resources and on the picture below(chance of sub7 dr), you’ll be able to switch much more smartly for your rzps. This is because ARM switches between axes after switch, so if you have DR-4E4C on U/D but it’s bad, and on the R/L you have AR-2C1E(DR-XCXE of the other axis doesn’t matter), you’ll know that after you switch you’ll have 34% chance of sub7 dr, because of ARM subset.
+To look for ARM on the other axis you don’t have to rotate and count pieces, it’s enough to count misoriented corner stickers that don’t have F/B color, for edges just look E layer and count misoriented edges there. So for example, afer U R U’ on white you have one corner with green color, and one with red color on top, and on yellow you have one corner with blue and one corner with orange, which means that you’ll have AR-2C on inverse(sum of red and orange corners count), and on E layer there is one misoriented edge(RB edge), so the whole case will be AR-1C1E on inverse
+The picture below has number of corners as rows, number of edges as columns, and the cells are chances of dr in sub7 with that arm case:

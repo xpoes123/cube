@@ -14,6 +14,12 @@ from cube.classifier.features import (
     is_dr,
     is_eo_solved,
 )
+from cube.classifier.dr_heuristics import (
+    dr_closeness_for_axis,
+    htr_closeness,
+    solved_corner_count,
+    solved_edge_count,
+)
 from cube.classifier.htr import is_htr, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED, State
@@ -104,6 +110,11 @@ def inspect_state(scramble: list[str], history: list[str]) -> dict:
         ax.value: _bad_edges_by_flipping_face(bad_slots[ax.value], ax)
         for ax in Axis
     }
+    # Closeness heuristics (the "champion's view"): counts and labels, not
+    # exact distances. The agent reads these and applies probabilistic FMC
+    # reasoning instead of being handed "DR is 7 moves away."
+    dr_closeness = {a.value: dr_closeness_for_axis(s, a) for a in Axis}
+    htr_close = htr_closeness(s) if dr_axes else None
     return {
         "bad_edges_per_axis": {a.value: eo_count(s, a) for a in Axis},
         "bad_edge_slots_per_axis": bad_slots,
@@ -111,6 +122,10 @@ def inspect_state(scramble: list[str], history: list[str]) -> dict:
         "bad_corners_per_axis": {a.value: co_count(s, a) for a in Axis},
         "eo_solved_axes": [a.value for a in eo_axes],
         "dr_solved_axes": [a.value for a in dr_axes],
+        "dr_closeness_per_axis": dr_closeness,
+        "htr_closeness": htr_close,
+        "solved_corners_count": solved_corner_count(s),
+        "solved_edges_count": solved_edge_count(s),
         "in_strict_htr": bool(is_htr(s)),
         "in_canonical_htr_ud": bool(is_htr_ud(s)),
         "is_solved": s == SOLVED,

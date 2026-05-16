@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, dr_pattern_lib, dr_triggers, eo_bfs, eo_pattern_lib, library, policy, search, state
+from cube.tools import algebra, dr_pattern_lib, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, library, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -399,6 +399,25 @@ def _build_handlers(
             )
         return out
 
+    def _h_dr_trigger_options(args):
+        """List named DR-trigger options from the current EO-solved state.
+
+        Returns a ranked menu of trigger families (DR-4C4E, DR-3C2E, etc.)
+        with their setup moves, total-to-DR, and JZP/pairs flags. The agent
+        picks by family preference and structural flags, not just by
+        shortest moves. Champion-shaped decision-making. UD axis only for
+        now; FB/RL fall back to dr_recognize.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = dr_to_mod.dr_trigger_options(
+            sc, hist,
+            axis=args.get("axis", "UD"),
+            max_setup=args.get("max_setup", 5),
+        )
+        budget.charge("dr_trigger_options", 8.0, slot=slot.name, axis=args.get("axis", "UD"))
+        return out
+
     def _h_dr_recognize(args):
         """Recognize the DR pattern. If the trigger is reachable within
         MAX_HUMAN_RECALL moves, return setup_moves + trigger_moves + named
@@ -691,6 +710,7 @@ def _build_handlers(
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
+        "dr_trigger_options": _h_dr_trigger_options,
         "dr_recognize": _h_dr_recognize,
         "probe_dr_pattern": _h_probe_dr_pattern,
         "cancel": _h_cancel,
@@ -786,6 +806,29 @@ def _tool_schemas() -> list[dict]:
                 "properties": {
                     "slot": _SLOT,
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "axis"],
+            },
+        },
+        {
+            "name": "dr_trigger_options",
+            "description": (
+                "List named DR-trigger options from the current EO-solved state "
+                "on the UD axis. Returns a ranked menu: each entry is a NAMED "
+                "trigger family (DR-4C4E 'R', DR-3C2E 'R U R'', DR-4C2E 'R U2 R'', "
+                "DR-7C8E 'R U L', etc.) with its setup_moves, total_to_dr, "
+                "jzp_eligible flag, and top_pairs_on_inverse count. Pick by "
+                "trigger family preference + structural flags (JZP cases lead "
+                "to shorter solves; pairs ≥ 2 signals NISS-switch candidate). "
+                "Use this BEFORE dr_recognize when on UD axis — it surfaces the "
+                "decision a champion makes. Cost: 8s simulated."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD"]},
+                    "max_setup": {"type": "integer", "minimum": 1, "maximum": 6, "default": 5},
                 },
                 "required": ["slot", "axis"],
             },
@@ -1047,6 +1090,35 @@ RZP, JZP, JEO, ARM, AR-XcYe, DRM, "trigger" (R, RU2R', RUR'), 4c4e/3c2e/4c2e, "4
 JSON form (always pass this to verify_solved, never retype the scramble):
   scramble = {scramble_json}
 
+# What you SEE in inspect_state (the champion's view)
+
+For each axis, inspect_state reports a `dr_closeness_per_axis` block:
+- `misoriented_corners` ("C") and `misplaced_slice_edges` ("E"): these are
+  the DR-XCYE label that champions recite. (4, 4) = DR-4C4E (R trigger),
+  (4, 2) = DR-4C2E (R U2 R'), (3, 2) = DR-3C2E (R U R' / R U' R'),
+  (7, 8) = DR-7C8E (R U L), etc.
+- `jzp_eligible` (UD only): boolean — a JZP state has dramatically shorter
+  DR; even normally-bad cases like 2C6E/4C6E become viable. JZP requires:
+  no U/D corner stickers on R/L, no E-slice edges in M-slice, even
+  unoriented corners. If JZP-eligible, lean toward this axis.
+- `top_pairs_on_inverse` (UD only): Wen's pairs-tracing count. 2+ pairs
+  preserved on inverse = strong NISS-switch signal.
+- `arm_other_axis`: distance from JZP on the OTHER axis after NISS.
+  Lower numbers predict better post-switch DR.
+
+For HTR (post-DR), `htr_closeness`:
+- `qt_corners` (0-5): primary HTR-distance signal. 0qt = already at HTR
+  corners; 4qt+ = expect longer finish.
+- `solved_corner_columns` (0-4): for floppy/slice-finish reasoning.
+
+# NISS-FIRST RULE
+
+After your initial EO scan, ALWAYS also check the inverse frame for each
+axis you might use. Use niss_flip + eo_pattern_lookup on the inverse to
+compare. If `top_pairs_on_inverse ≥ 2` OR EO is ≥1 move shorter on
+inverse, the inverse frame is the better solving direction. NISS is
+cheap (~5s); always check it.
+
 # Human Tools (v11 — strict constraints)
 You are NOT a brute-force search engine. You have a HUMAN solver's tools:
 
@@ -1097,15 +1169,19 @@ transcript is the product. Show your work.
    may be 5-10 moves — even though you can only SEE 4 moves at a time,
    you know the TOTAL.
 
-4. **DR compose**:
-   a) dr_recognize(axis=X). If `found=1` with trigger_family: the DR is
-      within your visualization. Apply setup_moves and trigger_moves as
-      SEPARATE apply_moves calls, NARRATING the trigger family by name
-      ("R-U2-R' DR-4c4e — applying the setup, then the trigger").
-   b) If `found=0` with `setup_progress`: trigger isn't in view yet.
-      Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration
-      ("applying 4 moves of setup toward DR — let me re-look"), then
-      dr_recognize again on the new state.
+4. **DR compose** (UD axis: use dr_trigger_options; other axes: dr_recognize):
+   a) For UD axis: dr_trigger_options(axis='UD') returns a ranked MENU of
+      named triggers (DR-4C4E, DR-3C2E, etc.). Read the menu, pick by
+      family preference and flags: JZP-eligible cases are gold;
+      top_pairs_on_inverse ≥ 2 signals a NISS-switch opportunity. Narrate
+      your pick by NAME ("I'll take the R-U2-R' DR-4C2E option because
+      it's JZP-eligible with a clean 3-move setup").
+   b) For FB/RL or as fallback: dr_recognize(axis=X). If `found=1` with
+      trigger_family: the DR is within your visualization. Apply
+      setup_moves and trigger_moves as SEPARATE apply_moves calls.
+   c) If `found=0` with `setup_progress`: trigger isn't in view yet.
+      Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration,
+      then dr_recognize again on the new state.
 
 5. **HTR classify + phase compose**:
    a) htr_classify(axis=X). Narrate the subset by name: "this is a

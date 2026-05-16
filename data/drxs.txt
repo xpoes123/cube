@@ -1,0 +1,893 @@
+
+Go to Drive
+
+DR-Xs
+
+DR-Xs
+By Janne Lehtimäki (@tseitsei89 on discord)
+
+Contents:
+What
+ is 
+this?...........................................................................................................................0
+Main method…..……………………………………………………………………………………..1
+Slice EO..……………………………………………………………………………………………1.1
+rzp-Xs...……………………………………………………………………………………………...1.2
+DR-2s………………………………………………………………………………………………...1.3
+DR-1s………………………………………………………………………………………………...1.4
+DR……….……………………………………………………………………………………………1.5
+Direct DR-2s -> DR…………………………………………………………………1.5.1
+HTR…………………………………………………………………………………………………...1.6
+Finish………………………………………………………………………………………………….1.7
+When is this good?......…….…………….………………………………………………………...2
+Movecount comparison…………………………………………………………………………….2.1
+Findability comparison………..……………………………………………………………………2.2
+My recommendations………………………………………………………………………………2.3
+Example solves……………………………………………………………………………………….3
+What else to try for DR-1s -> finish…………………….…………………………………………4
+Variation spamming………………………………………………………………………………...4.1
+HTR
+ - fake slice 
+(HTR-
+f1s).....................................................................................................4.2
+Random tips…………………………,……………………………………………………………….5
+-Xs prediction………………………………………………………………………………………..5.1
+EO altering rzp………………………………………………………………………………………5.2
+Slice insertion to change -Xs………………………………………………………………………5.3 
+
+DR-2s 8 flipped edges………………………………………………………………………………6
+How to get DR-2s 8fe………………………………………………………………………………6.1
+HTR-2s………………………………………………………………………………………………6.2
+Finish……………………………………………………………..…………………………………6.3
+Movecount and findability comparison……………………….………………………………….6.4
+My thoughts…………………………………………………………………………………………6.5
+
+What is this?
+
+This
+ is a way to find FMC solutions where we leverage many concepts from 
+DR/HTR but we leave some EO fixing until the very end of the solve. This
+ allows us to find solutions normal DR/HTR can not find. This method 
+will most likely NOT be good on all solves but on some scrambles it will
+ reach better results than normal DR/HTR meta. I will talk more about 
+when to use this later in chapter 2 of this doc. 
+
+This
+ method is mostly not developed by me but rather a community effort from
+ at least Jay, Rodney Kinney, and discord users: @trangium, @count 
+quackula, @KrzychXyz and most likely many more I don’t remember or even 
+know about.
+
+Also if you notice something wrong or weird or missing in this doc feel free to contact me on discord (@tseitsei89).
+
+NOTE:
+ in order to use this method you already need to be quite fluent with 
+normal DR/HTR since this method uses much of the same concepts but with 
+harder recognition at many points.
+
+1 Main method:
+
+1.1 Slice EO
+Instead
+ of doing full EO to begin with we only care about EO of pieces that 
+belong to a single slice. And we can either orient all of these pieces 
+OR misorient all of these pieces. As long as all of the 4 slice edges 
+have the same orientation it is good. On most scrambles there will be 
+0-1 move solutions for this since we have many different EOs we can try.
+ We can choose any slice (S, E, M) and look at orientation on any axis 
+(U/D, R/L, F/B) and we can orient or misorient.
+I do not recommend looking at > 1 move slice EOs in a real solve.
+
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+We have a slice EO skip here on normal for: 
+F/B E-slice (all oriented)
+F/B S-slice (all oriented
+and on inverse 
+F/B E-slice (all oriented)
+F/B M-slice (all oriented)
+U/D M-slice (all misoriented)
+And 1 move slice EO on R/L E-slice with: L (misoriented)
+
+Normally there are not this many skips but there are often 1-2 on a scramble and some 1 movers.
+
+NOTE: NISS does NOT preserve partial EO.
+But
+ you can also look for NISS slice EOs by trying to do 1 move to get all 
+pieces currently in a given slice to have the same orientation. This 
+will give slice EO when you NISS.
+1.2 rzp-Xs
+This
+ step is simple once we get used to ignoring some pieces since it is so 
+similar to normal DR. We just completely ignore the flipped edges and 
+centers and try to look for rzp like normal.
+We
+ want to look at corner orientation in such a way that our (mis)oriented
+ slice edges will be between the DR layers. For example if we have 
+E-slice oriented for F/B axis you need to look at U/D stickers. And you 
+can look at them in both U/D and R/L faces.
+
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+E-
+slice is already oriented on F/B so we just look at rzp right away. On 
+U/D here we have 4c6e and doing R gives us 4c4e in 1 move. On R/L axis 
+we have 7c4e and no short way of getting rzp. We can do R L U for 4c4e. 
+This is also a valid rzp since we just ignore the center color. But that
+ is already 3 moves and just like normal DR we want rzp to mostly be 0-2
+ moves.
+On inverse however we have a great case. E-slice is still oriented on F/B and doing R gives us 3c2e in 1 move!
+
+NOTE: NISS does NOT preserve rzp-Xs!
+But
+ while NISS doesn’t necessarily preserve rzp it DOES preserve the DR 
+minus case. The problem is that you might have some DR-slice edges 
+flipped on the other side. But, if you look at edges currently in 
+DR-slice for your rzp and they all have the same orientation, the rzp is
+ preserved when you NISS. In our example both R and (R) rzps have all 
+edges in E-slice oriented so we can still use NISS on those!
+
+1.3 DR-2s
+This
+ step is also simple once we get used to ignoring unimportant pieces. We
+ just ignore flipped edges and centers and do rzp->DR like normal.
+
+Also
+ the freedom of ignoring non-DRslice EO also allows us to use some 
+additional DR triggers that change EO of those pieces. Here is a full 
+list of additional sub5 triggers for most commonly used rzps:
+
+F R F / F’ R F //3c2eR’ F R F’ //sledge for 4c2e
+B U’ B’ R //4c4e more easily remember as Fw R’ Fw’ R = inverse sledge with widened F moves 
+M F // 4c4e
+M U2 F // 4c4e
+F R U' L // 7c8e
+R F2 R U R L // 7c8e (you can get rid of the R L so it's really a 4 mover)
+R U2 R U R L // 7c8e 
+R U(w) L2 D R L // 7c8e
+
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+In previous step we found the promising 3c2e rzp on inverse so we use that to continue:
+(R’) //rzp-Xs 3c2e
+(D2) //setup to trigger
+(L U L) //DR-2s in 5 moves
+
+The
+ reason we call this DR-2s is because we need 2 slice moves to fix 
+flipped edges and centers. Here centers are already solved but we have 2
+ flipped edges. So our first slice must unsolve centers and leave 
+exactly 4 flipped edges. Then the second slice can simultaneously put 
+centers back to correct places and flip all 4 edges.
+Sometimes
+ you can also get DR-3s cases but then you can always go to DR-2s in 0 
+moves by inserting a slice move that cancels with your last DR move. 
+Sometimes you skip this step and get DR-1s instantly. That is obviously 
+great.
+
+NOTE: from this step onwards you can use NISS again
+
+1.4 DR-1s
+Kind of a new but super simple step. We just want to do a slice move that leaves us with:
+centers 1 move from solved
+exactly 4 flipped edges.
+After that real DR can be achieved with just a single slice move.
+Often
+ this slice can be done directly after DR at least on one side of the 
+scramble. Sometimes you might need 1 extra move before slicing
+
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+Previously we found:
+(R’) //rzp-Xs 3c2e
+(D2) //setup to trigger
+(L U L) //DR-2s in 5 moves
+Now
+ on inverse we have 2 flipped edges and solved centers so we only need 
+to get these edges in different slices and we get 4e while doing either M
+ or S.
+Here we obviously decide to do M’ since it cancels with the last move of DR-2s. So we have:
+(L’ R) //2-2 = DR-1s in 5.
+
+1.5 DR
+Next we want to fix the slice to get to real DR.
+We
+ do this by setting all flipped edges in the slice where centers are 
+offset and doing the slice to get to real DR. Don’t worry too much about
+ the length of our DR at this point. It will end with U R L’ type moves 
+so it will be much better than move count suggests. And we can also try 
+multiple different setups quickly. And we plan to slice the R L’ out 
+later anyway. Note that it is very important to try many 
+different slice fix move sequences and pick the ones with best subsets. 
+Usually I would recommend trying all possible sub7 move fixes (so up to 4
+ setup moves +2 moves for slice itself). 
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+Previously we found:
+(R’) //rzp-Xs 3c2e
+(D2) //setup to trigger
+(L U L) //DR-2s in 5 moves
+(L’ R) //4a2-1s in 5 moves
+
+The shortest possible setups for edges are 5 moves both on normal: D’ B2 U R L’  and on inverse: (F’ R2 F R L’)
+But both of these give 2c4 subset. We can add one move on normal to change that:
+F2 D’ B2 U R L’ //4b2  in 11 moves
+
+        1.5.1 Direct DR-2s ->DR
+        Once we get more familiar with the method we can combine steps 1.4 and 1.5 and see 
+the shortest possible slice fixes directly from DR-2s instead of just doing the shortest 
+possible fix to DR-1s first.
+
+Example:
+R' U' F R2 U' F L' D F2 R D F' R F' R2 L2 D2 F R2 L2 F R2 F B R' U' F
+
+(U F R2 B L2 U2 B') // dr-2s in 7
+
+ Now if we strictly follow the method described above we get something like:
+(U D) //shortest possible reduction to dr-1s in 9
+        (R2 F2 D2 B R L) //dr in 15 so obviously not great… (Also many other variations
+        give DR in 15)
+
+        But, we can instead do:
+        (R2 U D) //dr-1s with extra move that sets edges up for short slice fix
+        (B R L) //dr in 13 so 2 moves better!
+
+1.6 HTR
+After reaching DR we want to switch to the other side of the scramble and spam linear HTRs from there
+
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+Previously we found:
+(R’) //rzp-Xs 3c2e
+(D2) //setup to trigger
+(L U L) //DR-2s in 5 moves
+(L’ R) //4a2-1s in 5 moves
+F2 D’ B2 U R L’ //4b2  in 11 moves
+
+Now we NISS and can just start spamming HTRs like normal. 
+Shortest possible HTR for us here is:
+(R2 B2  U2 R2 B’ D2 B) // 7-1 = HTR in 17 moves
+
+1.7 Finish
+
+After
+ HTR you don’t really want to focus much on finding a direct leave 
+slice. If you happen to see one go ahead but the main point is to find a
+ double slice that leaves the “normal” DR slice and the slice we did the
+ slice move on to reach DR.
+
+After that you want to solve the “wrong” slice while slicing out the R L’ we did to reach DR.
+
+Example:
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+Previously we found:
+(R’) //rzp-Xs 3c2e
+(D2) //setup to trigger
+(L U L) //DR-2s in 5 moves
+(L’ R) //4a2-1s in 5 moves
+F2 D’ B2 U [R L’ //4b2 in 11
+(R2 B2  U2 R2 B’ D2 B’) // 7-1 = HTR in 17 moves
+
+(U2 [L2 D2 F2) //double slice 4/21
+[]= U2 R L F2 U2 //slice solved by slicing out the “DR fixing slice” LS in -2/19
+
+TIP: If there is no short solution for the slice, you can also try to solve it to a case where centers are 180 degrees off. 
+That
+ can most of the time be fixed in +0 (and always in +1) by inserting any
+ slices in HTR-1 solution that result in the slice turning 180 degrees 
+from original.
+Imagine that we had this HTR line instead in our example:
+(R2 B2  U2 R2 F’ R2 F’) // 7-1 = HTR in 17 moves
+And the corresponding LS solution is:
+(D2 R L B2 D2 R L’) //last R L’ cancels with the last slice before DR. 
+Now
+ U/D centers are still wrong in addition to normal LS. But now if we go 
+to our HTR-1s solution and widen either both F’ moves OR the F2 the 
+centers will be fixed since those moves rotate S slice centers by 180 
+while only affecting LS edges.
+
+Now for solving the final LS you can use any method you would normally use. But there is one more additional trick you can try.
+There
+ are actually 2 places where you can try solving the LS. The HTR-1s is 
+an obvious one but you can also do it during the edges setup stage!
+
+So in our example we have a solution up to LS:
+
+{F2 D' B2 U' F2} R' L' [U2 B D2 B R2 U2 B2] R U' L' D2 R
+In [] we have our HTR-1s solution and best we can do there is [] = U2 F L2 F’ B2 R2 U2 B2 // +1.
+But in {} is our edge setup solution and there we can simply widen both U/D moves to get 
+{} = F2 Dw’ B2 Uw’ F2 //+0.
+You
+ can also try combination of both but you obviously have to return 
+centers to solved on the same sequence. So no widening 1 qt from {} and 
+another from [].
+But
+ for example {F2 Dw’ B2 Uw’ F2} and [U2 Bw D2 Bw R2 U2 Bw2] is a valid 
+attempt since both {} and [] individually return their respective slice 
+centers back to solved.
+
+Congrats, you now know how to find and solve DR-Xs!
+Next we discuss when you should use it.
+
+2 When is this good?
+
+We
+ only have 1 hour to do an FMC attempt so we cannot possibly check 
+everything. So when should we use this new technique? To answer this we 
+need to first look at average move counts of both DR -> solved and 
+DR-Xs -> solved.
+
+2.1 Movecount comparison
+
+This
+ method is still developing so this may change in the future, but 
+currently I think it is not humanly viable to find (near) optimal 
+solutions from DR-2s since those often seem to delay the first slice fix
+ to seemingly random point of the solution which makes it too hard to 
+find for now. But from comparing my practice solves with NISSY output 
+(low sample size but best we have right now) it seems that from DR-1s 
+the above method will often be able to find optimal. And if optimal is 
+unfindable we can then find optimal+1 most of the time.
+So
+ in this chapter we compare the optimal movecounts from DR -> solved 
+against DR-1s -> solved for commonly used subsets. Then we can figure
+ out how short DR-1s we need to find for it to give the same average 
+length of overall solution than let’s say 10 or 11 move DR. Thanks to 
+@trangium for generating the stats.
+
+DR-1s corner subset
+Average optimal move count
+Average movecount compared to DR of same subset
+4a1
+14.8
++2.4
+4b2
+14.9
++2.3
+4a2
+15.6
++2.3
+4c3
+15.7
++2.2
+2c3
+15.2
++2.3
+2c4
+15.5
++1.8
+
+2.2 Findability comparison
+
+So
+ based on the above stats an average finish from DR-1s is about 2.2 - 
+2.3 moves longer than from DR. However we have to take into account that
+ we can’t always find that optimal from DR-1s. We can’t always find that
+ optimal from DR either but it is more common for optimal to be findable
+ from DR than from DR-1s. So we need to give some value to that as well.
+ 
+Luckily
+ @trangium was able to generate some stats on how often these optimal 
+solutions are findable with the method described above. 
+
+We have not yet generated them for all subsets but we have data for 4b2 and 2c4 cases.
+Here a solution to DR-1s is considered findable if 
+it uses < 5 move slice fix (< 7 moves to real DR)
+it
+ uses < 9 moves to linear HTR from opposite side of slice fix (< 
+10 for 2c4 since checking 9 move HTRs for 2c4 is quite reasonable)
+And
+ a solution for normal DR is considered findable if it uses any < 9 
+(again < 10 for 2c4) move HTR. Linear from either side and NISS HTR 
+are all allowed for normal DR.
+
+Above
+ table has findability stats for 4b2-1s. So it seems optimal is findable
+ 51% of the time and optimal +1 is findable 83% of the time. So compared
+ to optimal we lose 1 move 32% of the time (83-51=32) and we lose 2 
+moves 17% of the time (100-83). So on average we lose 0.32*1 + 0.17*2 = 
+0.66 moves compared to optimal.
+
+Here
+ are the same stats for normal 4b2 DR. Similar math we did above shows 
+us that from this we lose on average 0.255*1 + 0.09*2 = 0.435 moves 
+compared to optimal. 
+
+Below are the same stats for 2c4:
+ 
+So for 2c4-1s we lose on average 0.22*1 + 0.35*2 = 0.92 moves.
+
+And for standard 2c4 DR we lose on average 0.218*1 + 0.147*2 = 0.512 moves.
+
+So for 4b2 we lose 0.66-0.435 = 0.225 moves more from DR-1s than we do from DR.
+And for 2c4 it is 0.92-0.512 = 0.408 moves more from DR-1s than from DR.
+So
+ let’s take about the average of that and call DR-1s 0.3 moves worse 
+findability wise than DR. This number might get more accurate if/when 
+stats get generated for more subsets.
+
+2.3 My recommendations
+
+So
+ our absolute optimal from DR-1s is something like 2.2-2.3 moves worse 
+than from DR. And, as discussed above, findability adds another 0.3 
+moves to that. So in total DR-1s seems to be about 2.5-2.6 moves worse 
+on average than DR.
+Meaning that 8 move DR-1s is on average better than an 11 move DR but worse than 10 move DR.
+
+So what should we do in an actual solve?My recommendation based on the above is this:
+Check all sub5 EOs normally
+Before
+ starting to spam 5 move EOs check sliceEO skips and maybe 1 move 
+sliceEOs since there is a decent chance for 6-7 move DR-Xs there and 
+some of those might be DR-1s as well. There are normally not that many 
+sliceEOs in 0-1 moves so it won’t take much time.
+If you still don’t have enough then start spamming 5 move EOs.
+
+3 Example solves
+
+We
+ already did one example solve during the explanation of the method. I 
+will put it below in its entirety once again and then we will do a few 
+more examples.
+
+Example 1:
+
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+(.) //F/B E-slice EO skip 0/0
+(R’) //rzp-Xs 3c2e 1/1
+(D2) //setup to trigger 1/2
+(L U L) //DR-2s 3/5
+(L’ R) //4a2-1s 2-2/5
+F2 D’^ B2 U^ [R L’ //4b2 4/9
+(R2 B2  U2 R2 B’ D2 B’) //HTR 7-1/17
+
+(U2 [L2 D2 F2) //double slice 6/21
+[]= U2 R L F2 U2 //LS -2/19
+^=w //+0/19
+
+Example 2:
+
+FMCL S9W3A3:
+R' U' F R' D' F U2 R U2 F2 L2 D2 U2 B2 R D' L' B' R D R F2 R' U' F
+
+First we see that there are slice EO skips on:
+
+R/L E-slice
+U/D E-slice
+(R/L E-slice)
+
+We actually find 3 DR candidates here:
+
+. //R/L E-slice and also rzp 2c2e on U/D
+U’ B’ D’ B2 U B //2c4-3s via well known 2c2e trigger or you can see it as 2 move rzp to 4c4e 6/6
+And as we know whenever we get DR-3s we can get to DR-2s in +0 by inserting a slice that cancels:
+B’ F // 2c4-2s 2-2/6
+Then
+ we have 4 flipped edges so we need to split them 2-2 between the slices
+ so we can remain at 4 flipped edges and bring centers 1 slice away from
+ solved. Fortunately we already have that so we can immediately do:
+U D //2c4-1s 2/8
+We also know that on inverse there will not be immediate slice fix since edges are in 3-1 split between slices.
+At
+ this point we notice that on normal our shortest possible slice fix is 5
+ moves B2 L2 B R L’ (that goes to 4b5 so not good) and quick NISS trace 
+tells us that on inverse we have a promising 4 move DR (R2 D R L’) that 
+actually goes to 2c3[a][b].
+
+And we also find these DR-1s:
+. //U/D E-slice and also rzp 7c8e on F/B
+B2 U2 B R' B R //2c3-3s 6/6
+R’ L //2c3-2s 2-2/6
+Now we can do U D on normal for 2c3-1s but no 4 move DRs on either side.
+Or on inverse we can do (F B) that also has 4 move DR on normal U2 F U D’ that goes to 2c4.
+
+And the variation of the same DR:
+B2 U2 B’ L’ B R //4b5-2s and no +0 to -1s so we probably just discard that outright…
+
+So
+ the most promising one we found seems to be the first DR-1s because of 
+the 4 move DR that goes to a good subset. So we continue with that:
+U’ B’ D’ B2 U F //2c4-2s 6/6
+U D //2c4-1s 2/8
+(R2 D [R L’) //2c3 2/12
+
+Then we just spam HTR from normal side:
+B^ U2 L2 B’ U2 B’^ //HTR 6/18
+L2 F2 //two more pairs 2/20
+U2 [R2 F2 //double slice 5/23
+[]= R L U2 //slice -1/22
+^=w //+0/22
+
+Example 3:
+
+333.fm daily 26.1.2026 (Rodneys DR-Xs and my finish)
+R' U' F B2 D F2 U' B2 D U2 R2 F2 D L2 F' L U B' R' D U2 R' F2 D' R' U' F
+
+We have slice EO skips on:
+F/B E-slice
+R/L E
+R/L S
+R/L M
+U/D M
+
+(U/D E)
+(F/B S)
+(R/L S)
+(U/D S) 
+(U/D M)
+
+Wow that is a lot!
+
+(.) //U/D E 4c2e rzp 0/0
+(L B2 R’ F’ R2 F) //2c4-3s 6/6
+(F’ B) //2c4-2s 2-2/6
+NISS trace shows us that on normal we have immediate slice to -1s.
+In fact we can do either R L or F B. From these options F B gives 3 move DR that goes to 2c3 4e!
+F B //2c3 4e -1s 2/8
+L [F B’//2c3 4e 3/11
+
+And again here we NISS and start spamming HTR-1s:
+(B2 R2 U’ F2 B2 L2 U’ F2 U’) //HTR 9-1/19
+(L2 U2 [R2) //double slice 3/22
+[]= F B’ D2 //slice +0/22
+
+4 What else to try from DR-1s -> finish?
+
+Obviously
+ this DR-1s -> finish method is not even close to perfect and thus 
+not all optimal solutions will be findable with that. It is just 
+something that 
+works relatively well quite often.
+can always be done more or less systematically.
+can be done in  a reasonable amount of time.
+So
+ the most reasonable thing in a real solve is often, just like in normal
+ DR, abandon the DR-1s if it doesn’t give a short finish quite quickly.
+But
+ sometimes you want to really squeeze the one single DR or DR-1s, for 
+example if that is the only thing you found or super short etc.
+So there are few other things you can try.
+
+4.1 Variation spamming
+
+So
+ normally we do edge setup, switch and spam HTR-1s. The reason we do 
+this is that for edge setup+slice fix there are always SO many 
+variations and extensions that you need to check if you do the slice fix
+ right after the edge setup to get real DR and then try HTR from there.
+
+But some solutions are unfortunately only findable by spamming HTRs from as many of the variations as possible.
+
+You
+ can try linear HTRs from the same side where you reach real DR and 
+NISS-HTRs, although NISS-HTRs are probably way too slow to check 
+realistically. Our normal method won’t find those. But checking linear 
+HTRs from the other side is exactly what we check for all variations and
+ extensions simultaneously with our main method so don’t waste time on 
+those.
+
+This
+ has the best chance of working if you have short linear HTRs available 
+and not that short HTRs on the other side where you normally would want 
+to do HTR-1s.
+Obvious downside is that you have so many variations that it takes a long time to check them.
+
+Now
+ I don’t happen to have a solve at hand where this would actually find 
+the optimal but example how to do it would be like this:
+
+FMCL S9W3A2:R' U' F U R F B' U2 F' L2 U B2 L' F' R2 D2 F' R2 F B' L2 U' R' U' F
+
+(.) //F/B E-slice EO skip 0/0
+(R’) //rzp-Xs 3c2e 1/1
+(D2) //setup to trigger 1/2
+(L U L) //DR-2s 3/5
+(L’ R) //4a2-1s 2-2/5
+F2 D’ B2 U //4b2-1s with flipped edges set up to correct slice 4/9
+Then we just do real DR here:
+R L //4b2 2e in 11 with TONS of variations and +1 extensions.
+Now just try linear HTRs+finish from here like you would from normal DR.
+
+4.2 HTR - fake slice (HTR-f1s)
+
+Sometimes it is also possible that optimal is found by going to what I call HTR - fake slice.
+This
+ is a cube state where corners and all oriented edges are in HTR, but in
+ addition you have 4 flipped edges that are split 2-2 between different 
+slices and centers on one slice are 90 degrees off. Also one final 
+requirement is that 2 flipped edges are in the slice they actually 
+belong to and 2 are NOT. This makes it so that you can solve all other 
+pieces and then insert U M U type insertions somewhere post HTR that 
+fixes centers and flipped edges.
+
+This
+ usually seems to happen mostly on low qt subsets where you have really 
+short HTR-f1s solution(s) available. So I would probably only consider 
+it on 4a1 and 4b2 if you have short reductions to 4a1.
+The
+ downside is that it is very hard (at least for me) to see solutions 
+from HTR to that state where we only need the U M U insertion. But maybe
+ people with better overall cubing intuition will see them better. Also,
+ even if you see that, the insertion might not have a good spot. Also 
+also the recognition for HTR-f1s is kinda horrible.
+
+But
+ here is an example for an optimal finish like that. The DR-1s is 10 
+moves and not really realistic to look at especially since there is an 8
+ move one from the same setup and different slicing but we only want to 
+showcase the finish here really.
+
+Random practise scramble from Rodney:
+F2 U' L2 B2 D2 R2 B2 U2 L' B2 L U2 B2 R F D F' R2 F R'
+ 
+D’ F’ L F2 U2 D2 L’ U // 4b2-2s (8)
+F B’ // 4b2-1s (10)
+
+U //4a1-1s (11)
+(B2 U2 L) //HTR-f1s (14)
+As you can see we now meet all requirements for this state:
+centers on one slice are 90 degrees off
+flipped edges are split 2-2 between slices 
+2 of the flipped edges are in their correct slice (at FL and DR spots) and 2 others are not (at UR and BR spots)
+(B2
+ L2 ^ U2 R2 D2 z) // (19) all but 4 centers and 4 flipped edges. I have 
+no tips on how to see this. Just build blocks and git gud I guess.
+^=L F Fw’ L’ //solved 4-1 (22)
+And we need to remember to add z at the end for NISS to work if we use the wide move.
+
+5 Random tips
+
+Here are just some random tips I didn’t think were important enough for the main part.
+
+1)  -Xs prediction
+After
+ sliceEO you can already sometimes see that it is impossible to get a 
+direct DR-1s on a given axis. Namely if your centers are 3 slice moves 
+away from solved you can’t get -1s. And if your centers are 1 slice off 
+and you do NOT have 4 bad edges you can’t have -1s.
+Note that you might still be able to do a slice insertion described in tip 3) to get -1s.
+
+2) EO altering rzp
+After
+ slice EO we can also try rzp moves that would normally break EO if we 
+happen to have a situation where none of our slice edges are (or all 
+are) in that layer. 
+For example if we have F/B E-slice EO we can try F and F’ moves if none of the E edges are in F layer.
+
+3) Slice insertion to change -Xs
+Sometimes
+ we can insert a slice move in the DR line (possibly with cancellations)
+ in order to manipulate whether we get -1s or -2s DR. Again the slice 
+needs to be inserted in a spot where it doesn’t affect our slice EO 
+edges.
+This
+ seems to be relatively rare however and mostly happens on rzps where 
+most DR slice edges are already in their slice, like 3c2e or 4c2e.
+For example if we have F/B E-slice EO (all edges oriented) again with the DR line of:
+F2 ^ U’ R U2 R // this gives DR-2s since centers are solved but some edges are flipped.
+Now we can insert ^ = S in +1 move since none of the E-slice edges are in S-slice at that point.
+This will put centers 1 slice away from solved and can give us DR-1s if we also happen to have 4 flipped edges after that.
+
+6 DR-2s 8 flipped edges
+
+WIP
+As
+ discussed above, finding (close to) optimal solutions from DR-2s is 
+often not humanly viable. But there seems to be one exception to that 
+where the solutions are significantly better and more human findable. 
+That is a case where all of the non-DR slice edges are flipped. This 
+allows us to go straight to HTR-2s and solve from there. These cube 
+states seem to have only 1 move worse optimal solutions than normal DRs.
+ Again thanks to @trangium for the stats. More on this in the movecount 
+and findability comparison chapters.
+
+Note
+ that this method is even more in the early stages of development than 
+the DR-1s method described above. So we don’t really have a proper idea 
+on how good this method is or is not. But next I will describe the steps
+ for this method and give my own personal thoughts about its potential, 
+but keep in mind that I have next to no experience using this method in 
+real solves so my opinions might change as I get a better understanding 
+about this stuff.
+
+ 6.1 How to get to DR-2s 8fe
+
+There
+ are several ways to get to this cube state. I will go through all of 
+the ones I know about and shortly discuss about how viable I think that 
+method is to use in real solves.
+
+You
+ can just happen to stumble on it while trying to find DR-1s like 
+described in the main part of this tutorial. That is obviously viable in
+ a real solve since you just find these as a byproduct when searching 
+for DR-1s. But it seems quite rare to happen “on accident”.
+
+Whenever
+ you find a normal DR that ends in moves of the form U R L you can just 
+do D instead of U R L and get DR-2s 8fe that is 2 moves shorter than the
+ real DR. Also very viable since you find these as a byproduct of 
+searching normal DRs. Also note that you can get this if your EO ends in
+ U R L and then you find the DR on the other side (this only works for 1
+ of the possible 2 DR axis but worth keeping in mind).
+        Example:        R' U' F B L2 F' L2 B F2 U2 R2 F' R2 D' R' B' D F L U' F2 L2 R' U' F
+
+R2 D (U')
+F' (L F B) // 7 2c3 6e        but now instead of DR line we do:        F’ ( R ) // 5 moves to 2c3 -2s 8fe                Here is another one where the U R L part is on the EO:        R' U' F R2 L F' L D R2 U' L F' B' R2 B2 U F2 U2 D' F2 D F2 R' U' F
+
+(F2 L F' B) 
+L2 U2 D L' R2 U // 10 4a1 on L/R, but instead of first line we do        (F2 R) // 8 moves to 4a1 -2s 8fe
+
+You
+ can do normal EO and then solve the DR on “wrong axis” and you get this
+ state. So let’s say we do EO on F/B axis. Then we could do R/L colored 
+“DR” on U/D axis and that would give us DR-2s 8fe. (Or vice versa and do
+ U/D colored DR on R/L axis.) This method also seems quite viable since 
+we are checking normal EOs for standard rzps anyway so simultaneously 
+checking for these rzps shouldn’t take much extra time.
+        Example:
+        Daily 2026-02-02
+R' U' F L2 F D2 B L2 B' L2 F' L2 D2 U2 R F' D U' L' F L' B' R2 U2 R' U' F
+
+(D F R) // EO
+(D) // "rzp" 4c4e, we have 4 oriented U/D corners on F/B, and two E-slice edges in S
+(F U' F2 L2 D) // 9 moves to 2c3 -2s 8 fe
+
+You
+ can force the issue by doing “EO” in such a way that DR slice edges are
+ oriented and all other edges are not and then solve to DR-2s 8fe 
+directly from there. This doesn’t seem as viable since you would have to
+ spend time finding all these “EOs” and checking them as well.
+        Example:        Weekly 2026-02 A1
+R' U' F U2 B' L2 B D2 R2 F2 L2 B' F2 U' L' D' B' F2 R' D2 U B' L' R' U' F
+
+(F2 U' B') //orient all E edges and misorient all other edges
+(R D2 R' L2 U2 L U') // 10 moves to 4c3 -2s 8fe
+
+6.2 HTR-2s
+
+Okay now we know how to find these DR-2s 8fe solutions. Next we will learn how to solve them.
+This next step is quite simple if you already know HTR. Although the recognition can feel quite hard at first. What
+ we do is ignore centers completely and imagine all flipped edges are 
+just oriented in their current spots. Then we just solve HTR like 
+normal. But instead of real HTR this gives us a cube state that is 
+solvable by doing HTR moves and exactly 2 slice moves to fix centers and
+ orient the 8 edges that are currently flipped.
+Example:R' U' F B L2 F' L2 B F2 U2 R2 F' R2 D' R' B' D F L U' F2 L2 R' U' F
+
+R2 D (U')
+F' (L F B) // 7 2c3 6ebut now instead of DR line we do:F’ ( R ) // 5 moves to 2c3 -2s 8fe(D2 B') R2 D2 R' B2 L' // HTR-2s in 12 moves
+
+And another one:
+Daily 2026-02-02
+R' U' F L2 F D2 B L2 B' L2 F' L2 D2 U2 R F' D U' L' F L' B' R2 U2 R' U' F
+
+(D F R) // EO
+(D) // "DR"-4c4e, we have 4 oriented U/D corners on F/B, and two E-slice edges in S
+(F U' F2 L2 D) // 9 "2c3"
+
+(B R2 F') B2 R2 U' // HTR-2s in 15 moves.
+
+6.3 Finish
+
+Next
+ part is in my opinion the biggest question mark of this method. We want
+ to solve leave slice from here. But the question is how realistic is it
+ for humans to see these solutions quickly. If this turns out to be 
+possible most of the time this method has a lot of promise.
+Example:R' U' F B L2 F' L2 B F2 U2 R2 F' R2 D' R' B' D F L U' F2 L2 R' U' F
+
+R2 D (U')
+F' (L F B) // 7 2c3 6ebut now instead of DR line we do:F’ ( R ) // 5 moves to 2c3 -2s 8fe(D2 B') R2 D2 R' B2 L' // HTR-2s in 12 moves
+F B R’ L’ //16 to slice and +2 to solve.
+In this case this is obviously easy to see but usually the finish is not that short.
+
+And another one:
+Daily 2026-02-02
+R' U' F L2 F D2 B L2 B' L2 F' L2 D2 U2 R F' D U' L' F L' B' R2 U2 R' U' F
+
+(D F R) // EO
+(D) // "DR"-4c4e, we have 4 oriented U/D corners on F/B, and two E-slice edges in S
+(F U' F2 L2 D) // 9 "2c3"
+
+(B R2 F') B2 R2 U' // HTR-2s in 15 moves.
+(D U B F' R2 F2) // 21 to slice +1 to solve.
+
+Note
+ that just like in the DR-1s we can also leave slice AND have the 
+opposite centers swapped. We can do a similar center fix we do there. 
+Example of that here:
+R' U' F R2 L F' L D R2 U' L F' B' R2 B2 U F2 U2 D' F2 D F2 R' U' F
+
+L2 U2 D L' R2 U (F2 R') // 8 moves to 4a1 -2s 8fe
+(U2 F’) // 10 to HTR-2s
+(^ U2 R L F’ B L2 U2) // 17-1 to 2e2e and center fix
+^= S2 //2e2e +1/17
+So after “DR” we have:
+(U2 F B2 D2 * R L F’ B L2 U2)
+*= D2 B2 U2 F2 U2 B2 //+2/19
+
+Leave
+ slice can always be solved normally. If you use NISS HTR-2s you will 
+have 2 spots where you can insert slice moves just like we have when 
+solving DR-1s. If we do linear HTR-2s we only have 1 sequence to try 
+like in normal DR/HTR solve.
+
+6.4 Movecount and findability comparison.
+
+First of all @trangium has once again generated some stats to compare optimal solutions from DR and DR-2s 8fe!
+
+Subset
+DR
+DR-2s 8fe
+
+4a1
+12.415
+13.26  (+0.85)
+
+4b2
+12.722
+13.59  (+0.87)
+
+2c3
+12.915
+13.80  (+0.89)
+
+4c3
+13.488
+14.54  (+1.05)
+
+2c4
+13.656
+14.80  (+1.14)
+
+So it seems that optimal from DR-2s 8fe is around 1 move worse than from real DR on average. This seems quite promising.
+
+However
+ I am not entirely convinced yet that solutions from HTR-2s -> leave 
+slice are always realistically and quickly findable for humans. 
+Sometimes they definitely are. And I don’t have enough experience with 
+this to approximate how often they are or are not findable at this 
+point.
+
+But
+ at least it should be worth it to check the corresponding DR-2s 8fe if 
+you get a DR that ends in U R L kind of moves. That seems to give 
+optimal quite often if you can just find it. Here are some stats about 
+that for 4b2 subset:-  | 13.72 (21.3%)
+D  | 13.89 (38.0%)
+U  | 13.38 (23.7%)
+UD | 14.37 (17.0%)
+How to read those is like this:If
+ we have a 4b2 DR ending in U R L moves then we have 38% chance to find 
+optimal by doing D move to DR-2s 8fe instead and solving HTR-2s in < 9
+ moves and then finish. We have 23.7% of finding optimal by doing linear
+ < 9 HTR from inverse and then solving for double slice and slice out
+ the R L part. And we have 17% chance that optimal can be found by doing
+ either of the methods above.
+That leaves us with only 21.3% chance that we do NOT find optimal if we try both of these. 
+ 
+
+Thanks
+ for reading! That is all I have to say for now. Any feedback and 
+improvements, both on this doc and especially on the method, are most 
+welcome!
+
+[a]Are
+ you actually able to niss trace that it gives 2c3? I get niss tracing 
+the flipped edges but tracing the subset change with dr-xs seems 
+difficult
+
+[b]I
+ can't currently do that. I just NISS trace to see if there is a short 
+setup and if there is then I go there to see what subset it gives
+

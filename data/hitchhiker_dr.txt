@@ -1,0 +1,156 @@
+Hitchhiker’s Guide to DR
+Yurii Riabov, February, 2025
+Domino Reduction(that will be further referred to as DR) is a state of a cube in which a cube has only stickers of opposite colors on those 2 opposite sides, and the 4 edges in the layer between them can be solved with only half turns(R2, L2, F2, B2 for U/D dr). From this state the cube can be solved only using U/U’/U2, D/D’/D2, R2, L2, F2, B2 moves, assuming U/D dr, and to understand better what it looks like you can just scramble a cube only using those moves.
+This guide will cover how to get from a scrambled cube to DR, and will consist of 2 parts: a beginner guide for those who want to learn the method and an advanced guide for those who want to improve this step in their solves.
+Beginner DR
+This guide assumes that you already know basic niss and basic eo. If you don’t, you can look for resources for them in Hitchhiker's Guide to FMC.docx
+For beginner dr this video is also quite helpful: Domino Reduction Tutorial
+EO
+The first step of getting to dr is doing EO on one of the axes in 5 moves or less. Make sure you are checking all 3 axes on both normal and inverse scramble. Your goal for now is to be able to write down(without applying moves) at least 15-20 sub6 eos in under 10 minutes on most scrambles, and if you’re struggling with that you can look for specific tips in the EO section of the second part of this guide, just remember that if an axis has a 4move eos there are always at least a couple of ways to get a different eo in 5 on that axis, and often a few variations of the 4move solution. You will begin the solve with just writing down eos for 5-10 minutes, and check them one by one later from the shortest to the longest.
+RZP
+Getting from eo to dr is done in 2 steps. In the first one, called RZP(completely random moves from Polish) you set up to a number of corners and edges that are not in dr that matches one of the so-called triggers that you’ll later set up to to solve dr. The beginner 3 triggers are R, R U2 R, R U/U’ R, which correspond to DR-4C4E, DR-4C2E and DR-3C2E respectively. Those numbers mean, that for example after R 4 corners don’t have a white/yellow corner on white/yellow faces, 2 edges with white/yellow on them are in E slice, and 2 E slice edges are on U/D faces. Because of the way we count edges that are out of dr sometimes the number of edges in the trigger is halved, so for example R U2 R would be called DR-4C1E, but in this guide I will stick to the more popular system that counts all edges out of dr, and that number can’t be odd.
+As the name of this step implies, you don’t have to think too much about the moves you do here. For now you are aiming to get one of the 3 desired states(DR-4C4E, DR-4C2E or DR-3C2E) in 6 moves or less, so if you have a 5move eo like F U R D F, you have to check if R, L, U, D, F2 R, F2 L, F2 U or F2 D gives either DR-4C4E, DR-4C2E or DR-3C2E, and if none of those work just move to the next eo, that’s the reason why you need a fair amount of them. If you have a 3move or 4move eo, you do the same, but instead of 1 move after eo you try adding 2 moves and looking for the right number of corners and edges out of dr.
+As for switching after eo to look for rzp, it’s only worth it either if you only have a couple eos of the shortest length, for example if there are only 2 3movers on the scramble, or only 4 4movers, then I recommend switching after those eos and looking for 1-2 moves to rzp. If you are struggling to find enough eos and don’t have anything after checking all of them, you may also start switching them, but in that case I’d recommend improving eo finding stage instead
+DR
+After you have reduced the cube to the state that corresponds to one of the 3 states, the only thing left is to set up that trigger only using U, D, R2, L2, F2 and B2 moves. Unlike with eo, you will look for dr immediately after finding rzp, but again if there isn’t a short dr(at first you should be aiming for dr in sub15), then you will abandon the rzp and won’t look at it at that side of the scramble again.
+To get comfortable with setting up to dr triggers i highly recommend using https://evanbrown96.github.io/drm_doc/ , setting max solution first to 3, then to 4, and grinding 5 for a bit, mostly focusing on 4c4e trigger as it’s the most common one you will use. The other trainer you can use is https://tao-yu.github.io/Alg-Trainer/ , but it only has 4c4e.
+You will also have to switch all or most of your rzps depending on time management, and check if there is a short solution to dr on the other side of the scramble, since DR-XCXE is preserved after switching.
+You should be aiming to have a decent dr at around 30-35 minutes in a 1-hour solve. For determining what dr is good and how to solve it after, read the Hitchhiker's Guide to HTR
+Good luck!
+Advanced DR
+EO
+First of all, I strongly recommend studying Full EO, until you make sure you don’t miss any linear sub5 move eos. I will cover extensions in this guide but this sheet has all of them, so after each solve you should go to this sheet, find cases you had and check whether you’ve found all 4move eos and all 5move eos on 5move optimal axes.
+Your goal should be to gradually increase the number of eos you check on average(by 5-10 if you can), then improve the quality of how you check it by adding new triggers or increasing rzp length, then adding more eos again. Top people right now check between 40 and 60 eos on average as far as i know, so this is what you should be ultimately aiming for.
+Here is a guide on advanced EO from Jay, which doesn’t fully overlap with what i explain in this guide so i recommend reading it as well: https://www.speedsolving.com/threads/fmc-advanced-eo-guide.94499/
+I also highly recommend practicing with EO trainer: https://ibbs620.github.io/eo-trainer/
+Extensions
+A general strategy on finding eo extension that Jay recommends and I support is to know all 4move eos well enough, and just checking if all possible moves give a 4move case on your eos.
+Here are some of the strategies of extending eos:
+A “side” move on a face where there are no bad edges(you can do any of the 3):
+F R’ F => L F R’ F
+U L F => L U L F
+B’ U2 L F => L B’ U2 L F
+A “side” move that leads to a case with the same optimal as original(also check for such moves that lead to a case with an optimal that is shorter by one move for variations)
+F R’ F => U F’ L F
+R U’ F => R’ U’ R2 F
+B’ U2 L F => U F U2 L’ B
+F U B => U B U’ F
+F U B => D2 F U B
+A half turn on the B face when you’re setting up to F and there are no edges on B
+F R’ F => B2 F R’ F
+R U’ F => R B2 U’ F
+B’ U2 L F => B’ U2 B2 L F
+B R U’ F => B R B2 U’ F
+A turn on the axis of eo(these are also often used for optimal eo solutions)
+U F L F => F U F L F
+U R F => F’ D’ R’ F
+R L F => F R L F
+F L’ U’ B => B U’ F R B
+Niss eos
+It is very important to know how to find niss eos. Niss tracing that allows finding them works like this: if you have a green-red misoriented edge on normal, then there will be a misoriented edge in red-green position on the inverse. Using this, you can make 1 move to get 2 or 4 bad edges, trace all of them, and write down the eo if the solution on inverse is under 5 moves. I personally mostly write down niss eos that are under 5 moves total, and all 5move extensions of them, so that the switch is the most effective, but writing down niss 5movers is also valid if your time management is good enough to check them.
+Another type of eos you should be finding is 2+2s, and the best way of finding them i know of is checking if after 2 moves on normal you can create 4 bad edges, of which 3 have the same F/B color on them, and then checking if the 4th one is such that it’s a 2move eo on inverse.
+Another thing you should eventually implement is niss tracing 1 move to 8 bad edges, and for this case you should niss trace the 4 good edges instead of bad edges, so that you just have to know the shapes of good edges for sub4 8bad eos that are R U L, U R L and R L.
+Lastly, one thing that I personally haven’t implemented but which is at least worth considering is always niss tracing the case on inverse after each first move that changes orientation on edges to 2-8 bad, so when checking F/B eos you write down normal eos, and then always niss trace after F and after B.
+2 bad edges
+These are pretty straightforward to find, and also easy to find extensions for. For the F R’ F eo, you can do literally any first move except B, B’, F2 to get a sub5 eo.
+Some things to remember are to check both F R2 F and B U2 B, and if you have a case with both bad edges on F, you should check for niss eos like F (F R F), but other than that finding all 4movers on 2 bad axis is trivial if you know extension techniques
+4 bad edges
+For 4 bad edges it’s very important to always get all sub5 eos, i won’t list everything here because there a few cases, which you should study from full eo sheet, but here are a few most common principles from which variations are generated:
+Order of moves doesn’t matter:
+R U’ F => U’ R F
+L U D’ F => D’ L U F
+Different “side” first moves lead to different optimal cases
+L U’ R’ F => B2 L R2 F
+U L F => F2 R’ F
+F move creates 3move case
+D R U’ F => F U’ L’ F
+D R U’ F => F2 D L F
+I usually don’t write down 5move extensions of 4move optimal 4bad eos because there are 30+ of them on pretty much all cases, but if you have a deficit of eos this is something you might consider. On 4 bad also don’t forget niss tracing 1 move to a different 4 bad and 1 move to 2 bad
+Also a random funny 5mover: F B’ U F B
+6 bad edges
+This is one of the hardest cases to get all 4->5 extensions, so you really have to know all 4movers well and brute force first moves for some cases, but the 4movers are quite simple, they all are either 1 move to 4 bad that is 3 moves optimal, 1 move to 2 bad, or 1 move to F U2 B which you shouldn’t forget about. Also for 4move eos don’t forget to check both F U2 B and B L2 F.
+The one 4mover that a lot of people don’t know about is F U F B, and it + a fair few of 5movers are a reason why you should always check if 1 move to 8 bad gives a 4move optimal eo when distribution of edges is 2 on F, 3 on S and 1 on B, or 3 on F, 2 on S and 1 on B.
+Also if distribution of edges is 4 on F and 2 on B it is a 4move optimal case but doing one of 2 possible half turns to F U2 B, and you can use it to create extensions, for example U F U2 B => U’ L2 F’ L2 B
+As for niss eos on 6 bad axes you should check 1 move to 2 bad, 1 move to 4 bad and 1 move to 8 bad at least.
+Generation of variations here is pretty much the same as for 4bad eos, adding the 1 move to 8 bad case, and also there are some cases where a direction of a quarter turn doesn’t matter: U F L2 B => U’ F L2 B
+8 bad edges
+This is a bit more trivial than 6bad in terms of generation of extensions, and uses the same principles.
+In terms of generation of variations, 8bad usually has more of those than 6bad just because of the fact that in eo of <moves> F <moves> B you can also do <moves> F’ <moves> B, which means the number of eos you get doubles just from that
+Here i can also can add a few methods of generating variations:
+Setting up to F B:
+R B U’ F => U R F B
+1 move to a different 8 bad:
+R B L U F => F’ R B U’ F
+A half turn to create a shorter 4 bad after F:
+B U’ R’ F => U2 B R’ F
+For niss eos the most common thing here is 1 move to 4 bad, but 1 move to a different 8 bad is also worth looking at
+10-12 bad edges
+These are very bad, and can’t have linear sub6 solutions, so you should check for 1 move to 8 bad primarily, but also 1 move to 6 bad and 2 moves to 2/4 bad
+RZP
+For rzp there aren’t many advanced tips, except that on most scrambles you should only check for rzp in 5 as long as you are able to find enough eos, which means checking 5move eos becomes very fast and you can increase the number of eos you check drastically. You should also look for rzps into DR-7C8E, DR-8C8E once you implement those, and you should check for JZP in 6 on most scrambles.
+One thing that you can add for rzp finding is premoves. For example, if you have a U (R F U) eo, then after you have checked this eo and variations on inverse, you can check eos on other axis and check if the U on other side of the scramble has given you an rzp, or even get U (U) rzp if eo is short enough. In some cases you can do premoves even if it is not the first move of a niss eo, if you have checked all your eos and don’t have a good dr
+DR
+In general as you start checking more eos and more different rzps, you will be able to lower your standard of drs first to 12 moves max, then to 11 moves max. As you get more experienced it is also recommended to not spend too much time on an rzp, if your intuition says that it’s bad then move on and don’t spend time, worst case you will learn new case after the attempt(an exception of course is a very short rzp, like in 3 moves or less)
+Here are some other notes on rzp->dr: Italian Mauro's notes on EO->DR
+JZP
+For JZP, the DR setup must be solvable without using quarter turns on the faces you're solving DR on
+So for 4e4c you could have B2 R2 U2 R but not R2 U' R
+The requirements are having no U/D corner stickers on R/L, no E slice edges in the M slice, and an even number of unoriented corners (for EO on F/B + DR on U/D)
+And the property that makes it useful is that having JZP on one axis of DR means there will be JZP on the other axis after switching, so even if you have 2c6e jzp on normal which is pretty bad, but it’s 4e4c on the other axis, consider switching even if it’s in 6, because solutions for rzp with jzp are considerably shorter on average than without it. With jzp you will also be able to use cases like DR-4C6E, DR-2C2E, DR-2C4E since they aren’t very good in general, but with jzp you can use tricks from htr and these cases may easily be 5-6 moves to dr
+Pairs Tracing
+Explanation by wen that pretty much covers how to trace how many top pairs there will be after switching rzp: look at one of the edges in the E slice that don't belong there, then look at a misoriented corner, if the 2 stickers on the corner that are touching the E slice match with that E slice edge, then that's a pair on inverse
+If you’re only going to switch based on pairs a good strategy is to switch 2 pairs and above, but combining it with arm is better in my opinion
+ARM
+Here is the original stats sheet for ARM: DRM/ARM average optimals
+ARM stands for Axial reduction(another name for jzp) minus, which means that this is a representation of how close rzp is to jzp. R U will be AR-2C1E on white top, and AR-0C0E on red top for example, because on U/D axis there is 1 edge that is on M layer and 2 corners facing outwards, while on R/L there are no such elements. If you learn statistics for arm, presented in the sheet and on the picture below(chance of sub7 dr), you’ll be able to switch much more smartly for your rzps. This is because ARM switches between axes after switch, so if you have DR-4E4C on U/D but it’s bad, and on the R/L you have AR-2C1E(DR-XCXE of the other axis doesn’t matter), you’ll know that after you switch you’ll have 34% chance of sub7 dr, because of ARM subset.
+To look for ARM on the other axis you don’t have to rotate and count pieces, it’s enough to count misoriented corner stickers that don’t have F/B color, for edges just look E layer and count misoriented(not with color of R/L faces) edges there. So for example, after U R U’ on white you have one corner with green color, and one with red color on top, and on yellow you have one corner with blue and one corner with orange, which means that you’ll have AR-2C on inverse(sum of red and orange corners count), and on E layer there is one misoriented edge(RB edge), so the whole case will be AR-2C1E on inverse
+The picture below by Enrico has number of corners as rows, number of edges as columns, and the cells are chances of dr in sub7 with that arm case:
+I highly recommend learning ARM stats at least for 4e4c and 7c8e
+ARM+Pairs
+Currently the best system for determining whether to switch an rzp or not is combining pairs tracing with ARM and possibly corner cases for 4c4e. Here is the decision trees for drms by Rodney that are very cool and helpful: https://rodneykinney.github.io/DRM-ARM-stats/drm_trees/
+These are stats for switching based on arm and pairs by Carter that i agree with
+Here are some stats on probabilities for combination of pairs and arm by Radek:
+4C4E
+4C4E is by far the most common rzp, so you should really grind it in https://tao-yu.github.io/Alg-Trainer/, turning on dr in 6 and below. Also don’t forget R U2 F2 R exists
+Here is a list of all 5move rzp breaking 4e4c solutions by Daniel Karnaukh:
+3C2E
+Most 3c2e solutions are pretty trivial, but here are some tricky solutions/variations:
+F2 L2 R U R
+B2 U2 R U R => F2 D2 L D L => R2 B2 L U L => R2 F2 R D R
+L’ U L’ U’ L
+Also don’t forget that R U’ R’ => B2 R U’ R’ => F2 L D’ L extension exists which changes dr subset, and you often can insert different moves while setting up to the trigger for more extensions
+Another thing is that when you see AR-0C0E with odd corners, try creating DR-3C2E from it in 1-2 moves, these cases can lead to drs in 11 with a seeming rzp in 7.
+4C2E
+This is also a pretty trivial case, it’s either a short setup to trigger or bad. One thing i can advice here is to keep an eye for rzp shifting when there is a column of misoriented pieces, like L U2 L2 D’ L
+4C6E
+This is almost always only good when it’s jzp, but you can sometimes set up to R U2 L when there are 2 pairs and a line, for example F2 D R U2 L
+7C8E
+This is a fun one. There are 2 variations of this trigger: R U L and R’ U L. Both of them require a line of oriented pieces on the bottom, a square on top and at least one line of misoriented pieces on bottom. The second one is actually easier to set up, because if you have 2 lines of misoriented pieces on the bottom and a square on top, you are guaranteed to have the trigger set up or auf away from it.
+The 2 patterns from which you will set up the triggers are R U’ L F2 and R U’ L R2(these are setups, not solutions).
+The first one has 2 adjacent edges on 1 side and and L shape on the other, and to get the trigger successfully you have to have at least one pair adjacent to the L shape. In the setup I provided it’s 2 which is perfect, but R U’ L’ F2 has one and that’s also ok.
+The second one is an edge on one side and a square+edge on the other side. You can actually set up to square+line pattern in 2 ways here. From the setup R U’ L R2 you can either attach a pair to the edge on top to create a square (R2) or attach an edge to it to create a line (U2 F2), so make sure to try another one if the first you checked doesn’t work.
+Specifically for 7c8e i very strongly recommend learning ARM stats if you havent already, because there are a lot of cases with 0% of sub7 dr here, and a lot of cases with above 30% chance.
+Specifically for 7c8e with 1 edge out of AR it’s often a good idea to look for rzp into 4c4e, and 7c8e AR-1C0E is always either 5 or 6 moves optimal by doing an additional rzp into 4c4e
+You can also often get a lot of variations here, for example:
+U R’ U L => U’ L’ U R changes dr subset
+L’ U R => D2 L’ U R changes dr subset
+U2 L U R => D2 R U L changes edges count
+U R2 U’ L U R => D B2 D’ L U R changes edges count, it’s very common that widening U/D moves gives solution of the same length
+8C8E
+Solving 8c8e requires you to know htr and jzp.
+Before starting to solve 8c8e, you should first count the number of corners that are out of jzp. First let’s focus on the case when you have 4 corners out of jzp. For these cases, you should treat the pieces that are not good for R L trigger as “bad” and solve them like in htr, then do R L.
+Setup: R L U B2 R2 B2
+Here you can see that there are 4 corners in 4a shape and 4 edges that are not ready for R L trigger: all corners on U, all edges on U except UR and the DR edge. 4a corners mean that you will have to set up to U “htr” trigger if there are 4 edges like here, otherwise the case would’ve been bad. To set up the trigger you only need to put last edge in place using F2 R2 F2, F2 L2 B2, B2 R2 B2 or B2 L2 F2, so example solution will be B2 L2 F2 D R L
+Setup: R L U F2 U B2
+Here there are 4 corners that are not ready for R L trigger, and they are in 4b shape. UL and DF edges are also not in R L trigger, meaning we have to setup bad pieces to U R2 U trigger, then do R L, and here to set up the first trigger you only have to attach DRB corner to UL pair, so the solution will be B2 D’ L2 D R L
+Setup: R L U F2 D B2
+This is the same example as the previous one but with 6 edges so you have to set up to U R2 D, which is easier if you look at the pieces that are good for R L instead of bad, and then invert last qt
+Before we got arm stats this is all we did for 8c8e, but with those stats it turned out:
+DR-8C8E AR-4C3E is good not only for U R2 D R L type solutions, but also with additional rzp into 7c8e, which leads to the best solution of same length: L D R' U' L'
+AR-5C3E and AR-6C3E are both also good with rzp into 7c8e, and AR-6C3E has the second best chance of sub7 dr
+AR-2C1E has a decent chance of sub7, but only by doing a U move to turn it into AR-6C3E
+AR-3C1E is always either 6 or 7 moves by doing R L into a 4move 3c2e case, or a half turn into that
+Other triggers
+Other triggers that are quite rare but useful when they show up are DR-2E, DR-4E, DR-3C6E, which are R U2 F2 U2 R, R U2 D2 L and R’ U D2 L, specifically 3c6e is very easily recognisable by 2 pairs and a pseudopair.
+For other triggers i recommend looking through NEW - DR 5 MOVE TRIGGERS by Radek. The ones you should pay most attention are the ones with possible sub5 solutions, like 5c4e, 5c6e and 6c6e, as well as the ones with low number of pieces out of dr like 2c, 2c2e, 2c4e and 3c4e. You will most probably not be able to learn this in any considerable amount to use consistently in solves, but the process of learning triggers will give you intuition of what a good case looks like, so you will be able to know to try a bit longer rzp when the case looks good
+Here is also a list of setups for all sub6 drs, excluding AUF by Levi: 5-move non-triggers
