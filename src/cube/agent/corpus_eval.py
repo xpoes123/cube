@@ -21,7 +21,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from cube.agent import build_index, render_narrative, scramble_gen, simulated_fmc
+from cube.agent import build_index, human_narrative, render_narrative, scramble_gen, simulated_fmc
 
 # 4 hand-picked scrambles from benchmarks/test_scrambles.md.
 DEFAULT_CORPUS = [
@@ -131,6 +131,12 @@ def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
     # Render narrative alongside.
     narrative_path = transcript_path.with_suffix(".md")
     narrative_path.write_text(render_narrative.render(transcript_path))
+    # v23c: also emit the human-narrative version (NLP translation of tool calls).
+    human_path = transcript_path.with_suffix(".human.md")
+    try:
+        human_path.write_text(human_narrative.render(transcript_path))
+    except Exception:
+        pass  # human narrative is best-effort; fall back silently
 
     summary = {
         "id": scramble_id,

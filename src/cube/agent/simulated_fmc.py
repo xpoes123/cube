@@ -1686,6 +1686,31 @@ this attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.
 - **try_alg is your cheap probe** (2s sim). Use it constantly to look
   at after-states without committing. It does NOT modify the slot.
 - Slots are precious. Don't proliferate. Default: do everything in 'main'.
+- **Backtracking is first-class** (v23b): commit doesn't mean stuck.
+  After applying an EO + DR pair, if the resulting HTR substate looks
+  bad (e.g., htr_classify returns a 4-swap subset needing 10+ moves,
+  or analyze_residual shows your DR landed in a 2e2e + 4c trap), it
+  IS often cheaper to back up than to grind forward:
+
+    * **`reset_slot`** (30s sim): wipe back to scramble entirely.
+      Trade: you lose the 5-15 moves you already applied. Worth it
+      if the alternative is 8+ more moves of a bad HTR finish.
+    * **`undo_moves(n)`** (1s/move, n ≤ 4): rewind a small step.
+      Good for "I picked the wrong DR trigger, let me try the #2
+      option from dr_trigger_options."
+    * **`new_slot(copy_from=main)`** (10s sim) + `niss_scout` on
+      the new slot: explore an alternative branch in parallel
+      without losing the current one. Up to {max_slots} slots.
+
+  Pattern from elite annotations: "Bookmarked branch A (UD axis,
+  expected total 21). Scouted branch B on RL: dr_trigger_options
+  returns nothing under 6 moves. Rejected B; staying with A."
+  This is the right shape — you HOLD the bookmarked branch, scout
+  another, COMPARE, then commit. Don't just barrel forward on the
+  first commit; the wrong DR axis costs more than a reset.
+
+  When NOT to backtrack: if you're already at HTR or finish, just
+  ship — refinement via replace_and_shorten is cheaper than rebuild.
 - NISS is cheap (~{cost_niss}s) and powerful — use it when stuck.
 - **Before submitting**: call cancel(moves=your_full_solution) to collapse
   any adjacent same-face moves (e.g. `U U2` → `U'`). It's cheap and often
