@@ -242,6 +242,70 @@ def _build_handlers(
     if run_state is None:
         run_state = {"tool_calls_remaining": 10_000, "rs_calls_used": 0}
 
+    def _h_quick_check(args):
+        """v17: FREE state classifier. Returns booleans only — is_solved,
+        is_eo_solved per axis, is_dr per axis, is_htr per axis, on_inverse.
+        Mirrors what a human FMC solver does in a fraction of a second:
+        glance at the cube and recognize the state class. 0s sim cost.
+
+        Use this instead of analyze_residual for mid-solve "am I in DR/HTR
+        yet?" checks. Reserve analyze_residual for the rarer case of
+        looking specifically for an insertable 3-cycle residual.
+        """
+        from cube.classifier.features import Axis, is_eo_solved, is_dr
+        from cube.classifier.htr import is_htr_ud
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        s = SOLVED.apply_alg(parse_alg(" ".join(sc))) if sc else SOLVED
+        if hist:
+            s = s.apply_alg(parse_alg(" ".join(hist)))
+        # eo / dr per axis
+        eo = {ax.value: is_eo_solved(s, ax) for ax in Axis}
+        dr = {ax.value: is_dr(s, ax) for ax in Axis}
+        return {
+            "is_solved": s == SOLVED,
+            "is_eo_per_axis": eo,
+            "is_dr_per_axis": dr,
+            "is_htr_ud": is_htr_ud(s),
+            "on_inverse": slot.on_inverse,
+            "moves_in_history": len(hist),
+            "note": "Free state class check — use this before reaching for analyze_residual.",
+        }
+
+    def _h_compose_niss_solution(args):
+        """v17: assemble the normal-frame WCA-FMC solution sheet from a
+        slot that may have been worked on the inverse side. Returns the
+        canonical solution + verify_solved result. Do NOT hand-invert —
+        the engine composes correctly per the NISS algebra.
+
+        Convention: when slot.on_inverse is True, slot.history is moves
+        applied on the inverse frame after niss_flip; their normal-frame
+        equivalent is invert(history). The engine respects whatever
+        cumulative state your slot reached.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        # Construct the normal-frame solution.
+        if slot.on_inverse:
+            # On inverse: normal-frame solution = invert(history).
+            inv_moves = algebra.invert(slot.history)["inverted"]
+            solution = list(inv_moves)
+        else:
+            solution = list(slot.history)
+        # Run a cancel pass — humans always do this before submitting.
+        solution = algebra.cancel(solution)["cancelled_moves"]
+        check = state.verify_solved(scramble, solution)
+        budget.charge("compose_niss_solution", 1.0, slot=slot.name)
+        return {
+            "solution": solution,
+            "length": len(solution),
+            "solves": check["solves"],
+            "frame_at_compose": "inverse" if slot.on_inverse else "normal",
+            "note": (
+                "Submit this solution as your FINAL_SOLUTION if solves=True. "
+                "If solves=False, your slot state isn't solved yet — keep working."
+            ),
+        }
+
     def _h_inspect_state(args):
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -787,6 +851,8 @@ def _build_handlers(
         "undo_moves": _h_undo_moves,
         "reset_slot": _h_reset_slot,
         "new_slot": _h_new_slot,
+        "quick_check": _h_quick_check,
+        "compose_niss_solution": _h_compose_niss_solution,
         "niss_flip": _h_niss_flip,
         "policy_intuition": _h_policy_intuition,
         "try_alg": _h_try_alg,
@@ -818,6 +884,31 @@ _SLOT = {"type": "string", "description": "Slot name (default slot is 'main')."}
 
 def _tool_schemas() -> list[dict]:
     return [
+        {
+            "name": "quick_check",
+            "description": (
+                "v17 FREE state classifier (0s sim). Returns is_solved + "
+                "is_eo_per_axis + is_dr_per_axis + is_htr_ud + on_inverse + "
+                "moves_in_history. Mirrors a human FMC solver's instant visual "
+                "recognition of state class. Use this for inter-phase 'am I in "
+                "DR/HTR/solved yet?' checks — reserve analyze_residual for the "
+                "rarer case of explicitly looking for an insertable 3-cycle."
+            ),
+            "input_schema": {"type": "object", "properties": {"slot": _SLOT}, "required": ["slot"]},
+        },
+        {
+            "name": "compose_niss_solution",
+            "description": (
+                "v17 — assemble the canonical normal-frame WCA-FMC solution "
+                "sheet from a slot. If the slot is on_inverse, the engine "
+                "correctly inverts the history; otherwise it returns history "
+                "as-is. Runs cancel() and verify_solved internally. **Always "
+                "call this before emitting FINAL_SOLUTION** rather than hand-"
+                "constructing the inverted move list — the agent has a poor "
+                "track record on NISS algebra in transcripts. Cost: 1s sim."
+            ),
+            "input_schema": {"type": "object", "properties": {"slot": _SLOT}, "required": ["slot"]},
+        },
         {
             "name": "inspect_state",
             "description": "Look at the cube state in a slot. Returns EO/CO per axis, DR/HTR flags, move count, NISS-frame, undo_available.",
@@ -1422,22 +1513,21 @@ solves in v11-v13.
    After r&s succeeds, you may submit immediately — don't try to
    chain a second r&s; the tool enforces a 1-call cap.
 
-6. **HTR classify + phase compose** (running Option A) — with **mandatory
-   inter-phase residual checks** (v14a, the dormant-tool activator):
+6. **HTR classify + phase compose** (running Option A) — with **free
+   inter-phase state checks** (v17: quick_check replaces analyze_residual
+   for the common case):
    a) htr_classify(axis=X). Narrate the subset by name: "this is a
       4-swap axial subset with cycle structure (2,2,2,2)."
    b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the
       reduction is longer than 4 moves; apply the visible chunk,
       narrate ("4 moves of corner orbit reduction"), then **CALL
-      analyze_residual BEFORE re-querying apply_htr_phase**. If the
-      residual shows `is_pure_corner_3cycle: true`, STOP THE HTR
-      PIPELINE → branch to derive_corner_3cycle. The 8-move commutator
-      is almost always shorter than the remaining HTR finish, and it
-      cancels heavily with surrounding moves after a cancel() pass.
-   c) Same for apply_htr_phase(phase='finish'): check analyze_residual
-      between chunks. If `is_pure_corner_3cycle` or `is_pure_edge_3cycle`
-      pops out before the finish ends, derive the commutator instead of
-      grinding the last few half-turn moves.
+      quick_check BEFORE re-querying apply_htr_phase**. quick_check is
+      FREE (0s) and returns is_solved/is_htr_ud/etc. If is_solved=true
+      → submit; if is_htr_ud=false → continue HTR-reduction. Only call
+      analyze_residual when you specifically suspect a pure 3-cycle
+      residual (rare; quick_check tells you when this is plausible).
+   c) Same for apply_htr_phase(phase='finish'): quick_check between
+      chunks. If is_solved emerges before the finish ends, ship it.
 
    Why: a "clean" subset finish often produces a 3c residual one or two
    chunks before fully solved — landing there earlier and inserting the
@@ -1485,7 +1575,13 @@ this attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.
 - **Before submitting**: call cancel(moves=your_full_solution) to collapse
   any adjacent same-face moves (e.g. `U U2` → `U'`). It's cheap and often
   saves 1-3 moves.
-- Submit by calling verify_solved AND outputting on its own line:
+- **Submission (v17)**: ALWAYS call `compose_niss_solution(slot='main')`
+  BEFORE emitting FINAL_SOLUTION. It assembles the canonical normal-frame
+  solution from your slot history, runs cancel(), and verifies the solve.
+  If it returns solves=True, output the returned `solution` field as the
+  FINAL_SOLUTION list — do NOT hand-construct it from invert() calls
+  (WesternSicily v16 wasted 25 tool calls + 1 extra move because the
+  agent tried to invert mentally and got it wrong 3 times).
     FINAL_SOLUTION: ["R", "U'", ...]
 - The inverse-of-scramble is the trivial floor and does NOT count.
 
