@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, eo_bfs, eo_pattern_lib, library, policy, search, state
+from cube.tools import algebra, dr_pattern_lib, eo_bfs, eo_pattern_lib, library, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -392,6 +392,32 @@ def _build_handlers(
             )
         return out
 
+    def _h_dr_pattern_lookup(args):
+        """Recall a memorized DR completion from the EO-already-solved state.
+
+        Mirrors a human champion who recognizes the DR pre-image pattern and
+        plays the rehearsed completion. O(1) library lookup, no search.
+        Use this AFTER applying EO. Cost: 3s simulated.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = dr_pattern_lib.dr_pattern_lookup(sc, hist, axis=args["axis"])
+        budget.charge("dr_pattern_lookup", 3.0, slot=slot.name, axis=args["axis"])
+        return out
+
+    def _h_probe_dr_pattern(args):
+        """Run dr_pattern_lookup AS IF the given eo_alg were appended to
+        history, WITHOUT modifying the slot. Mirror of probe_dr_after_eo
+        but for the O(1) DR library. Cost: 3s simulated.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        hypothetical_hist = list(hist) + list(args["eo_alg"])
+        out = dr_pattern_lib.dr_pattern_lookup(sc, hypothetical_hist, axis=args["axis"])
+        out["probed_with_eo"] = list(args["eo_alg"])
+        budget.charge("probe_dr_pattern", 3.0, slot=slot.name, axis=args["axis"])
+        return out
+
     def _h_find_dr_via_trigger(args):
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -547,6 +573,8 @@ def _build_handlers(
         "lookahead_wide": _h_lookahead_wide,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
         "find_eo_algorithmic": _h_find_eo_algorithmic,
+        "dr_pattern_lookup": _h_dr_pattern_lookup,
+        "probe_dr_pattern": _h_probe_dr_pattern,
         "find_dr_via_trigger": _h_find_dr_via_trigger,
         "probe_dr_after_eo": _h_probe_dr,
         "cancel": _h_cancel,
@@ -681,8 +709,46 @@ def _tool_schemas() -> list[dict]:
             },
         },
         {
+            "name": "dr_pattern_lookup",
+            "description": (
+                "PRIMARY DR TOOL — recall a memorized DR completion for the "
+                "current EO-solved state on `axis`. Like a human champion: "
+                "recognize the DR pre-image (corner-orient + slice pattern), "
+                "recall the rehearsed completion. O(1) lookup, 3s simulated. "
+                "EO on `axis` must already be solved. Covers all reachable "
+                "DR pre-image patterns. Try this BEFORE find_dr_via_trigger. "
+                "If it misses (rare), fall back to find_dr_via_trigger."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "axis"],
+            },
+        },
+        {
+            "name": "probe_dr_pattern",
+            "description": (
+                "Run dr_pattern_lookup AS IF the given eo_alg were applied, "
+                "WITHOUT modifying the slot. Use to compare DR-library "
+                "feasibility across candidate EOs before committing. "
+                "Cost: 3s simulated."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "eo_alg": {**_MOVE_LIST, "description": "Hypothetical EO moves to test."},
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "eo_alg", "axis"],
+            },
+        },
+        {
             "name": "find_dr_via_trigger",
-            "description": f"Trigger-then-tail DR search (setup_width={_SIM_DR_TRIGGER_SETUP_WIDTH}, setup_depth={_SIM_DR_TRIGGER_SETUP_DEPTH}). EO on `axis` must already be solved in the slot.",
+            "description": f"Trigger-then-tail DR search (setup_width={_SIM_DR_TRIGGER_SETUP_WIDTH}, setup_depth={_SIM_DR_TRIGGER_SETUP_DEPTH}). EO on `axis` must already be solved in the slot. Use as FALLBACK if dr_pattern_lookup misses.",
             "input_schema": {"type": "object", "properties": {"slot": _SLOT, "axis": {"type": "string", "enum": ["UD", "FB", "RL"]}}, "required": ["slot", "axis"]},
         },
         {
@@ -898,18 +964,20 @@ JSON form (always pass this to verify_solved, never retype the scramble):
    misses, use lookahead then find_eo_algorithmic. Should never happen.)
 2. **DR probe BEFORE committing to EO** — this is the most important
    strategy rule. For each axis that found a short EO, call
-   probe_dr_after_eo(slot='main', eo_alg=[that EO's moves], axis=X).
-   This tells you "if I commit this EO, can I find DR?" without
-   actually committing. Pick the EO whose probe returns the shortest
-   total = len(eo_alg) + best DR length. The shortest EO alone is NOT
-   the best — a 4-move EO that probes to a 7-move DR (= 11 total) beats
-   a 2-move EO that probes to no DR (force NISS / fail).
+   probe_dr_pattern(slot='main', eo_alg=[that EO's moves], axis=X).
+   This tells you "if I commit this EO, what DR sequence does the
+   library recall?" without committing. Pick the EO whose probe returns
+   the shortest total = len(eo_alg) + DR length. The shortest EO alone
+   is NOT the best — a 4-move EO that probes to a 7-move DR (= 11 total)
+   beats a 2-move EO that probes to a 12-move DR (= 14 total). If
+   probe_dr_pattern returns found=0 on every axis (very rare), fall back
+   to probe_dr_after_eo (uses the slower trigger-search).
 3. **Commit EO**: apply_moves with the chosen axis's EO sequence.
-4. **DR**: find_dr_via_trigger(axis=X) — apply the winning option (the
-   probe already proved it works). If somehow no DR is found at this
-   step, try NISS or reset_slot and try a different EO axis. Do NOT
-   manually build DR setup chains by guessing — that burns 10+ tool
-   calls. Reset and try the next axis instead.
+4. **DR**: dr_pattern_lookup(axis=X) — O(1) recall of the memorized DR
+   completion (the probe already proved it works). Apply the returned
+   moves with apply_moves. Only if it misses (extremely rare): fall back
+   to find_dr_via_trigger. Do NOT manually build DR setup chains by
+   guessing — that burns 10+ tool calls. Trust the library.
 5. **HTR**: this is a TWO-STEP process, no exceptions.
    a) htr_subset(slot='main') — identifies the canonical subset.
    b) lookup_subset_finish(slot='main', axis=X) — returns the
