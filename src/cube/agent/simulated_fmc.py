@@ -1235,6 +1235,7 @@ def solve(
         cost_subset_miss=int(_COST_SUBSET_LOOKUP_MISS),
         cost_subset_hit=int(_COST_SUBSET_LOOKUP_CACHED),
         cost_niss=int(_COST_NISS_FLIP),
+        MAX_HUMAN_RECALL=MAX_HUMAN_RECALL,
     )
     user_msg = f"Solve this scramble within your one-hour budget. Start with inspect_state(slot='main')."
 

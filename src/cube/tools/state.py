@@ -142,10 +142,25 @@ def try_alg(
                 dk[ax] = d
         if dk:
             deltas[key] = dk
+    # Surface which specific edge slots became fixed / broken per axis, so the
+    # LLM can SEE "this alg flipped UF and DF on UD-axis, breaking 1 edge and
+    # fixing 2" instead of just a count delta.
+    edge_changes: dict[str, dict[str, list[str]]] = {}
+    for ax in ("UD", "FB", "RL"):
+        before_set = set(before["bad_edge_slots_per_axis"][ax])
+        after_set = set(after["bad_edge_slots_per_axis"][ax])
+        newly_oriented = sorted(before_set - after_set)
+        newly_misoriented = sorted(after_set - before_set)
+        if newly_oriented or newly_misoriented:
+            edge_changes[ax] = {
+                "newly_oriented": newly_oriented,
+                "newly_misoriented": newly_misoriented,
+            }
     return {
         "before": before,
         "after": after,
         "deltas": deltas,
+        "edge_changes_per_axis": edge_changes,
         "solved": after["is_solved"],
     }
 

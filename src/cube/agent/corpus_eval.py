@@ -49,6 +49,25 @@ def build_corpus(extra: int = 0, seed: int = 100) -> list[tuple[str, str]]:
     return out
 
 
+def load_333fm_corpus(path: Path) -> tuple[list[tuple[str, str]], dict[str, dict]]:
+    """Load a 333.fm corpus JSON (produced by `cube.agent.fetch_333fm_corpus`).
+
+    Returns (corpus, metadata) where corpus is the list of (id, scramble) pairs
+    and metadata maps id → {human_solution, human_moves, human_comment, solver,
+    competition} for the per-scramble summary.
+    """
+    data = json.loads(path.read_text())
+    corpus = [(entry["id"], entry["scramble"]) for entry in data]
+    metadata = {entry["id"]: {
+        "human_solution": entry["human_solution"],
+        "human_moves": entry["human_moves"],
+        "human_comment": entry["human_comment"],
+        "solver": entry["solver"],
+        "competition": entry["competition"],
+    } for entry in data}
+    return corpus, metadata
+
+
 def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
             wall_limit_s: float, max_tool_calls: int) -> dict:
     print(f"\n{'=' * 60}\n  {scramble_id}: {scramble}\n{'=' * 60}", flush=True)
@@ -95,21 +114,33 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
     return summary
 
 
-def write_summary(out_dir: Path, summaries: list[dict], model: str) -> Path:
+def write_summary(
+    out_dir: Path, summaries: list[dict], model: str,
+    human_meta: dict[str, dict] | None = None,
+) -> Path:
     rows: list[str] = []
-    rows.append("# Corpus eval — sim mode on 4 scrambles")
+    rows.append(f"# Corpus eval — sim mode on {len(summaries)} scrambles")
     rows.append("")
     rows.append(f"Model: `{model}`")
     rows.append(f"Run: {datetime.now().isoformat(timespec='seconds')}")
     rows.append("")
-    rows.append("| ID | Result | Sim moves | Analyzer baseline | Gap | Tool calls | Sim time | Wall | Cost |")
-    rows.append("|---|---|---:|---:|---:|---:|---:|---:|---:|")
+    if human_meta:
+        rows.append("| ID | Result | Sim moves | Human (WCA) | Gap | Solver | Tool calls | Sim time | Wall | Cost |")
+        rows.append("|---|---|---:|---:|---:|---|---:|---:|---:|---:|")
+    else:
+        rows.append("| ID | Result | Sim moves | Analyzer baseline | Gap | Tool calls | Sim time | Wall | Cost |")
+        rows.append("|---|---|---:|---:|---:|---:|---:|---:|---:|")
     total_in = total_out = 0
     solved = 0
     move_sum = 0
     base_sum = 0
     for s in summaries:
-        baseline = ANALYZER_BASELINE.get(s["id"], "?")
+        if human_meta and s["id"] in human_meta:
+            baseline = human_meta[s["id"]]["human_moves"]
+            solver = human_meta[s["id"]]["solver"]
+        else:
+            baseline = ANALYZER_BASELINE.get(s["id"], "?")
+            solver = None
         if s["solves"]:
             gap = s["total_moves"] - baseline if isinstance(baseline, int) else "?"
             move_sum += s["total_moves"]
@@ -122,22 +153,46 @@ def write_summary(out_dir: Path, summaries: list[dict], model: str) -> Path:
             status = "✗"
         total_in += s["input_tokens"]
         total_out += s["output_tokens"]
-        # Sonnet pricing rough: $3/M in (cached close to $0.30), $15/M out.
         cost_est = s["input_tokens"] * 3 / 1_000_000 + s["output_tokens"] * 15 / 1_000_000
-        rows.append(
-            f"| {s['id']} | {status} | {s['total_moves'] if s['solves'] else '—'} | "
-            f"{baseline} | {gap} | {s['tool_calls']} | {s['sim_spent']:.0f}s | "
-            f"{s['wall_s']:.0f}s | ${cost_est:.2f} |"
-        )
+        if human_meta:
+            rows.append(
+                f"| {s['id']} | {status} | {s['total_moves'] if s['solves'] else '—'} | "
+                f"{baseline} | {gap} | {solver or '—'} | {s['tool_calls']} | {s['sim_spent']:.0f}s | "
+                f"{s['wall_s']:.0f}s | ${cost_est:.2f} |"
+            )
+        else:
+            rows.append(
+                f"| {s['id']} | {status} | {s['total_moves'] if s['solves'] else '—'} | "
+                f"{baseline} | {gap} | {s['tool_calls']} | {s['sim_spent']:.0f}s | "
+                f"{s['wall_s']:.0f}s | ${cost_est:.2f} |"
+            )
     rows.append("")
     rows.append(f"**Solved**: {solved}/{len(summaries)}")
     if solved:
         rows.append(f"**Avg sim moves (solved)**: {move_sum / solved:.1f}")
-        rows.append(f"**Avg analyzer baseline (solved)**: {base_sum / solved:.1f}")
-        rows.append(f"**Avg gap (solved)**: {(move_sum - base_sum) / solved:.1f}")
+        label = "human (WCA)" if human_meta else "analyzer baseline"
+        rows.append(f"**Avg {label} (solved)**: {base_sum / solved:.1f}")
+        rows.append(f"**Avg gap (solved)**: {(move_sum - base_sum) / solved:+.1f}")
     total_cost = total_in * 3 / 1_000_000 + total_out * 15 / 1_000_000
     rows.append(f"**Total API cost (rough, no cache discount)**: ${total_cost:.2f}")
     rows.append("")
+    if human_meta:
+        rows.append("## Human reconstructions (for comparison)")
+        rows.append("")
+        for s in summaries:
+            meta = human_meta.get(s["id"])
+            if not meta:
+                continue
+            rows.append(f"### {s['id']} — {meta['solver']} ({meta['human_moves']} moves)")
+            rows.append("```")
+            rows.append(meta["human_solution"])
+            rows.append("```")
+            if meta.get("human_comment"):
+                rows.append("Annotation:")
+                rows.append("```")
+                rows.append(meta["human_comment"])
+                rows.append("```")
+            rows.append("")
     rows.append("## Per-scramble narratives")
     for s in summaries:
         rows.append(f"- [{s['id']}]({Path(s['narrative_path']).name})")
@@ -156,6 +211,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="Append N freshly-generated WCA-style scrambles to the default 4.")
     parser.add_argument("--random-seed", type=int, default=100,
                         help="Base seed for generated scrambles (each uses seed+i).")
+    parser.add_argument("--corpus-333fm", type=Path, default=None,
+                        help="If set, load scrambles from this 333.fm JSON (produced "
+                             "by cube.agent.fetch_333fm_corpus) instead of the default + random corpus. "
+                             "Summary will include human-solver baselines per scramble.")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -163,7 +222,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    corpus = build_corpus(extra=args.extra_random, seed=args.random_seed)
+    human_meta: dict[str, dict] | None = None
+    if args.corpus_333fm:
+        corpus, human_meta = load_333fm_corpus(args.corpus_333fm)
+    else:
+        corpus = build_corpus(extra=args.extra_random, seed=args.random_seed)
     summaries: list[dict] = []
     for scramble_id, scramble in corpus:
         try:
@@ -184,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
                 "transcript_path": "", "narrative_path": "",
             })
 
-    summary_path = write_summary(args.out_dir, summaries, args.model)
+    summary_path = write_summary(args.out_dir, summaries, args.model, human_meta=human_meta)
     print(f"\nwrote {summary_path}")
     # Regenerate the top-level runs index so new transcripts surface immediately.
     try:

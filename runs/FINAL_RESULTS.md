@@ -4,6 +4,18 @@ The headline experiment after a full day of iteration.
 
 ## TL;DR
 
+**v11 (human-tools-only): 5/5 WCA-FMC scrambles solved, sim avg 30.2
+vs human champion avg 20.8, $0.56.**
+
+The honest-human version of the agent: every recall/search tool caps
+at 4 moves per call, wide-BFS tools removed, agent composes multi-step
+plans by iterating in 4-move chunks (25-50 tool calls per scramble).
+Strategic decisions and narration are LLM-driven; the +9.4 gap to
+WCA champions is approximately the "skeleton + insertions" magic the
+agent doesn't have as a tool yet.
+
+## v9 (previous headline — analyzer baseline)
+
 **v9 (EO library + DR library, recall-not-search): 10/10 SOLVED, avg
 29.9 moves, $0.65 total.**
 
@@ -41,7 +53,15 @@ remaining open work).
 | v6 (mirror-aug + 10 scrambles) | + retrained policy | 1/10 | $14.85 |
 | v7 (BFS + cache) | + find_eo_algorithmic + prompt cache | 5/10 | $1.70 |
 | v8 (EO library) | + memorized EO patterns (6144) | 5/10 | $1.42 |
-| **v9 (DR library)** | + memorized DR patterns (3.25M) | **10/10** | **$0.65** |
+| v9 (DR library) | + memorized DR patterns (3.25M) | 10/10 | $0.65 |
+| v10 (phase-shaped) | + DR/HTR phase decomposition | 10/10 | $0.80 |
+| **v11 (human-tools)** | + 4-move recall cap, no wide search | **5/5 WCA** | **$0.56** |
+
+v11 shifts the comparison from analyzer-baseline to **WCA-champion baseline**:
+5 real competition scrambles from api.333.fm with the solvers' annotated
+reconstructions. Sim avg 30.2 vs human champion avg 20.8 (+9.4). The
+gap is approximately the skeleton+insertion savings WCA solvers get
+that the agent doesn't have access to yet.
 
 **v7 vs v6**: 5× the solve rate at 1/9 the cost. The combination of
 the BFS escape hatch (algorithmic EO when policy fails) and prompt

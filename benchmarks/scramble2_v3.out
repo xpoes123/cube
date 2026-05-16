@@ -1,0 +1,58 @@
+/home/david/code/cube/src/cube/training/model.py:76: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=cfg.n_layers)
+loaded checkpoints/policy_best.pt
+  val: top1=0.2882 top5=0.6499 (epoch 11)
+
+found 34 skeleton candidates; showing top 5:
+
+  --- #1 ---
+scramble: R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F
+  [         EO (UD)]  4 moves  log-prob= -5.13  →  R B D' B'
+  [         DR (UD)]  8 moves  log-prob= -8.78  +5→HTR  →  B2 U' B2 R F2 R' F2 R
+  [        HTR (UD)]  7 moves  log-prob=  0.00  →  R2 U R2 B2 U2 L2 U
+  [          Finish]  8 moves  log-prob=  0.00  →  B2 U2 F2 U2 F2 R2 D2 L2
+  total: 25 moves (cancellation saved 2)
+  ✓ SOLVES the scramble in 25 moves
+  full solution: R B D' B U' B2 R F2 R' F2 R' U R2 B2 U2 L2 U B2 U2 F2 U2 F2 R2 D2 L2
+
+  --- #2 ---
+scramble: R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F
+  [         EO (UD)]  3 moves  log-prob= -6.25  →  B D' B'
+  [   DR (UD) [inv]]  6 moves  log-prob=-10.12  +8→HTR  [inv]  →  B2 R F2 B2 U' L
+  [        HTR (UD)]  9 moves  log-prob=  0.00  [inv]  →  R2 U B2 U B2 R2 U B2 U
+  [          Finish]  8 moves  log-prob=  0.00  [inv]  →  U2 R2 B2 D2 R2 F2 R2 U2
+  total: 25 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 25 moves
+  full solution: B D' B' U2 R2 F2 R2 D2 B2 R2 U B2 U' R2 B2 U' B2 U' R2 L' U B2 F2 R' B2
+
+  --- #3 ---
+scramble: R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F
+  [         EO (UD)]  3 moves  log-prob= -6.25  →  B D' B'
+  [   DR (UD) [inv]]  6 moves  log-prob=-10.57  +8→HTR  [inv]  →  B2 R B2 F2 U' L
+  [        HTR (UD)]  9 moves  log-prob=  0.00  [inv]  →  R2 U B2 U B2 R2 U B2 U
+  [          Finish]  8 moves  log-prob=  0.00  [inv]  →  U2 R2 B2 D2 R2 F2 R2 U2
+  total: 25 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 25 moves
+  full solution: B D' B' U2 R2 F2 R2 D2 B2 R2 U B2 U' R2 B2 U' B2 U' R2 L' U F2 B2 R' B2
+
+  --- #4 ---
+scramble: R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F
+  [         EO (UD)]  3 moves  log-prob= -5.79  →  B D' B
+  [   DR (UD) [inv]]  6 moves  log-prob=-12.00  +8→HTR  [inv]  →  B2 R B2 F2 U' L
+  [        HTR (UD)]  9 moves  log-prob=  0.00  [inv]  →  R2 U B2 U B2 R2 U B2 U
+  [          Finish]  9 moves  log-prob=  0.00  [inv]  →  U2 B2 U2 L2 F2 R2 U2 F2 R2
+  total: 26 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 26 moves
+  full solution: B D' B R2 F2 U2 R2 F2 L2 U2 B2 U B2 U' R2 B2 U' B2 U' R2 L' U F2 B2 R' B2
+
+  --- #5 ---
+scramble: R' U' F B' U2 F' U2 R2 B' R2 B' R2 U2 R2 F' L U2 B D R F L2 F D' R' U' F
+  [         EO (UD)]  3 moves  log-prob= -5.79  →  B D' B
+  [   DR (UD) [inv]]  7 moves  log-prob=-11.91  +8→HTR  [inv]  →  B2 D' R' B2 R U R
+  [        HTR (UD)] 10 moves  log-prob=  0.00  [inv]  →  R2 U' R2 U F2 R2 L2 U' F2 D
+  [          Finish]  9 moves  log-prob=  0.00  [inv]  →  L2 F2 L2 R2 D2 R2 U2 F2 D2
+  total: 28 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 28 moves
+  full solution: B D' B D2 F2 U2 R2 D2 R2 L2 F2 L2 D' F2 U L2 R2 F2 U' R2 U R U' R' B2 R D B2
+
+  search time: 1537.47s

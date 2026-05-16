@@ -1,0 +1,46 @@
+/home/david/code/cube/src/cube/training/model.py:76: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=cfg.n_layers)
+loaded checkpoints/policy_best.pt
+  val: top1=0.2882 top5=0.6499 (epoch 11)
+
+found 19 skeleton candidates; showing top 5:
+
+  --- #1 ---
+scramble: R' U' F L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F
+  [   EO (UD) [inv]]  4 moves  log-prob= -8.86  [inv]  →  F' B R F
+  [   DR (UD) [inv]]  7 moves  log-prob=-11.50  +10→HTR  [inv]  →  B2 U F2 D' U F2 R
+  [        HTR (UD)] 10 moves  log-prob=  0.00  [inv]  →  L2 U' L2 U R2 U' R2 U L2 D
+  [          Finish] 10 moves  log-prob=  0.00  [inv]  →  D2 F2 U2 B2 L2 F2 L2 F2 D2 R2
+  total: 30 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 30 moves
+  full solution: R2 D2 F2 L2 F2 L2 B2 U2 F2 D L2 U' R2 U R2 U' L2 U L2 R' F2 U' D F2 U' B2 F' R' B' F
+
+  --- #2 ---
+scramble: R' U' F L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F
+  [   EO (UD) [inv]]  4 moves  log-prob= -8.86  [inv]  →  F' B R F
+  [   DR (UD) [inv]]  6 moves  log-prob=-12.58  +9→HTR  [inv]  →  U' D F2 R2 D' L
+  [        HTR (UD)] 10 moves  log-prob=  0.00  [inv]  →  U F2 U F2 U' R2 B2 U' F2 D
+  [          Finish] 11 moves  log-prob=  0.00  [inv]  →  F2 R2 F2 U2 F2 D2 F2 U2 R2 D2 U2
+  total: 31 moves
+  ✓ SOLVES the scramble in 31 moves
+  full solution: U2 D2 R2 U2 F2 D2 F2 U2 F2 R2 F2 D' F2 U B2 R2 U F2 U' F2 U' L' D R2 F2 D' U F' R' B' F
+
+  --- #3 ---
+scramble: R' U' F L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F
+  [   EO (UD) [inv]]  4 moves  log-prob= -8.27  [inv]  →  B' F' R F
+  total: 4 moves
+  final state: best EO axis = UD (6 bad edges)
+
+  --- #4 ---
+scramble: R' U' F L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F
+  [   EO (UD) [inv]]  4 moves  log-prob= -8.55  [inv]  →  B' F' R F'
+  total: 4 moves
+  final state: best EO axis = UD (6 bad edges)
+
+  --- #5 ---
+scramble: R' U' F L' R U2 F2 L2 R U2 L B2 R' U' L2 F L' U2 R F2 R B' R' U' F
+  [   EO (UD) [inv]]  4 moves  log-prob= -8.60  [inv]  →  F' B R F'
+  total: 4 moves
+  final state: best EO axis = UD (6 bad edges)
+
+  search time: 941.91s

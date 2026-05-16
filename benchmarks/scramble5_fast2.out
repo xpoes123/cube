@@ -1,0 +1,36 @@
+/home/david/code/cube/src/cube/training/model.py:76: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=cfg.n_layers)
+loaded checkpoints/policy_best.pt
+  val: top1=0.2882 top5=0.6499 (epoch 11)
+  warming HTR distance tables (corners + edges × 3 axes)...
+  HTR tables ready (15.6s)
+
+found 8 skeleton candidates; showing top 3:
+
+  --- #1 ---
+scramble: R' U' F R D' B2 R2 D' L2 D2 L2 B2 U2 F U' L B R' F U F D2 R' U' F
+  [         EO (RL)]  4 moves  log-prob= -7.53  →  U L F' U'
+  [         DR (RL)] 12 moves  log-prob=-13.38  +10→HTR  →  F' L F' F2 L' D2 R2 D2 L2 F R2 F
+  [        HTR (RL)] 10 moves  log-prob=  0.00  →  B2 R' B2 R D2 R' D2 R D2 L
+  [          Finish]  8 moves  log-prob=  0.00  →  D2 L2 U2 B2 D2 B2 L2 U2
+  total: 33 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 33 moves
+  full solution: U L F' U' F' L F L' D2 R2 D2 L2 F R2 F B2 R' B2 R D2 R' D2 R D2 L D2 L2 U2 B2 D2 B2 L2 U2
+
+  --- #2 ---
+scramble: R' U' F R D' B2 R2 D' L2 D2 L2 B2 U2 F U' L B R' F U F D2 R' U' F
+  [         EO (RL)]  4 moves  log-prob= -7.53  →  U L F' U'
+  [         DR (RL)] 12 moves  log-prob=-14.27  +10→HTR  →  F' L F' F2 L' D2 R2 D2 L2 B U2 B
+  [        HTR (RL)] 11 moves  log-prob=  0.00  →  U2 R' F2 R' U2 R F2 R' F2 D2 R
+  [          Finish] 10 moves  log-prob=  0.00  →  U2 F2 D2 L2 F2 R2 F2 D2 R2 U2
+  total: 36 moves (cancellation saved 1)
+  ✓ SOLVES the scramble in 36 moves
+  full solution: U L F' U' F' L F L' D2 R2 D2 L2 B U2 B U2 R' F2 R' U2 R F2 R' F2 D2 R U2 F2 D2 L2 F2 R2 F2 D2 R2 U2
+
+  --- #3 ---
+scramble: R' U' F R D' B2 R2 D' L2 D2 L2 B2 U2 F U' L B R' F U F D2 R' U' F
+  [         EO (RL)]  4 moves  log-prob= -7.18  →  L U2 F' U'
+  total: 4 moves
+  final state: best EO axis = RL (0 bad edges)
+
+  search time: 317.15s
