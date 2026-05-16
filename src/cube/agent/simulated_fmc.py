@@ -437,6 +437,42 @@ def _build_handlers(
         budget.charge("policy_intuition", _COST_POLICY_INTUITION, slot=slot.name)
         return out
 
+    def _h_brain_suggest(args):
+        """v23 brain inference: state-conditioned per-step move predictor.
+
+        Returns top-K (move, prob) pairs from the nissy-trained brain
+        for the named step (eo/dr/htr/finish). Falls back to legacy
+        policy_intuition if the brain checkpoint for that step is not
+        present — caller sees `from_brain: false` to know which.
+        """
+        from cube.brain import infer as brain_infer
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        step = args["step"]
+        k = args.get("k", 5)
+        if not brain_infer.is_brain_available(step):
+            # Fallback to legacy policy
+            legacy = policy.policy_intuition(sc, hist, k=k)
+            budget.charge("brain_suggest", _COST_POLICY_INTUITION, slot=slot.name)
+            return {
+                "from_brain": False,
+                "step": step,
+                "candidates": legacy.get("candidates", []),
+                "note": f"no trained brain checkpoint for step={step}; fell back to legacy policy_intuition",
+            }
+        # Evaluate state from scramble + history
+        s = SOLVED.apply_alg(parse_alg(" ".join(sc))) if sc else SOLVED
+        if hist:
+            s = s.apply_alg(parse_alg(" ".join(hist)))
+        suggestions = brain_infer.policy_suggest(s, step, k=k)
+        budget.charge("brain_suggest", _COST_POLICY_INTUITION, slot=slot.name, step=step)
+        return {
+            "from_brain": True,
+            "step": step,
+            "candidates": [{"move": m, "prob": p} for m, p in suggestions],
+            "note": f"top-{k} from brain_{step} (nissy-trained state-conditioned)",
+        }
+
     def _h_try_alg(args):
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -885,6 +921,7 @@ def _build_handlers(
         "compose_niss_solution": _h_compose_niss_solution,
         "niss_flip": _h_niss_flip,
         "policy_intuition": _h_policy_intuition,
+        "brain_suggest": _h_brain_suggest,
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
@@ -973,6 +1010,29 @@ def _tool_schemas() -> list[dict]:
             "name": "policy_intuition",
             "description": "Top-k 'intuition' moves from the trained policy. Use sparingly; this is your gut, not search.",
             "input_schema": {"type": "object", "properties": {"slot": _SLOT, "k": {"type": "integer", "minimum": 1, "maximum": 10, "default": 5}}, "required": ["slot"]},
+        },
+        {
+            "name": "brain_suggest",
+            "description": (
+                "v23 — state-conditioned per-step move predictor (the 'brain'). "
+                "Specify which FMC step you're working on (eo/dr/htr/finish); the "
+                "brain returns top-K (move, prob) candidates from a small "
+                "transformer trained on optimal-move distributions from nissy. "
+                "Unlike policy_intuition (history-sequence-conditioned), this "
+                "directly conditions on the current cube state and outputs only "
+                "moves that are legal for the named step. Falls back to "
+                "policy_intuition if the brain checkpoint for that step is not "
+                "trained yet (response includes `from_brain: false`)."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "step": {"type": "string", "enum": ["eo", "dr", "htr", "finish"]},
+                    "k": {"type": "integer", "minimum": 1, "maximum": 10, "default": 5},
+                },
+                "required": ["slot", "step"],
+            },
         },
         {
             "name": "try_alg",
