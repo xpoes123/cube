@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, dr_pattern_lib, eo_bfs, eo_pattern_lib, library, policy, search, state
+from cube.tools import algebra, dr_pattern_lib, dr_triggers, eo_bfs, eo_pattern_lib, library, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -136,6 +136,11 @@ class BudgetTracker:
 # A first cache miss costs the agent _COST_SUBSET_LOOKUP_MISS; subsequent
 # hits are cheap. This is the "human memorized this subset" abstraction.
 _SUBSET_FINISH_CACHE: dict[tuple, dict[str, list[str]]] = {}
+
+# Phase-separated cache: canonical HTR subset -> {axis -> {"htr_moves": [...],
+# "finish_moves": [...]}}. The phase split mirrors how a champion verbalizes
+# the finish: "first the corner reduction, then the half-turn finish."
+_SUBSET_PHASE_CACHE: dict[tuple, dict[str, dict[str, list[str]]]] = {}
 
 
 def _load_subset_cache_from_disk() -> None:
@@ -392,28 +397,62 @@ def _build_handlers(
             )
         return out
 
-    def _h_dr_pattern_lookup(args):
-        """Recall a memorized DR completion from the EO-already-solved state.
+    def _h_dr_recognize(args):
+        """Recognize the DR pattern and split into setup + named trigger.
 
-        Mirrors a human champion who recognizes the DR pre-image pattern and
-        plays the rehearsed completion. O(1) library lookup, no search.
-        Use this AFTER applying EO. Cost: 3s simulated.
+        Returns:
+          - trigger_family: human-readable name (e.g. "X-U2-X' (DR-4c4e)")
+          - setup_moves: pre-trigger setup (may be empty)
+          - trigger_moves: the named trigger itself
+          - total_length: setup + trigger combined
+
+        Apply setup_moves and trigger_moves with SEPARATE apply_moves calls,
+        narrating "this is a 2-move setup into the R-U2-R' trigger" — that is
+        how a champion verbalizes their DR. Cost: 3s simulated.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         out = dr_pattern_lib.dr_pattern_lookup(sc, hist, axis=args["axis"])
-        budget.charge("dr_pattern_lookup", 3.0, slot=slot.name, axis=args["axis"])
+        if out.get("found") == 1 and out.get("options") and out["options"][0]["moves"]:
+            full_moves = out["options"][0]["moves"]
+            setup, trigger, trigger_name = dr_triggers.identify_trigger(full_moves)
+            out = {
+                "found": 1,
+                "axis": args["axis"],
+                "trigger_family": trigger_name,
+                "setup_moves": setup,
+                "trigger_moves": trigger,
+                "total_length": len(full_moves),
+                "note": (
+                    f"DR recognized: {trigger_name}. "
+                    f"{len(setup)}-move setup + {len(trigger)}-move trigger. "
+                    f"Apply setup_moves and trigger_moves as separate "
+                    f"apply_moves calls."
+                ),
+            }
+        budget.charge("dr_recognize", 3.0, slot=slot.name, axis=args["axis"])
         return out
 
     def _h_probe_dr_pattern(args):
-        """Run dr_pattern_lookup AS IF the given eo_alg were appended to
-        history, WITHOUT modifying the slot. Mirror of probe_dr_after_eo
-        but for the O(1) DR library. Cost: 3s simulated.
+        """Run dr_recognize AS IF the given eo_alg were applied, WITHOUT
+        modifying the slot. Use to compare DR-library options across
+        candidate EOs by total length AND trigger family. Cost: 3s simulated.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         hypothetical_hist = list(hist) + list(args["eo_alg"])
         out = dr_pattern_lib.dr_pattern_lookup(sc, hypothetical_hist, axis=args["axis"])
+        if out.get("found") == 1 and out.get("options") and out["options"][0]["moves"]:
+            full_moves = out["options"][0]["moves"]
+            setup, trigger, trigger_name = dr_triggers.identify_trigger(full_moves)
+            out = {
+                "found": 1,
+                "axis": args["axis"],
+                "trigger_family": trigger_name,
+                "setup_length": len(setup),
+                "trigger_length": len(trigger),
+                "total_length": len(full_moves),
+            }
         out["probed_with_eo"] = list(args["eo_alg"])
         budget.charge("probe_dr_pattern", 3.0, slot=slot.name, axis=args["axis"])
         return out
@@ -464,13 +503,73 @@ def _build_handlers(
         budget.charge("htr_subset", _COST_HTR_SUBSET, slot=slot.name)
         return out
 
-    def _h_lookup_subset_finish(args):
-        """Memorization-style HTR finish.
+    def _compute_subset_phases(s, sc, hist, axis: str, canonical: tuple) -> dict | None:
+        """Populate _SUBSET_PHASE_CACHE for (canonical, axis) if missing.
+        Returns {"htr_moves": [...], "finish_moves": [...]} or None on error.
+        """
+        cached = _SUBSET_PHASE_CACHE.get(canonical, {}).get(axis)
+        if cached is not None:
+            return cached
+        if not is_htr_ud(s):
+            full = search.solve_htr_and_finish_from_dr(sc, hist, axis=axis)
+            if "error" in full:
+                return None
+            phases = {
+                "htr_moves": list(full["htr_moves"]),
+                "finish_moves": list(full["finish_moves"]),
+            }
+        else:
+            from cube.classifier.htr import htr_solve
+            finish = htr_solve(s)
+            if finish is None:
+                return None
+            phases = {"htr_moves": [], "finish_moves": [str(m) for m in finish]}
+        _SUBSET_PHASE_CACHE.setdefault(canonical, {})[axis] = phases
+        return phases
 
-        Strong humans recognize the HTR-corner-subset and execute a
-        rehearsed finish. We approximate that by caching the optimal
-        finish per (canonical_subset_form, axis); a cache miss is the
-        "first time you've seen this subset" cost.
+    def _subset_describe(canonical: tuple) -> dict:
+        """Human-friendly structural description of the corner subset."""
+        from cube.classifier.features import (
+            corner_swap_count, corner_axial_count,
+            corner_perm_parity, corner_cycle_structure,
+        )
+        # Build a State view from the canonical cp tuple to query features.
+        from cube.engine.state import SOLVED as _S
+        from dataclasses import replace
+        synthetic = replace(_S, cp=tuple(canonical))
+        swap = corner_swap_count(synthetic)
+        axial = corner_axial_count(synthetic)
+        parity = corner_perm_parity(synthetic)
+        cycles = corner_cycle_structure(synthetic)
+        if axial == 8:
+            family = "axial"
+        elif axial >= 4:
+            family = "mostly-axial"
+        elif max(cycles) <= 2:
+            family = "2-cycle"
+        else:
+            family = "long-cycle"
+        return {
+            "swap_count": swap,
+            "axial_count": axial,
+            "perm_parity": parity,
+            "cycle_structure": list(cycles),
+            "family": family,
+            "name": f"{swap}-swap {family}",
+        }
+
+    def _h_htr_classify(args):
+        """Classify the current HTR-corner-subset and report phase lengths.
+
+        Returns the subset name (e.g. "4-swap axial"), the structural features
+        (swap/axial counts, cycle structure, parity), and the lengths of the
+        two finish phases:
+          - htr_reduction: corner-orbit moves taking DR -> HTR subgroup
+          - finish: half-turn-only moves taking HTR -> solved
+
+        The agent should then apply each phase with apply_htr_phase and
+        narrate which phase is doing what. First exposure to a subset costs
+        more sim time ("learning"); subsequent exposures are cheap (recall).
         """
         slot = _resolve_slot(slots, args["slot"])
         axis = args["axis"]
@@ -481,62 +580,84 @@ def _build_handlers(
 
         canonical = dr_subset_canonical(s)
         if canonical is None:
-            return {"error": "current state is not in DR-corner subgroup; no subset to look up."}
-
+            return {"error": "current state is not in DR-corner subgroup; reach DR first."}
         cache_key = tuple(canonical)
-        if cache_key in _SUBSET_FINISH_CACHE and axis in _SUBSET_FINISH_CACHE[cache_key]:
-            finish = _SUBSET_FINISH_CACHE[cache_key][axis]
-            quality = _memory_quality_hint(cache_key, axis)
-            budget.charge("lookup_subset_finish", _COST_SUBSET_LOOKUP_CACHED, slot=slot.name, axis=axis, cached=True, subset=list(canonical))
-            return {
-                "subset_canonical": list(canonical),
-                "axis": axis,
-                "finish_moves": list(finish),
-                "length": len(finish),
-                "cached": True,
-                "memory_quality": quality,
-                "note": f"Recognized subset — playing memorized finish ({quality}).",
-            }
 
-        # Cache miss: compute via the existing PDB. From the agent's
-        # perspective this is the "first time learning this subset" cost.
-        if not is_htr_ud(s):
-            # The full finish requires reaching canonical HTR first, then
-            # half-turn finish. Reuse the unconstrained solve_htr_and_finish.
-            full = search.solve_htr_and_finish_from_dr(sc, hist, axis=axis)
-            if "error" in full:
-                budget.charge("lookup_subset_finish", _COST_SUBSET_LOOKUP_MISS, slot=slot.name, axis=axis, cached=False)
-                return full
-            combined = list(full["htr_moves"]) + list(full["finish_moves"])
-            _SUBSET_FINISH_CACHE.setdefault(cache_key, {})[axis] = combined
-            budget.charge("lookup_subset_finish", _COST_SUBSET_LOOKUP_MISS, slot=slot.name, axis=axis, cached=False, subset=list(canonical))
-            return {
-                "subset_canonical": list(canonical),
-                "axis": axis,
-                "finish_moves": combined,
-                "length": len(combined),
-                "cached": False,
-                "note": (
-                    "First exposure to this subset — derived finish and memorized "
-                    "it. Future calls for the same subset are cheap."
-                ),
-            }
-        # Already in canonical HTR: just half-turn finish.
-        from cube.classifier.htr import htr_solve
-        finish = htr_solve(s)
-        if finish is None:
-            budget.charge("lookup_subset_finish", _COST_SUBSET_LOOKUP_MISS, slot=slot.name, axis=axis, cached=False)
-            return {"error": "htr_solve PDB returned None."}
-        moves_str = [str(m) for m in finish]
-        _SUBSET_FINISH_CACHE.setdefault(cache_key, {})[axis] = moves_str
-        budget.charge("lookup_subset_finish", _COST_SUBSET_LOOKUP_MISS, slot=slot.name, axis=axis, cached=False, subset=list(canonical))
+        cached_before = cache_key in _SUBSET_PHASE_CACHE and axis in _SUBSET_PHASE_CACHE[cache_key]
+        phases = _compute_subset_phases(s, sc, hist, axis, cache_key)
+        if phases is None:
+            budget.charge("htr_classify", _COST_SUBSET_LOOKUP_MISS, slot=slot.name, axis=axis, cached=False)
+            return {"error": "could not compute HTR phases for this subset."}
+
+        cost = _COST_SUBSET_LOOKUP_CACHED if cached_before else _COST_SUBSET_LOOKUP_MISS
+        budget.charge("htr_classify", cost, slot=slot.name, axis=axis, cached=cached_before, subset=list(canonical))
+        info = _subset_describe(cache_key)
         return {
             "subset_canonical": list(canonical),
+            "subset_name": info["name"],
+            "subset_family": info["family"],
+            "structural": {
+                "swap_count": info["swap_count"],
+                "axial_count": info["axial_count"],
+                "perm_parity": info["perm_parity"],
+                "cycle_structure": info["cycle_structure"],
+            },
             "axis": axis,
-            "finish_moves": moves_str,
-            "length": len(moves_str),
-            "cached": False,
-            "note": "First exposure to this subset — memorized.",
+            "phases": {
+                "htr_reduction": {
+                    "length": len(phases["htr_moves"]),
+                    "description": (
+                        "DR -> HTR-corner-subgroup; quarter-turn corners on the axis "
+                        "(or empty if already in HTR)."
+                    ),
+                },
+                "finish": {
+                    "length": len(phases["finish_moves"]),
+                    "description": "HTR -> solved; half-turn only.",
+                },
+            },
+            "total_length": len(phases["htr_moves"]) + len(phases["finish_moves"]),
+            "cached": cached_before,
+            "note": (
+                f"Subset is {info['name']} (cycles={info['cycle_structure']}). "
+                f"Apply with apply_htr_phase(phase='htr_reduction') then "
+                f"apply_htr_phase(phase='finish'). "
+                + ("Recall (cached)." if cached_before else "First exposure — memorized.")
+            ),
+        }
+
+    def _h_apply_htr_phase(args):
+        """Return the moves for the named HTR phase. Phase must be either
+        'htr_reduction' or 'finish'. Requires htr_classify to have been
+        called first (otherwise lazily computes). Apply the returned moves
+        with apply_moves and narrate what the phase is doing."""
+        slot = _resolve_slot(slots, args["slot"])
+        axis = args["axis"]
+        phase = args["phase"]
+        if phase not in ("htr_reduction", "finish"):
+            return {"error": f"phase must be 'htr_reduction' or 'finish'; got {phase!r}"}
+        sc, hist = _materialize(scramble, slot)
+        s = SOLVED.apply_alg(parse_alg(" ".join(sc))) if sc else SOLVED
+        if hist:
+            s = s.apply_alg(parse_alg(" ".join(hist)))
+        canonical = dr_subset_canonical(s)
+        if canonical is None:
+            return {"error": "not in DR-corner subgroup."}
+        cache_key = tuple(canonical)
+        phases = _compute_subset_phases(s, sc, hist, axis, cache_key)
+        if phases is None:
+            return {"error": "could not compute HTR phases."}
+        moves = phases["htr_moves"] if phase == "htr_reduction" else phases["finish_moves"]
+        budget.charge("apply_htr_phase", 1.0, slot=slot.name, axis=axis, phase=phase)
+        return {
+            "phase": phase,
+            "axis": axis,
+            "moves": list(moves),
+            "length": len(moves),
+            "note": (
+                f"{phase}: {len(moves)} moves. Apply with apply_moves."
+                + (" (Already in HTR — empty phase.)" if not moves else "")
+            ),
         }
 
     def _h_verify_solved(args):
@@ -573,13 +694,14 @@ def _build_handlers(
         "lookahead_wide": _h_lookahead_wide,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
         "find_eo_algorithmic": _h_find_eo_algorithmic,
-        "dr_pattern_lookup": _h_dr_pattern_lookup,
+        "dr_recognize": _h_dr_recognize,
         "probe_dr_pattern": _h_probe_dr_pattern,
         "find_dr_via_trigger": _h_find_dr_via_trigger,
         "probe_dr_after_eo": _h_probe_dr,
         "cancel": _h_cancel,
         "htr_subset": _h_htr_subset,
-        "lookup_subset_finish": _h_lookup_subset_finish,
+        "htr_classify": _h_htr_classify,
+        "apply_htr_phase": _h_apply_htr_phase,
         "verify_solved": _h_verify_solved,
         "budget_status": _h_budget_status,
     }
@@ -709,15 +831,16 @@ def _tool_schemas() -> list[dict]:
             },
         },
         {
-            "name": "dr_pattern_lookup",
+            "name": "dr_recognize",
             "description": (
-                "PRIMARY DR TOOL — recall a memorized DR completion for the "
-                "current EO-solved state on `axis`. Like a human champion: "
-                "recognize the DR pre-image (corner-orient + slice pattern), "
-                "recall the rehearsed completion. O(1) lookup, 3s simulated. "
-                "EO on `axis` must already be solved. Covers all reachable "
-                "DR pre-image patterns. Try this BEFORE find_dr_via_trigger. "
-                "If it misses (rare), fall back to find_dr_via_trigger."
+                "PRIMARY DR TOOL — recognize the DR pattern on `axis` and "
+                "split the memorized completion into NAMED setup + trigger. "
+                "Returns trigger_family (e.g. \"X-U2-X' (DR-4c4e)\"), "
+                "setup_moves (may be empty), and trigger_moves. Like a "
+                "champion: name what you're seeing, then apply the named "
+                "pieces. Then apply setup_moves and trigger_moves with "
+                "SEPARATE apply_moves calls so the narration shows each "
+                "piece. EO on `axis` must already be solved. 3s simulated."
             ),
             "input_schema": {
                 "type": "object",
@@ -731,9 +854,10 @@ def _tool_schemas() -> list[dict]:
         {
             "name": "probe_dr_pattern",
             "description": (
-                "Run dr_pattern_lookup AS IF the given eo_alg were applied, "
-                "WITHOUT modifying the slot. Use to compare DR-library "
-                "feasibility across candidate EOs before committing. "
+                "Run dr_recognize AS IF the given eo_alg were applied, "
+                "WITHOUT modifying the slot. Returns trigger_family + "
+                "setup/trigger lengths + total. Use to compare DR options "
+                "across candidate EOs by trigger family AND total. "
                 "Cost: 3s simulated."
             ),
             "input_schema": {
@@ -775,17 +899,50 @@ def _tool_schemas() -> list[dict]:
         },
         {
             "name": "htr_subset",
-            "description": "Identify the canonical HTR-corner-subset of the slot. Use after reaching DR — name the subset before looking up its finish.",
+            "description": "Identify the canonical HTR-corner-subset of the slot. Use after reaching DR — name the subset before classifying/finishing.",
             "input_schema": {"type": "object", "properties": {"slot": _SLOT}, "required": ["slot"]},
         },
         {
-            "name": "lookup_subset_finish",
+            "name": "htr_classify",
             "description": (
-                "Look up the memorized HTR finish for the slot's current canonical subset. "
-                "First exposure to a subset is expensive (you 'learn' it); repeats are cheap. "
-                "Returns the half-turn finish_moves. Apply them with apply_moves to complete the solve."
+                "Classify the post-DR state into a named HTR subset and "
+                "report the two finish-phase lengths: (1) htr_reduction "
+                "(DR -> HTR-corner-subgroup via quarter-turn corners on the "
+                "axis); (2) finish (HTR -> solved via half-turns only). "
+                "Returns subset_name (e.g. '4-swap axial'), structural "
+                "features (swap_count, axial_count, cycle_structure), and "
+                "per-phase lengths. Narrate the subset by name, then call "
+                "apply_htr_phase for each phase separately. First exposure "
+                f"to a subset costs ~{int(_COST_SUBSET_LOOKUP_MISS)}s (learning); "
+                f"repeats cost {int(_COST_SUBSET_LOOKUP_CACHED)}s (recall)."
             ),
-            "input_schema": {"type": "object", "properties": {"slot": _SLOT, "axis": {"type": "string", "enum": ["UD", "FB", "RL"]}}, "required": ["slot", "axis"]},
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "axis"],
+            },
+        },
+        {
+            "name": "apply_htr_phase",
+            "description": (
+                "Return the moves for one HTR phase ('htr_reduction' or "
+                "'finish'). Pair with apply_moves to commit them. Calling "
+                "the two phases separately gives narration like 'reducing "
+                "corners with U2 R2 U2 R2' then 'half-turn finish: F2 L2 "
+                "U2…'. Cost: 1s simulated each."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                    "phase": {"type": "string", "enum": ["htr_reduction", "finish"]},
+                },
+                "required": ["slot", "axis", "phase"],
+            },
         },
         {
             "name": "verify_solved",
@@ -962,30 +1119,35 @@ JSON form (always pass this to verify_solved, never retype the scramble):
    `moves` sequence. Pick the axis with shortest len(moves) — that's
    your candidate EO. (Fallbacks: if for some reason eo_pattern_lookup
    misses, use lookahead then find_eo_algorithmic. Should never happen.)
-2. **DR probe BEFORE committing to EO** — this is the most important
-   strategy rule. For each axis that found a short EO, call
-   probe_dr_pattern(slot='main', eo_alg=[that EO's moves], axis=X).
-   This tells you "if I commit this EO, what DR sequence does the
-   library recall?" without committing. Pick the EO whose probe returns
-   the shortest total = len(eo_alg) + DR length. The shortest EO alone
-   is NOT the best — a 4-move EO that probes to a 7-move DR (= 11 total)
-   beats a 2-move EO that probes to a 12-move DR (= 14 total). If
-   probe_dr_pattern returns found=0 on every axis (very rare), fall back
-   to probe_dr_after_eo (uses the slower trigger-search).
+2. **DR probe BEFORE committing to EO** — call probe_dr_pattern for
+   each candidate EO. Returns trigger_family (e.g., "X-U2-X' (DR-4c4e)")
+   plus setup/trigger lengths and total. Pick the EO whose probe returns
+   the shortest joint EO + DR_total. Don't just compare totals — note
+   the trigger family for each axis; you'll narrate it in step 4.
 3. **Commit EO**: apply_moves with the chosen axis's EO sequence.
-4. **DR**: dr_pattern_lookup(axis=X) — O(1) recall of the memorized DR
-   completion (the probe already proved it works). Apply the returned
-   moves with apply_moves. Only if it misses (extremely rare): fall back
-   to find_dr_via_trigger. Do NOT manually build DR setup chains by
-   guessing — that burns 10+ tool calls. Trust the library.
-5. **HTR**: this is a TWO-STEP process, no exceptions.
-   a) htr_subset(slot='main') — identifies the canonical subset.
-   b) lookup_subset_finish(slot='main', axis=X) — returns the
-      memorized finish_moves.
-   Then apply_moves(finish_moves). Do NOT call lookahead(target='htr')
-   or any DR-search after DR is reached — it will not work and wastes
-   tool calls. Trust the lookup.
-6. verify_solved(solution=full_history_in_solve_order).
+4. **DR (two-step, narrated)**:
+   a) dr_recognize(axis=X) — returns trigger_family, setup_moves,
+      trigger_moves. NARRATE what you see: "this is a 2-move setup
+      into the X-U2-X' trigger (DR-4c4e)."
+   b) apply_moves(setup_moves) — commit the setup ONLY. Narrate why.
+   c) apply_moves(trigger_moves) — commit the trigger. Narrate it by
+      name: "Applying the R-U2-R' trigger now to reach DR."
+   The point: read the recognized pieces, NAME them, commit them
+   separately. Do NOT collapse setup+trigger into one apply_moves.
+5. **HTR (three-step, narrated)**:
+   a) htr_classify(slot='main', axis=X) — returns the subset name
+      ("4-swap axial", "2-swap 2-cycle", etc.), structural features,
+      and the lengths of the two finish phases. NARRATE the subset:
+      "This is the 4-swap axial subset, cycle structure (4,2,2);
+      htr_reduction is 9 moves, finish is 13 moves."
+   b) apply_htr_phase(phase='htr_reduction') then apply_moves(moves) —
+      commit the corner-reduction. Narrate what it's doing.
+   c) apply_htr_phase(phase='finish') then apply_moves(moves) — commit
+      the half-turn-only finish. Narrate it.
+   This is recognition + composition — exactly how a champion talks
+   through their solve. Do NOT call lookahead(target='htr') or any
+   DR-search after DR is reached.
+6. cancel(moves=full_solution) + verify_solved.
 
 # Strategy notes
 
