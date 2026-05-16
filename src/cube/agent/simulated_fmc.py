@@ -1797,7 +1797,11 @@ def solve(
             messages=messages,
         )
         if thinking_budget > 0:
-            api_kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+            # Opus 4.x uses adaptive thinking instead of explicit budget_tokens.
+            if "opus" in model.lower():
+                api_kwargs["thinking"] = {"type": "adaptive"}
+            else:
+                api_kwargs["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
         turn_t0 = time.time()
         resp = client.messages.create(**api_kwargs)
         turn_elapsed = time.time() - turn_t0
