@@ -69,7 +69,45 @@ def load_333fm_corpus(path: Path) -> tuple[list[tuple[str, str]], dict[str, dict
 
 
 def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
-            wall_limit_s: float, max_tool_calls: int) -> dict:
+            wall_limit_s: float, max_tool_calls: int, n_best: int = 1) -> dict:
+    """v19: --n-best N runs each scramble N times and returns the best solve.
+
+    Deterministic way to beat the 3-5 move per-scramble variance: we get
+    the LLM's best of N attempts instead of a single noisy run. Cost
+    scales linearly with N; for N=2 a 5-scramble eval is ~$2.
+    """
+    if n_best > 1:
+        best: dict | None = None
+        for attempt in range(n_best):
+            single = _run_single(
+                f"{scramble_id}__attempt{attempt+1}",
+                scramble,
+                model=model, out_dir=out_dir,
+                wall_limit_s=wall_limit_s,
+                max_tool_calls=max_tool_calls,
+            )
+            # Rank: prefer solves; among solves prefer shorter; among non-solves prefer "less broken" (won't matter much)
+            if best is None:
+                best = single
+            elif single["solves"] and not best["solves"]:
+                best = single
+            elif single["solves"] and best["solves"] and single["total_moves"] < best["total_moves"]:
+                best = single
+        assert best is not None
+        # Tag the n_best context in the summary
+        best["id"] = scramble_id  # collapse the attempt suffix back so SUMMARY rows are stable
+        best["n_best_attempts"] = n_best
+        status_str = (
+            f"SOLVED in {best['total_moves']}m" if best["solves"] else "all attempts FAILED"
+        )
+        print(f"\n  -> [n_best={n_best}] BEST: {status_str}", flush=True)
+        return best
+    return _run_single(scramble_id, scramble, model=model, out_dir=out_dir,
+                       wall_limit_s=wall_limit_s, max_tool_calls=max_tool_calls)
+
+
+def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
+                wall_limit_s: float, max_tool_calls: int) -> dict:
     print(f"\n{'=' * 60}\n  {scramble_id}: {scramble}\n{'=' * 60}", flush=True)
     moves = scramble.split()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -215,6 +253,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="If set, load scrambles from this 333.fm JSON (produced "
                              "by cube.agent.fetch_333fm_corpus) instead of the default + random corpus. "
                              "Summary will include human-solver baselines per scramble.")
+    parser.add_argument("--n-best", type=int, default=1,
+                        help="v19: run each scramble N times and report the best solve. "
+                             "Deterministic way to beat per-scramble variance. Cost scales linearly.")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -235,6 +276,7 @@ def main(argv: list[str] | None = None) -> int:
                 model=args.model, out_dir=args.out_dir,
                 wall_limit_s=args.wall_limit_s,
                 max_tool_calls=args.max_tool_calls,
+                n_best=args.n_best,
             ))
         except Exception as e:
             print(f"  !! {scramble_id} crashed: {type(e).__name__}: {e}", flush=True)
