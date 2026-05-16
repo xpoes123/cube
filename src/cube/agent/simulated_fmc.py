@@ -232,8 +232,15 @@ def _build_handlers(
     dr_trigger_setup_width: int = _SIM_DR_TRIGGER_SETUP_WIDTH,
     dr_trigger_setup_depth: int = _SIM_DR_TRIGGER_SETUP_DEPTH,
     dr_trigger_tail: int = _SIM_DR_TRIGGER_TAIL,
+    run_state: dict | None = None,
 ):
-    """Return a name -> handler map closed over scramble/slots/budget."""
+    """Return a name -> handler map closed over scramble/slots/budget.
+
+    `run_state` is a mutable dict the caller updates per turn so handlers
+    can introspect run-level state (tool_calls_remaining, rs_calls_used).
+    """
+    if run_state is None:
+        run_state = {"tool_calls_remaining": 10_000, "rs_calls_used": 0}
 
     def _h_inspect_state(args):
         slot = _resolve_slot(slots, args["slot"])
@@ -521,7 +528,28 @@ def _build_handlers(
         """Tronto §3.10 'Replace and shorten': pick a sub-span of the
         current history, re-solve it as a micro-scramble via the existing
         DR/HTR pipeline, and return a shorter substitute if found.
-        Recursive reuse of existing tools, not new search. Cost: 30s sim."""
+        Recursive reuse of existing tools, not new search. Cost: 30s sim.
+
+        v14a guardrails: capped at 1 call per run, and gated on having
+        ≥30 tool calls remaining (since on a miss the agent may need to
+        rebuild its solve, which can chew through 20+ tool calls)."""
+        # Gate 1: per-run cap. Tronto explicitly recommends a single r&s pass.
+        if run_state.get("rs_calls_used", 0) >= 1:
+            return {
+                "error": "replace_and_shorten already used this run (1-call cap, Tronto §3.10).",
+                "rs_calls_used": run_state["rs_calls_used"],
+            }
+        # Gate 2: budget headroom. r&s consumes tool calls on the miss path.
+        remaining = run_state.get("tool_calls_remaining", 0)
+        if remaining < 30:
+            return {
+                "error": (
+                    f"too few tool calls remaining ({remaining}) for replace_and_shorten; "
+                    f"need ≥30 (the miss path can require 20+ recovery calls). "
+                    f"Ship your current solve as FINAL_SOLUTION instead."
+                ),
+                "tool_calls_remaining": remaining,
+            }
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         out = insertion_tools.replace_and_shorten(
@@ -529,6 +557,8 @@ def _build_handlers(
             start=args["start"], end=args["end"],
             axis=args.get("axis", "UD"),
         )
+        run_state["rs_calls_used"] = run_state.get("rs_calls_used", 0) + 1
+        out["rs_calls_used"] = run_state["rs_calls_used"]
         budget.charge("replace_and_shorten", 30.0, slot=slot.name)
         return out
 
@@ -1279,7 +1309,7 @@ transcript is the product. Show your work.
       Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration,
       then dr_recognize again on the new state.
 
-5. **POST-DR DECISION** (new in v13): after applying DR, you have CHOICES:
+5. **POST-DR DECISION** (v13/v14a): after applying DR, you have CHOICES:
 
    **Option A — Standard HTR finish**: htr_classify + apply_htr_phase
    (the current default; typical total 28-32 moves).
@@ -1307,24 +1337,38 @@ transcript is the product. Show your work.
    Strategy: try Option A first (always works). If total ≥28 and you have
    budget, try Option B/C/D to refine.
 
-5b. **REFINEMENT (mandatory if total ≥27)**: after you have a verified
-   solve, if total_moves ≥ 27 AND sim budget remaining is ≥1500s, run
-   replace_and_shorten ONCE on a large tail span (e.g., start=4, end=N
-   where N is your total move count). If it returns `solves_scramble: true`
-   AND `delta < 0`, accept the substitute as your new history. This single
-   refinement step has been observed to save 2-4 moves with high frequency.
-   Don't iterate — one shot only (per Tronto §3.10 the technique replaces
-   one suspicious sub-span at a time, depth-1 recursion).
+5b. **REFINEMENT (gated, optional)**: after you have a verified solve,
+   if total_moves ≥ 27 AND sim budget remaining is ≥1500s AND tool calls
+   remaining ≥ 30, you MAY run replace_and_shorten ONCE on a large tail
+   span (e.g., start=4, end=N where N is your total move count). The
+   tool itself enforces these gates and will refuse otherwise — DO NOT
+   try to call it more than once. If it returns `solves_scramble: true`
+   AND `delta < 0`, accept the substitute as your new history. Don't
+   iterate (per Tronto §3.10 the technique replaces one suspicious
+   sub-span at a time). If r&s would fall outside the gates, just
+   submit your current solve.
 
-6. **HTR classify + phase compose** (running Option A):
+6. **HTR classify + phase compose** (running Option A) — with **mandatory
+   inter-phase residual checks** (v14a, the dormant-tool activator):
    a) htr_classify(axis=X). Narrate the subset by name: "this is a
       4-swap axial subset with cycle structure (2,2,2,2)."
    b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the
       reduction is longer than 4 moves; apply the visible chunk,
-      narrate ("4 moves of corner orbit reduction"), then re-query.
-      Loop until partial:false.
-   c) Same for apply_htr_phase(phase='finish'). Narrate: "applying
-      the half-turn-only finish in chunks of 4."
+      narrate ("4 moves of corner orbit reduction"), then **CALL
+      analyze_residual BEFORE re-querying apply_htr_phase**. If the
+      residual shows `is_pure_corner_3cycle: true`, STOP THE HTR
+      PIPELINE → branch to derive_corner_3cycle. The 8-move commutator
+      is almost always shorter than the remaining HTR finish, and it
+      cancels heavily with surrounding moves after a cancel() pass.
+   c) Same for apply_htr_phase(phase='finish'): check analyze_residual
+      between chunks. If `is_pure_corner_3cycle` or `is_pure_edge_3cycle`
+      pops out before the finish ends, derive the commutator instead of
+      grinding the last few half-turn moves.
+
+   Why: a "clean" subset finish often produces a 3c residual one or two
+   chunks before fully solved — landing there earlier and inserting the
+   commutator saves 2-4 moves vs running the full finish. This is the
+   real human FMC pattern: see the residual, derive the comm, submit.
 
 6. **cancel + verify_solved**. Narrate the cancellations you spot.
 
@@ -1423,10 +1467,15 @@ def solve(
     client = anthropic.Anthropic()
     slots: dict[str, Slot] = {"main": Slot(name="main")}
     budget = BudgetTracker(sim_budget=sim_budget, wall_limit_s=wall_limit_s)
+    run_state: dict = {
+        "tool_calls_remaining": max_tool_calls,
+        "rs_calls_used": 0,
+    }
     handlers = _build_handlers(
         scramble, slots, budget,
         dr_trigger_setup_width=dr_trigger_setup_width,
         dr_trigger_setup_depth=dr_trigger_setup_depth,
+        run_state=run_state,
     )
     tool_schemas = _tool_schemas()
 
@@ -1606,6 +1655,7 @@ def solve(
             tool_results = []
             for tu in tool_uses:
                 tool_calls += 1
+                run_state["tool_calls_remaining"] = max(0, max_tool_calls - tool_calls)
                 if verbose:
                     print(f"\n[tool#{tool_calls}] {tu.name}({json.dumps(tu.input)[:200]})")
                 handler = handlers.get(tu.name)
