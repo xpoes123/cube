@@ -55,7 +55,8 @@ remaining open work).
 | v8 (EO library) | + memorized EO patterns (6144) | 5/10 | $1.42 |
 | v9 (DR library) | + memorized DR patterns (3.25M) | 10/10 | $0.65 |
 | v10 (phase-shaped) | + DR/HTR phase decomposition | 10/10 | $0.80 |
-| **v11 (human-tools)** | + 4-move recall cap, no wide search | **5/5 WCA** | **$0.56** |
+| v11 (human-tools) | + 4-move recall cap, no wide search | 5/5 WCA (avg 30.2, gap +9.4) | $0.56 |
+| **v12 (champion's view)** | + DR-XCYE labels, JZP, ARM, pairs, dr_trigger_options, NISS-first | **5/5 WCA (avg 29.4, gap +8.6)** | **$0.75** |
 
 v11 shifts the comparison from analyzer-baseline to **WCA-champion baseline**:
 5 real competition scrambles from api.333.fm with the solvers' annotated
