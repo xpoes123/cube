@@ -65,12 +65,16 @@ def _eo_then_dr(
             "eo_length": eo_len,
             "eo_moves": eo_moves,
             "dr_option": None,
-            "expected_total_to_solved": eo_len + 99,
+            "eo_plus_dr_length": None,
             "jzp_eligible": False,
             "note": dr.get("error", "no DR triggers within max_setup=5"),
         }]
     rows = []
     for opt in dr["options"][:dr_per_cell]:
+        # v23a (Phase A): drop expected_htr_moves /
+        # expected_total_to_solved oracles. Return raw observable
+        # quantities: EO length, DR setup length, trigger family,
+        # JZP-eligible flag. The LLM weighs tradeoffs.
         rows.append({
             "axis": axis,
             "eo_length": eo_len,
@@ -80,13 +84,12 @@ def _eo_then_dr(
                 "setup_length": opt["setup_length"],
                 "trigger_length": opt["trigger_length"],
                 "total_to_dr": opt["total_to_dr"],
-                "expected_htr_moves": opt["expected_htr_moves"],
             },
-            "expected_total_to_solved": eo_len + opt["expected_total_to_solved"],
+            "eo_plus_dr_length": eo_len + opt["total_to_dr"],
             "jzp_eligible": opt["jzp_eligible"],
             "note": (
                 f"EO {eo_len}mv + {opt['trigger_family']} "
-                f"(DR {opt['total_to_dr']}mv) -> expected ~{eo_len + opt['expected_total_to_solved']} total"
+                f"(DR {opt['total_to_dr']}mv) — substate quality varies; judge by trigger family"
             ),
         })
     return rows
@@ -126,32 +129,19 @@ def niss_scout(scramble: list[str], history: list[str], *, dr_per_cell: int = 2)
             cell["side"] = "inverse"
             rows.append(cell)
 
-    # Sort by expected_total_to_solved. Rows that couldn't compute a DR
-    # option get a large sentinel and sort last.
-    rows.sort(key=lambda r: (r.get("expected_total_to_solved") or 999, r.get("eo_length") or 99))
+    # v23a (Phase A): sort by raw eo_plus_dr_length only. No "recommendation"
+    # field — the LLM has to read the table and judge substate quality
+    # itself (4C4E is fast to reach but bad HTR-finish; 3C2E is slower
+    # to reach but better HTR-finish — the model decides).
+    rows.sort(key=lambda r: (r.get("eo_plus_dr_length") or 999, r.get("eo_length") or 99))
 
-    # Surface a recommendation in the response — the agent can override
-    # but the default points at the row with lowest expected total.
-    top = rows[0] if rows else None
     return {
         "rows": rows,
-        "recommendation": (
-            {
-                "side": top["side"],
-                "axis": top["axis"],
-                "rationale": top.get("note", ""),
-                "expected_total_to_solved": top.get("expected_total_to_solved"),
-            }
-            if top and top.get("expected_total_to_solved") is not None
-            else None
-        ),
         "note": (
-            "v22 joint scout: up to 12 rows (2 sides × 3 axes × top-N DR triggers). "
-            "Surfaces the COMPLETE EO+DR joint comparison. A longer EO with a better "
-            "DR substate often beats a shorter EO with a 4C4E DR. "
-            "Pick the recommendation OR override with rationale (write the rejection "
-            "reasoning per [[exemplar-c-branch-journal]]). "
-            "If you take the inverse side, call niss_flip BEFORE applying "
+            "Up to 12 rows (2 sides × 3 axes × top-2 DR triggers), sorted by "
+            "eo_plus_dr_length. JUDGE substate quality yourself: the "
+            "trigger family signals likely HTR-finish difficulty. "
+            "If you commit to the inverse side, call niss_flip BEFORE applying "
             "the EO moves; otherwise apply them on normal."
         ),
     }

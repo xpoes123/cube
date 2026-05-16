@@ -195,9 +195,12 @@ def dr_trigger_options(
                 pre_state = state.apply_alg(list(path)) if path else state
                 pre_c = co_count(pre_state, ax)
                 pre_e = slice_misplaced_count(pre_state, ax)
-                family = _family_of(label)
-                expected_htr = _FAMILY_EXPECTED_HTR.get(family, 8)
                 total_to_dr = plen + len(moves)
+                # v23a (Phase A): drop expected_htr_moves and
+                # expected_total_to_solved. These were oracle judgments
+                # derived from empirical corpus stats — not something a
+                # human solver would have. The LLM should weigh the
+                # tradeoff (longer DR vs better substate) itself.
                 best[label] = {
                     "trigger_family": label,
                     "canonical_alg": alg_str,
@@ -205,8 +208,6 @@ def dr_trigger_options(
                     "setup_length": plen,
                     "trigger_length": len(moves),
                     "total_to_dr": total_to_dr,
-                    "expected_htr_moves": expected_htr,
-                    "expected_total_to_solved": total_to_dr + expected_htr,
                     "pre_trigger_signature": trigger_label(pre_c, pre_e),
                     "jzp_eligible": is_jzp_eligible(pre_state),
                     "top_pairs_on_inverse": count_top_pairs(pre_state),
@@ -224,19 +225,12 @@ def dr_trigger_options(
 
     options = list(best.values())
 
+    # v23a (Phase A): sort by total_to_dr only (raw length). The agent
+    # has to weigh substate quality (4c4e vs 3c2e) itself, like a human
+    # solver. JZP and pre_trigger_signature flags are visible structural
+    # properties a human would notice; they're NOT a ranked oracle.
     def rank_key(o: dict):
-        family = _family_of(o["trigger_family"])
-        return (
-            # PRIMARY: total expected moves to SOLVED (DR + HTR-finish).
-            # Per 333.fm corpus: a 1-move 4C4E DR (HTR ≈9) is worse than a
-            # 4-move 3C2E DR (HTR ≈5). Total = 10 vs 9.
-            o["expected_total_to_solved"],
-            # SECONDARY: JZP-eligible first (free cancellations downstream).
-            0 if o["jzp_eligible"] else 1,
-            # TERTIARY: substate quality at equal expected-total.
-            _FAMILY_RANK.get(family, 99),
-            o["setup_length"],
-        )
+        return (o["total_to_dr"], o["setup_length"])
 
     options.sort(key=rank_key)
     return {
@@ -244,11 +238,11 @@ def dr_trigger_options(
         "options": options[:6],
         "max_setup_searched": max_setup,
         "note": (
-            f"Ranked by: expected_total_to_solved (DR + HTR-finish, "
-            f"empirical from 333.fm corpus) -> JZP-eligible -> substate. "
-            f"Setup limit: {max_setup}. expected_htr_moves: "
-            f"3C2E=5, 4C2E=6, 2C4E=6, 7C8E=7, 4C4E=9, 8C8E=10. "
-            f"AVOID 4C4E when a longer DR lands in 3C2E or 4C2E — "
-            f"the 4-move HTR savings outweigh the extra DR setup."
+            f"Up to 6 named-trigger options on axis {axis}, sorted by "
+            f"total_to_dr. JZP-eligible flag and pre_trigger_signature "
+            f"(corner/edge counts) are structural properties a human can "
+            f"see — use them to judge substate quality vs DR length. "
+            f"There is NO expected_total_to_solved oracle; weigh the "
+            f"tradeoffs yourself."
         ),
     }
