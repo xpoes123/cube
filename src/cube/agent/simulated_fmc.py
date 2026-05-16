@@ -1307,6 +1307,15 @@ transcript is the product. Show your work.
    Strategy: try Option A first (always works). If total ≥28 and you have
    budget, try Option B/C/D to refine.
 
+5b. **REFINEMENT (mandatory if total ≥27)**: after you have a verified
+   solve, if total_moves ≥ 27 AND sim budget remaining is ≥1500s, run
+   replace_and_shorten ONCE on a large tail span (e.g., start=4, end=N
+   where N is your total move count). If it returns `solves_scramble: true`
+   AND `delta < 0`, accept the substitute as your new history. This single
+   refinement step has been observed to save 2-4 moves with high frequency.
+   Don't iterate — one shot only (per Tronto §3.10 the technique replaces
+   one suspicious sub-span at a time, depth-1 recursion).
+
 6. **HTR classify + phase compose** (running Option A):
    a) htr_classify(axis=X). Narrate the subset by name: "this is a
       4-swap axial subset with cycle structure (2,2,2,2)."
