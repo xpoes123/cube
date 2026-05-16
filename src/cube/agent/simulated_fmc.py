@@ -295,14 +295,44 @@ def _build_handlers(
         solution = algebra.cancel(solution)["cancelled_moves"]
         check = state.verify_solved(scramble, solution)
         budget.charge("compose_niss_solution", 1.0, slot=slot.name)
+
+        # v18 r&s reminder: if the solve is long AND gates pass AND we
+        # haven't refined yet, surface a recommendation to the agent.
+        # Past corpus runs (v17 BackiPetrovac) skipped r&s because the
+        # compose-then-submit flow implied "done." Tool-side cue makes
+        # the refinement opportunity visible at the decision moment.
+        rs_recommend = None
+        if (
+            check["solves"]
+            and len(solution) >= 27
+            and run_state.get("rs_calls_used", 0) == 0
+            and run_state.get("tool_calls_remaining", 0) >= 30
+        ):
+            rs_recommend = {
+                "reason": (
+                    f"Your solve is {len(solution)} moves and r&s gates pass "
+                    f"(rs_calls_used=0, ≥30 tool calls remaining). "
+                    f"replace_and_shorten on a large tail span has historically "
+                    f"saved 3-5 moves (PSSS_s1: 31→26 in v17 via a single r&s). "
+                    f"Call replace_and_shorten(slot, start=4, end={len(solution)}) "
+                    f"BEFORE submitting FINAL_SOLUTION."
+                ),
+                "suggested_start": 4,
+                "suggested_end": len(solution),
+            }
         return {
             "solution": solution,
             "length": len(solution),
             "solves": check["solves"],
             "frame_at_compose": "inverse" if slot.on_inverse else "normal",
+            "rs_recommend": rs_recommend,
             "note": (
-                "Submit this solution as your FINAL_SOLUTION if solves=True. "
-                "If solves=False, your slot state isn't solved yet — keep working."
+                "Submit this solution as FINAL_SOLUTION if solves=True AND "
+                "rs_recommend is null. If rs_recommend is non-null, call "
+                "replace_and_shorten FIRST, then re-compose, then submit. "
+                "Don't iterate — the tool enforces a 1-call r&s cap."
+                if check["solves"]
+                else "Your slot state isn't solved yet — keep working."
             ),
         }
 
