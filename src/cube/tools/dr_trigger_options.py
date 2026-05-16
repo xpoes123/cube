@@ -38,19 +38,57 @@ from cube.tools.dr_pattern_lib import (
     _slice_marker_from_state,
 )
 
-# Trigger catalog — name + canonical alg string.
-_TRIGGER_CATALOG: list[tuple[str, str]] = [
-    ("DR-4C4E (R)", "R"),
-    ("DR-4C4E (R')", "R'"),
-    ("DR-3C2E (R U R')", "R U R'"),
-    ("DR-3C2E (R U' R')", "R U' R'"),
-    ("DR-4C2E (R U2 R')", "R U2 R'"),
-    ("DR-4C4E (R U2 F2 R)", "R U2 F2 R"),
-    ("DR-7C8E (R U L)", "R U L"),
-    ("DR-7C8E (R' U L)", "R' U L"),
-    ("DR-2C4E (R F2 R)", "R F2 R"),
-    ("DR-8C8E (R L)", "R L"),
-]
+# Trigger catalog — name + canonical alg string per axis. For UD-DR the
+# trigger face is R (or L) and the EO-preserving non-CO-twisting setup
+# face is U (or D). By cube symmetry, the FB-DR catalog uses U as
+# trigger and F as setup; the RL-DR catalog uses F as trigger and L as
+# setup. Half-turns of the EO-flipping axis (F2/B2 for UD; L2/R2 for FB;
+# U2/D2 for RL) appear inside the trigger pattern.
+#
+# v15: extended from UD-only to all 3 axes by symmetric substitution.
+_TRIGGER_CATALOG_BY_AXIS: dict[str, list[tuple[str, str]]] = {
+    "UD": [
+        ("DR-4C4E (R)", "R"),
+        ("DR-4C4E (R')", "R'"),
+        ("DR-3C2E (R U R')", "R U R'"),
+        ("DR-3C2E (R U' R')", "R U' R'"),
+        ("DR-4C2E (R U2 R')", "R U2 R'"),
+        ("DR-4C4E (R U2 F2 R)", "R U2 F2 R"),
+        ("DR-7C8E (R U L)", "R U L"),
+        ("DR-7C8E (R' U L)", "R' U L"),
+        ("DR-2C4E (R F2 R)", "R F2 R"),
+        ("DR-8C8E (R L)", "R L"),
+    ],
+    # FB-DR: trigger=U, setup=F, half-turn-EO-flip-axis=L2/R2
+    "FB": [
+        ("DR-4C4E (U)", "U"),
+        ("DR-4C4E (U')", "U'"),
+        ("DR-3C2E (U F U')", "U F U'"),
+        ("DR-3C2E (U F' U')", "U F' U'"),
+        ("DR-4C2E (U F2 U')", "U F2 U'"),
+        ("DR-4C4E (U F2 L2 U)", "U F2 L2 U"),
+        ("DR-7C8E (U F D)", "U F D"),
+        ("DR-7C8E (U' F D)", "U' F D"),
+        ("DR-2C4E (U L2 U)", "U L2 U"),
+        ("DR-8C8E (U D)", "U D"),
+    ],
+    # RL-DR: trigger=F, setup=L, half-turn-EO-flip-axis=U2/D2
+    "RL": [
+        ("DR-4C4E (F)", "F"),
+        ("DR-4C4E (F')", "F'"),
+        ("DR-3C2E (F L F')", "F L F'"),
+        ("DR-3C2E (F L' F')", "F L' F'"),
+        ("DR-4C2E (F L2 F')", "F L2 F'"),
+        ("DR-4C4E (F L2 U2 F)", "F L2 U2 F"),
+        ("DR-7C8E (F L B)", "F L B"),
+        ("DR-7C8E (F' L B)", "F' L B"),
+        ("DR-2C4E (F U2 F)", "F U2 F"),
+        ("DR-8C8E (F B)", "F B"),
+    ],
+}
+
+# Backward-compat alias (some downstream tooling may import the UD list).
+_TRIGGER_CATALOG = _TRIGGER_CATALOG_BY_AXIS["UD"]
 
 _FAMILY_RANK = {
     # v14b: inverted from the original Hitchhiker ordering. The 333.fm
@@ -100,13 +138,16 @@ def dr_trigger_options(
     *, axis: str = "UD", max_setup: int = 5,
 ) -> dict:
     """Return a ranked menu of named DR triggers reachable from the current
-    EO-solved state with at most `max_setup` EO-preserving setup moves."""
-    if axis != "UD":
+    EO-solved state with at most `max_setup` EO-preserving setup moves.
+
+    v15: now supports all 3 axes (UD/FB/RL). Each axis uses its own
+    trigger catalog by symmetric substitution from the UD reference.
+    """
+    if axis not in _TRIGGER_CATALOG_BY_AXIS:
         return {
-            "error": f"dr_trigger_options currently supports UD axis only "
-                     f"(got {axis!r}). Use dr_recognize for FB/RL."
+            "error": f"axis must be one of UD/FB/RL; got {axis!r}",
         }
-    ax = Axis.UD
+    ax = {"UD": Axis.UD, "FB": Axis.FB, "RL": Axis.RL}[axis]
 
     state = SOLVED.apply_alg(parse_alg(" ".join(scramble))) if scramble else SOLVED
     if history:
@@ -128,7 +169,7 @@ def dr_trigger_options(
     # we'll apply each trigger from each visited (co, marker) and check if
     # it lands on (solved_co, solved_marker).
     trigger_parsed = [(label, alg_str, parse_alg(alg_str))
-                      for label, alg_str in _TRIGGER_CATALOG]
+                      for label, alg_str in _TRIGGER_CATALOG_BY_AXIS[axis]]
 
     # BFS in reduced-state space, tracking the move PATH so we can reconstruct
     # the setup as actual Move objects.

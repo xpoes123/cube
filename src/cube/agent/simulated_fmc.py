@@ -412,8 +412,9 @@ def _build_handlers(
         Returns a ranked menu of trigger families (DR-4C4E, DR-3C2E, etc.)
         with their setup moves, total-to-DR, and JZP/pairs flags. The agent
         picks by family preference and structural flags, not just by
-        shortest moves. Champion-shaped decision-making. UD axis only for
-        now; FB/RL fall back to dr_recognize.
+        shortest moves. Champion-shaped decision-making. v15: supports
+        all 3 axes (UD/FB/RL) via per-axis trigger catalogs derived by
+        cube symmetry from the UD reference.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -884,20 +885,22 @@ def _tool_schemas() -> list[dict]:
             "name": "dr_trigger_options",
             "description": (
                 "List named DR-trigger options from the current EO-solved state "
-                "on the UD axis. Returns a ranked menu: each entry is a NAMED "
-                "trigger family (DR-4C4E 'R', DR-3C2E 'R U R'', DR-4C2E 'R U2 R'', "
-                "DR-7C8E 'R U L', etc.) with its setup_moves, total_to_dr, "
-                "jzp_eligible flag, and top_pairs_on_inverse count. Pick by "
-                "trigger family preference + structural flags (JZP cases lead "
-                "to shorter solves; pairs ≥ 2 signals NISS-switch candidate). "
-                "Use this BEFORE dr_recognize when on UD axis — it surfaces the "
-                "decision a champion makes. Cost: 8s simulated."
+                "on ANY axis (UD/FB/RL — v15 supports all three). Returns a "
+                "ranked menu: each entry is a NAMED trigger family (DR-4C4E 'R', "
+                "DR-3C2E 'R U R'', DR-4C2E 'R U2 R'', DR-7C8E 'R U L', etc.) "
+                "with its setup_moves, total_to_dr, expected_total_to_solved "
+                "(DR + empirical HTR-finish), jzp_eligible flag, and "
+                "top_pairs_on_inverse count. Per-axis trigger letters: "
+                "UD uses R+U, FB uses U+F, RL uses F+L (cube-symmetry equivalents). "
+                "Pick by expected_total_to_solved (already sorted lowest-first). "
+                "Use this INSTEAD of dr_recognize when surveying any axis — it "
+                "surfaces the decision a champion makes. Cost: 8s simulated."
             ),
             "input_schema": {
                 "type": "object",
                 "properties": {
                     "slot": _SLOT,
-                    "axis": {"type": "string", "enum": ["UD"]},
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                     "max_setup": {"type": "integer", "minimum": 1, "maximum": 6, "default": 5},
                 },
                 "required": ["slot", "axis"],
@@ -1333,17 +1336,19 @@ solves in v11-v13.
    accounts for this via `expected_total_to_solved`. Prefer a 4-move
    3C2E DR over a 1-move 4C4E DR — the savings come from the HTR side.
 
-   a) For UD axis: dr_trigger_options(axis='UD') returns a ranked MENU of
-      named triggers (DR-4C4E, DR-3C2E, etc.) with `expected_total_to_solved`.
+   a) **v15: dr_trigger_options is now your PRIMARY tool on ALL 3 axes.**
+      Call dr_trigger_options(axis=X) for X in your candidate axes. Returns
+      a ranked MENU of named triggers with `expected_total_to_solved`.
       Read the menu, pick by `expected_total_to_solved` (already ranked
       lowest-first). JZP-eligible cases are gold; top_pairs_on_inverse ≥ 2
       signals a NISS-switch opportunity. Narrate your pick by NAME ("I'll
       take the R-U2-R' DR-4C2E option because it's JZP-eligible with
       expected_total_to_solved=10 — beats the 1-move 4C4E whose
       expected_total is 11").
-   b) For FB/RL or as fallback: dr_recognize(axis=X). If `found=1` with
-      trigger_family: the DR is within your visualization. Apply
-      setup_moves and trigger_moves as SEPARATE apply_moves calls.
+   b) dr_recognize is a FALLBACK only — use it only if dr_trigger_options
+      returns no options within max_setup=5. Per-axis trigger letters:
+      UD uses R+U, FB uses U+F, RL uses F+L. The expected_total ranking
+      lets you compare apples-to-apples across axes.
    c) If `found=0` with `setup_progress`: trigger isn't in view yet.
       Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration,
       then dr_recognize again on the new state.
