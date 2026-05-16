@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, dr_pattern_lib, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, library, policy, search, state
+from cube.tools import algebra, dr_pattern_lib, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, insertion_tools, library, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -495,6 +495,43 @@ def _build_handlers(
     # (Removed in v11: find_dr_via_trigger and probe_dr_after_eo — those were
     # wide beam searches with width=32 not available to a human solver.)
 
+    def _h_analyze_residual(args):
+        """Classify what's left to solve on the current state.
+
+        Use this whenever you want to see if you've landed on an
+        insertable residual (pure 3-cycle, 2e2e, etc.). Cheap (2s).
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = insertion_tools.analyze_current_residual(sc, hist)
+        budget.charge("analyze_residual", 2.0, slot=slot.name)
+        return out
+
+    def _h_derive_corner_3cycle(args):
+        """If the current state is a pure corner 3-cycle, return the
+        canonical 8-move commutator that solves it. Closed-form table
+        lookup, no search. Cost: 3s simulated."""
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = insertion_tools.derive_corner_3cycle(sc, hist)
+        budget.charge("derive_corner_3cycle", 3.0, slot=slot.name)
+        return out
+
+    def _h_replace_and_shorten(args):
+        """Tronto §3.10 'Replace and shorten': pick a sub-span of the
+        current history, re-solve it as a micro-scramble via the existing
+        DR/HTR pipeline, and return a shorter substitute if found.
+        Recursive reuse of existing tools, not new search. Cost: 30s sim."""
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = insertion_tools.replace_and_shorten(
+            sc, hist,
+            start=args["start"], end=args["end"],
+            axis=args.get("axis", "UD"),
+        )
+        budget.charge("replace_and_shorten", 30.0, slot=slot.name)
+        return out
+
     def _h_cancel(args):
         out = algebra.cancel(args["moves"])
         # Charge a tiny bookkeeping cost; cancellation is mechanical so don't penalize it.
@@ -713,6 +750,9 @@ def _build_handlers(
         "dr_trigger_options": _h_dr_trigger_options,
         "dr_recognize": _h_dr_recognize,
         "probe_dr_pattern": _h_probe_dr_pattern,
+        "analyze_residual": _h_analyze_residual,
+        "derive_corner_3cycle": _h_derive_corner_3cycle,
+        "replace_and_shorten": _h_replace_and_shorten,
         "cancel": _h_cancel,
         "htr_subset": _h_htr_subset,
         "htr_classify": _h_htr_classify,
@@ -871,6 +911,62 @@ def _tool_schemas() -> list[dict]:
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                 },
                 "required": ["slot", "eo_alg", "axis"],
+            },
+        },
+        {
+            "name": "analyze_residual",
+            "description": (
+                "Classify what's still unsolved on the current slot. Returns "
+                "residual_class (e.g. 'corner_3cycle', 'edge_3cycle', 'mixed'), "
+                "the actual perm cycles and twists/flips by slot name, "
+                "is_pure_corner_3cycle / is_pure_edge_3cycle flags, and "
+                "counts of unsolved pieces. Use this to detect when you've "
+                "landed on an insertable residual (3c, 2e2e, etc.) so you "
+                "can derive a commutator instead of grinding through HTR. 2s sim."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"slot": _SLOT},
+                "required": ["slot"],
+            },
+        },
+        {
+            "name": "derive_corner_3cycle",
+            "description": (
+                "If your current state is a PURE corner 3-cycle (verify via "
+                "analyze_residual.is_pure_corner_3cycle first), return the "
+                "canonical 8-move commutator that solves it. Closed-form table "
+                "lookup over the 112 reachable corner 3-cycles × 9 twist "
+                "patterns. Mirrors a human FMC solver deriving the right "
+                "commutator from the 3-cycle they see. NO SEARCH. 3s sim."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"slot": _SLOT},
+                "required": ["slot"],
+            },
+        },
+        {
+            "name": "replace_and_shorten",
+            "description": (
+                "Tronto §3.10 'Replace and shorten'. Pick a sub-span of your "
+                "current slot history (specify start/end indices). Apply that "
+                "span to a solved cube as a fresh micro-scramble, re-solve it "
+                "via the existing DR/HTR pipeline, and substitute the result "
+                "back in. Returns the substitute and whether the new full "
+                "history still solves. Use on suspicious lumpy sub-sequences "
+                "of 8+ moves. NOT new search — recursive reuse of existing "
+                "tools. 30s sim."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "start": {"type": "integer", "minimum": 0},
+                    "end": {"type": "integer", "minimum": 1},
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"], "default": "UD"},
+                },
+                "required": ["slot", "start", "end"],
             },
         },
         {
@@ -1183,7 +1279,35 @@ transcript is the product. Show your work.
       Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration,
       then dr_recognize again on the new state.
 
-5. **HTR classify + phase compose**:
+5. **POST-DR DECISION** (new in v13): after applying DR, you have CHOICES:
+
+   **Option A — Standard HTR finish**: htr_classify + apply_htr_phase
+   (the current default; typical total 28-32 moves).
+
+   **Option B — Skeleton + insertion**: champions often skip the full HTR
+   finish and instead apply moves until they land on a small RESIDUAL like
+   a pure 3-cycle of corners, then derive an 8-move commutator. Net often
+   22-25 moves.
+   - After DR, call analyze_residual to see what's left.
+   - Apply some htr_reduction moves OR experimental setups.
+   - Call analyze_residual after each chunk. If `is_pure_corner_3cycle: true`
+     → STOP. You have an insertable skeleton.
+   - Call derive_corner_3cycle → returns 8-move commutator. Apply it.
+   - Verify SOLVED. The 8 moves often cancel heavily with surroundings.
+
+   **Option C — NISS-frame skeleton** (Levi's WR technique): use niss_flip
+   aggressively (4 flips max budget). After each flip, call analyze_residual.
+   Natural skeletons emerge at NISS-switch points.
+
+   **Option D — Replace and shorten** (post-solve refinement, Tronto §3.10):
+   after a complete solve, scan for lumpy 8+ move sub-sequences. Call
+   replace_and_shorten(start=X, end=Y) to re-solve that micro-span. If
+   shorter, accept the substitute.
+
+   Strategy: try Option A first (always works). If total ≥28 and you have
+   budget, try Option B/C/D to refine.
+
+6. **HTR classify + phase compose** (running Option A):
    a) htr_classify(axis=X). Narrate the subset by name: "this is a
       4-swap axial subset with cycle structure (2,2,2,2)."
    b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the

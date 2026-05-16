@@ -54,7 +54,6 @@ def _extract_pure_3cycle_corners(state: State) -> Cycle3 | None:
     """
     if state.ep != SOLVED.ep or state.eo != SOLVED.eo:
         return None
-    # Non-cycled corners must be home AND oriented (co=0).
     moved = [i for i in range(8) if state.cp[i] != i]
     if len(moved) != 3:
         return None
@@ -71,6 +70,22 @@ def _extract_pure_3cycle_corners(state: State) -> Cycle3 | None:
     if state.cp[c] != a:
         return None
     return _canonicalize_cycle((a, b, c))
+
+
+# Full corner residual key: cycle + twists in cycle order.
+# Different comms that perform the same 3-cycle of cubies can leave
+# different twist patterns on the cycled corners. We need to key on both.
+CornerResidualKey = tuple[int, int, int, int, int, int]  # (a, b, c, ta, tb, tc)
+
+
+def _extract_corner_residual_key(state: State) -> CornerResidualKey | None:
+    """Return (cycle + twists) key if state is a pure corner 3-cycle, else None.
+    Canonicalized to start at the smallest slot index."""
+    cycle = _extract_pure_3cycle_corners(state)
+    if cycle is None:
+        return None
+    a, b, c = cycle
+    return (a, b, c, state.co[a], state.co[b], state.co[c])
 
 
 def _extract_pure_3cycle_edges(state: State) -> Cycle3 | None:
@@ -116,27 +131,16 @@ def _enumerate_paths(max_len: int) -> list[list[Move]]:
     return out
 
 
-def _build_3cycle_table(
-    target: str,
+def _build_corner_3cycle_table(
     max_setup_len: int = 3,
     max_interchange_len: int = 2,
     verbose: bool = True,
-) -> dict[Cycle3, list[str]]:
-    """Enumerate setup × interchange commutators, classify, record shortest.
-
-    Commutator form: [A, B] = A B A^-1 B^-1. We enumerate A up to
-    max_setup_len and B up to max_interchange_len, then apply to SOLVED
-    and check for a pure 3-cycle of the target piece type.
-    """
-    extractor = (
-        _extract_pure_3cycle_corners if target == "corner"
-        else _extract_pure_3cycle_edges
-    )
-    table: dict[Cycle3, list[str]] = {}
-
+) -> dict[CornerResidualKey, list[str]]:
+    """Build the corner 3-cycle table keyed by (cycle + twists)."""
+    table: dict[CornerResidualKey, list[str]] = {}
     setups = _enumerate_paths(max_setup_len)
     interchanges = _enumerate_paths(max_interchange_len)
-    interchanges = [p for p in interchanges if p]  # drop empty
+    interchanges = [p for p in interchanges if p]
 
     if verbose:
         print(f"Enumerating {len(setups)} setups × {len(interchanges)} interchanges "
@@ -150,7 +154,51 @@ def _build_3cycle_table(
             if not comm:
                 continue
             state = SOLVED.apply_alg(comm)
-            cycle = extractor(state)
+            key = _extract_corner_residual_key(state)
+            if key is None:
+                continue
+            count += 1
+            comm_str = [str(m) for m in comm]
+            existing = table.get(key)
+            if existing is None or len(comm_str) < len(existing):
+                table[key] = comm_str
+
+    if verbose:
+        print(f"  Found {count} candidates -> {len(table)} unique (cycle+twist) keys")
+        if table:
+            lengths = [len(v) for v in table.values()]
+            print(f"  Lengths: min={min(lengths)}, max={max(lengths)}, "
+                  f"avg={sum(lengths)/len(lengths):.1f}")
+    return table
+
+
+def _build_edge_3cycle_table(
+    max_setup_len: int = 3,
+    max_interchange_len: int = 2,
+    verbose: bool = True,
+) -> dict[Cycle3, list[str]]:
+    """Edge 3-cycle table — keyed by cycle only (face-turn-only edge comms
+    that produce pure 3-cycles don't introduce flip ambiguity in the same
+    way; flips on cycled edges are well-determined by the cycle direction
+    under our move set)."""
+    table: dict[Cycle3, list[str]] = {}
+    setups = _enumerate_paths(max_setup_len)
+    interchanges = _enumerate_paths(max_interchange_len)
+    interchanges = [p for p in interchanges if p]
+
+    if verbose:
+        print(f"Enumerating {len(setups)} setups × {len(interchanges)} interchanges "
+              f"= {len(setups) * len(interchanges)} candidates...")
+
+    count = 0
+    for setup in setups:
+        for inter in interchanges:
+            comm = setup + inter + _invert_moves(setup) + _invert_moves(inter)
+            comm = cancel_moves(comm)
+            if not comm:
+                continue
+            state = SOLVED.apply_alg(comm)
+            cycle = _extract_pure_3cycle_edges(state)
             if cycle is None:
                 continue
             count += 1
@@ -163,7 +211,8 @@ def _build_3cycle_table(
         print(f"  Found {count} pure-3-cycle candidates -> {len(table)} unique cycles")
         if table:
             lengths = [len(v) for v in table.values()]
-            print(f"  Lengths: min={min(lengths)}, max={max(lengths)}, avg={sum(lengths)/len(lengths):.1f}")
+            print(f"  Lengths: min={min(lengths)}, max={max(lengths)}, "
+                  f"avg={sum(lengths)/len(lengths):.1f}")
     return table
 
 
@@ -172,12 +221,12 @@ def build_and_save() -> None:
     import time
     t0 = time.time()
     print("Building corner 3-cycle table...")
-    corner_table = _build_3cycle_table("corner", max_setup_len=3)
+    corner_table = _build_corner_3cycle_table()
     print(f"  Corner table: {len(corner_table)} entries in {time.time() - t0:.1f}s")
 
     t0 = time.time()
     print("Building edge 3-cycle table...")
-    edge_table = _build_3cycle_table("edge", max_setup_len=3)
+    edge_table = _build_edge_3cycle_table()
     print(f"  Edge table: {len(edge_table)} entries in {time.time() - t0:.1f}s")
 
     CORNER_TABLE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -214,19 +263,17 @@ def _ensure_loaded() -> tuple[dict[Cycle3, list[str]], dict[Cycle3, list[str]]]:
     return _CORNER_TABLE, _EDGE_TABLE
 
 
-def lookup_3cycle(cycle: tuple[int, int, int], piece_type: str) -> list[str] | None:
-    """Return the canonical commutator move sequence for a pure 3-cycle.
+def lookup_corner_3cycle(key: CornerResidualKey) -> list[str] | None:
+    """Lookup a corner 3-cycle commutator by full residual key (cycle+twists)."""
+    corner_tab, _ = _ensure_loaded()
+    return corner_tab.get(key)
 
-    cycle: a 3-tuple of piece indices in cycle order. Canonicalized
-      internally (rotation-invariant; direction matters).
-    piece_type: 'corner' or 'edge'.
-    Returns: list of move strings (e.g. ['R', "U'", "R'", 'D', 'R', 'U', "R'", "D'"]),
-      or None if this exact 3-cycle isn't in the table.
-    """
-    corner_tab, edge_tab = _ensure_loaded()
-    tab = corner_tab if piece_type == "corner" else edge_tab
+
+def lookup_edge_3cycle(cycle: tuple[int, int, int]) -> list[str] | None:
+    """Lookup an edge 3-cycle commutator by cycle key."""
+    _, edge_tab = _ensure_loaded()
     key = _canonicalize_cycle(cycle)
-    return tab.get(key)
+    return edge_tab.get(key)
 
 
 if __name__ == "__main__":
