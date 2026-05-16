@@ -1370,16 +1370,20 @@ solves in v11-v13.
    skeletons proactively. Per the 333.fm research, the path to sub-25
    is DR-quality, not insertion-skill.
 
-5b. **REFINEMENT (gated, optional)**: after you have a verified solve,
-   if total_moves ≥ 27 AND sim budget remaining is ≥1500s AND tool calls
-   remaining ≥ 30, you MAY run replace_and_shorten ONCE on a large tail
-   span (e.g., start=4, end=N where N is your total move count). The
-   tool itself enforces these gates and will refuse otherwise — DO NOT
-   try to call it more than once. If it returns `solves_scramble: true`
-   AND `delta < 0`, accept the substitute as your new history. Don't
-   iterate (per Tronto §3.10 the technique replaces one suspicious
-   sub-span at a time). If r&s would fall outside the gates, just
-   submit your current solve.
+5b. **REFINEMENT (MANDATORY when gates pass)**: after you have a
+   verified solve, if total_moves ≥ 27 AND tool calls remaining ≥ 30
+   AND you haven't already called replace_and_shorten this run, you
+   **MUST** call replace_and_shorten ONCE on a large tail span
+   (e.g., start=4, end=N where N is your total move count). The tool
+   enforces the gates and will refuse otherwise — DO NOT try to call
+   it more than once. If it returns `solves_scramble: true` AND
+   `delta < 0`, accept the substitute as your new history (replace
+   history starting from `start` with `substitute_moves`). v13
+   evidence: this saved 3-5 moves on PSSS_s1 (30 → 25). If r&s
+   would fall outside the gates, submit your current solve.
+
+   After r&s succeeds, you may submit immediately — don't try to
+   chain a second r&s; the tool enforces a 1-call cap.
 
 6. **HTR classify + phase compose** (running Option A) — with **mandatory
    inter-phase residual checks** (v14a, the dormant-tool activator):
