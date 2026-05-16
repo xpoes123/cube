@@ -1327,7 +1327,7 @@ solves in v11-v13.
 1. **Inspect + NISS-scout** (v16):
    a) inspect_state(main).
    b) **niss_scout(slot='main')**. ONE call returns a 6-row table
-      (normal × inverse × {UD, FB, RL}) sorted by
+      (normal × inverse × {{UD, FB, RL}}) sorted by
       expected_total_to_solved. The first row is the recommendation.
       Median elite WCA solve has 8 NISS transitions and 50% start on
       inverse — scouting is mandatory, not optional. Verbalize the
