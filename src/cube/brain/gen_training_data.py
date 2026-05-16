@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing as mp
 import os
 import random
 import sys
@@ -189,6 +190,16 @@ def _close_writers(writers: dict) -> None:
         w.close()
 
 
+def _worker_one(args: tuple[list[str], int]) -> list[dict]:
+    """Multiprocessing worker — solves one scramble, returns serializable datums."""
+    scramble, n_optimal = args
+    try:
+        datums = datums_from_scramble(scramble, n_optimal=n_optimal)
+    except Exception:
+        return []
+    return [d.to_json() for d in datums]
+
+
 def generate_corpus(
     n_scrambles: int,
     out_dir: Path,
@@ -196,7 +207,8 @@ def generate_corpus(
     seed: int = 42,
     n_optimal: int = 50,
     verbose: bool = True,
-    progress_every: int = 25,
+    progress_every: int = 100,
+    workers: int = 1,
 ) -> dict[str, int]:
     """Generate a per-step JSONL corpus of training data.
 
@@ -206,9 +218,26 @@ def generate_corpus(
     writers = _open_writers(out_dir)
     counts = {step: 0 for step in _STEP_TO_NISSY}
     t0 = time.time()
+    scrambles = [_random_scramble(rng) for _ in range(n_scrambles)]
     try:
+        if workers > 1:
+            # Parallel path. Pool unordered for max throughput.
+            args = [(s, n_optimal) for s in scrambles]
+            with mp.Pool(workers) as pool:
+                for i, datums_json in enumerate(pool.imap_unordered(_worker_one, args, chunksize=4)):
+                    for d_json in datums_json:
+                        writers[d_json["step"]].write(json.dumps(d_json) + "\n")
+                        counts[d_json["step"]] += 1
+                    if verbose and (i + 1) % progress_every == 0:
+                        elapsed = time.time() - t0
+                        rate = (i + 1) / elapsed
+                        print(f"  {i + 1}/{n_scrambles} scrambles "
+                              f"({rate:.1f}/s, ~{(n_scrambles - i - 1) / max(rate, 0.01):.0f}s remaining); "
+                              f"records: {counts}", file=sys.stderr, flush=True)
+            return counts
+        # Serial path
         for i in range(n_scrambles):
-            scramble = _random_scramble(rng)
+            scramble = scrambles[i]
             try:
                 datums = datums_from_scramble(scramble, n_optimal=n_optimal)
             except Exception as e:
@@ -237,13 +266,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-optimal", type=int, default=50,
                         help="Cap on optimal-solutions to enumerate per soft target.")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Parallel worker processes (uses multiprocessing.Pool).")
     args = parser.parse_args(argv)
 
-    print(f"Generating brain training data: n={args.n} → {args.out}", file=sys.stderr)
+    print(f"Generating brain training data: n={args.n} workers={args.workers} → {args.out}", file=sys.stderr)
     t0 = time.time()
     counts = generate_corpus(
         args.n, args.out, seed=args.seed,
-        n_optimal=args.n_optimal, verbose=True,
+        n_optimal=args.n_optimal, verbose=True, workers=args.workers,
     )
     elapsed = time.time() - t0
     print(f"\nDone in {elapsed:.1f}s. Records per step:", file=sys.stderr)
