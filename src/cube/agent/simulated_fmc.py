@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, dr_pattern_lib, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, insertion_tools, library, policy, search, state
+from cube.tools import algebra, dr_pattern_lib, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, insertion_tools, library, niss_scout as niss_scout_mod, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -404,6 +404,20 @@ def _build_handlers(
                 f"showing only top {_SIM_DR_TRIGGER_MAX_OPTIONS} triggers; "
                 f"deeper enumeration is beyond a human's visualization scope."
             )
+        return out
+
+    def _h_niss_scout(args):
+        """v16: read-only 6-row scout of EO+DR on normal × inverse × 3 axes.
+
+        Returns a comparison table sorted by expected_total_to_solved.
+        The agent reads, picks the recommended row (or overrides with
+        rationale), then proceeds with niss_flip + apply_moves as needed.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        out = niss_scout_mod.niss_scout(sc, hist)
+        # Cost: 6 cells × ~5s each = 30s sim (6 eo_lookups + 6 dr BFS).
+        budget.charge("niss_scout", 30.0, slot=slot.name)
         return out
 
     def _h_dr_trigger_options(args):
@@ -778,6 +792,7 @@ def _build_handlers(
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
+        "niss_scout": _h_niss_scout,
         "dr_trigger_options": _h_dr_trigger_options,
         "dr_recognize": _h_dr_recognize,
         "probe_dr_pattern": _h_probe_dr_pattern,
@@ -879,6 +894,25 @@ def _tool_schemas() -> list[dict]:
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                 },
                 "required": ["slot", "axis"],
+            },
+        },
+        {
+            "name": "niss_scout",
+            "description": (
+                "v16 — 6-row read-only scout. Computes the best EO+DR option "
+                "on BOTH normal AND inverse for all 3 axes (UD/FB/RL), returns "
+                "a comparison table sorted by expected_total_to_solved. The "
+                "table is the explicit branch-and-discard ledger elite WCA "
+                "solvers keep in their head; the median elite solve has 8 "
+                "NISS transitions and 50% START on inverse. Call this ONCE "
+                "right after inspect_state on a fresh scramble — before any "
+                "EO commit — and use the recommendation (or override with "
+                "an explicit rationale). Does NOT modify any slot. Cost: 30s sim."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"slot": _SLOT},
+                "required": ["slot"],
             },
         },
         {
@@ -1290,24 +1324,22 @@ solves in v11-v13.
 
 # Pipeline (the realistic-human version)
 
-1. **Inspect + EO scan**:
+1. **Inspect + NISS-scout** (v16):
    a) inspect_state(main).
-   b) For each axis (UD, FB, RL): eo_pattern_lookup(axis=X). You get
-      EITHER a full ≤4-move EO sequence, OR the first 4 moves of a
-      longer optimal path (with `partial: true`).
-   c) Pick the axis with shortest full_optimal_length (visible from
-      either the `length` field or the `full_optimal_length` field if
-      partial). Briefly EXPLAIN why this axis: relate bad-edge count,
-      slot positions, and FMC theory ("UD has 4 bad edges all on F,
-      classic 1-mover" or "FB has 2 bad edges on perpendicular faces,
-      ~3 moves").
-
-1b. **NISS-SCOUT EO on inverse** (v14b, from research): half of all elite
-   solves START on the inverse scramble. After running eo_pattern_lookup
-   on the normal cube, call niss_flip and run eo_pattern_lookup AGAIN
-   on inverse — pick the side with the shorter EO **AND** the shorter
-   probe_dr_pattern downstream. This is one extra tool call that elite
-   humans always do; skipping it locks you into a suboptimal axis.
+   b) **niss_scout(slot='main')**. ONE call returns a 6-row table
+      (normal × inverse × {UD, FB, RL}) sorted by
+      expected_total_to_solved. The first row is the recommendation.
+      Median elite WCA solve has 8 NISS transitions and 50% start on
+      inverse — scouting is mandatory, not optional. Verbalize the
+      rejected rows: "Picked normal-UD with expected 18 (EO 4 + DR
+      8 + HTR 6); rejected inverse-FB at 19 because the EO is 5
+      moves and the DR substate's worse."
+   c) If the recommendation picks the INVERSE side, call niss_flip
+      BEFORE applying the EO. Otherwise continue on normal.
+   d) For the chosen (side, axis), call eo_pattern_lookup(axis=X) to
+      get the actual EO move list to apply (the scout reports
+      lengths; this returns the moves themselves, possibly chunked
+      4 at a time if partial).
 
 2. **Commit EO incrementally**:
    - If the lookup returned the full sequence (≤4 moves): apply_moves
