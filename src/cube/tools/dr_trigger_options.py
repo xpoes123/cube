@@ -53,8 +53,12 @@ _TRIGGER_CATALOG: list[tuple[str, str]] = [
 ]
 
 _FAMILY_RANK = {
-    "DR-4C4E": 0, "DR-3C2E": 1, "DR-4C2E": 2,
-    "DR-7C8E": 3, "DR-2C4E": 4, "DR-8C8E": 5,
+    # v14b: inverted from the original Hitchhiker ordering. The 333.fm
+    # corpus shows 4C4E is the WORST family (overrepresented in long
+    # solves: 26 long vs 33 elite, vs 7 long / 160 elite for 4C2E).
+    # 3C2E ("2c3") and 4C2E ("4b2") dominate elite solves.
+    "DR-3C2E": 0, "DR-4C2E": 1, "DR-2C4E": 2,
+    "DR-7C8E": 3, "DR-4C4E": 4, "DR-8C8E": 5,
 }
 
 # Empirical HTR-finish length by DR-substate, from the 333.fm corpus
