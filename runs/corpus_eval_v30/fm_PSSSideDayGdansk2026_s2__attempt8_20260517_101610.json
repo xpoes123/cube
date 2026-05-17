@@ -1,0 +1,4979 @@
+{
+  "scramble": [
+    "R'",
+    "U'",
+    "F",
+    "R",
+    "D2",
+    "F'",
+    "D",
+    "R",
+    "L2",
+    "F",
+    "R",
+    "B2",
+    "D'",
+    "F'",
+    "L2",
+    "U2",
+    "D2",
+    "B",
+    "R2",
+    "B",
+    "L2",
+    "B",
+    "R'",
+    "U'",
+    "F"
+  ],
+  "model": "claude-sonnet-4-5-20250929",
+  "final_solution": [
+    "U",
+    "R2",
+    "U",
+    "R2",
+    "U'",
+    "R2",
+    "L2",
+    "F2",
+    "U",
+    "B2",
+    "D",
+    "R2",
+    "U2",
+    "R2",
+    "D2",
+    "U2",
+    "F2",
+    "R2",
+    "U2",
+    "R",
+    "U2",
+    "R'",
+    "L2",
+    "U",
+    "L",
+    "D2",
+    "U",
+    "R2",
+    "F",
+    "U'",
+    "R2",
+    "B'"
+  ],
+  "solves": true,
+  "total_moves": 32,
+  "tool_calls": 42,
+  "halt_reason": null,
+  "sim_spent": 187.0,
+  "sim_budget": 3600.0,
+  "wall_elapsed_s": 141.3,
+  "budget_events": [
+    {
+      "kind": "inspect_state",
+      "cost": 5.0,
+      "sim_spent_after": 5.0,
+      "slot": "main"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 8.0,
+      "slot": "main",
+      "axis": "FB"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 11.0,
+      "slot": "main",
+      "axis": "RL"
+    },
+    {
+      "kind": "niss_flip",
+      "cost": 5.0,
+      "sim_spent_after": 16.0,
+      "slot": "main"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 19.0,
+      "slot": "main",
+      "axis": "UD"
+    },
+    {
+      "kind": "probe_dr_pattern",
+      "cost": 3.0,
+      "sim_spent_after": 22.0,
+      "slot": "main",
+      "axis": "UD"
+    },
+    {
+      "kind": "niss_flip",
+      "cost": 5.0,
+      "sim_spent_after": 27.0,
+      "slot": "main"
+    },
+    {
+      "kind": "probe_dr_pattern",
+      "cost": 3.0,
+      "sim_spent_after": 30.0,
+      "slot": "main",
+      "axis": "FB"
+    },
+    {
+      "kind": "probe_dr_pattern",
+      "cost": 3.0,
+      "sim_spent_after": 33.0,
+      "slot": "main",
+      "axis": "RL"
+    },
+    {
+      "kind": "niss_flip",
+      "cost": 5.0,
+      "sim_spent_after": 38.0,
+      "slot": "main"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 4.0,
+      "sim_spent_after": 42.0,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "dr_trigger_options",
+      "cost": 8.0,
+      "sim_spent_after": 50.0,
+      "slot": "main",
+      "axis": "UD"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 6.0,
+      "sim_spent_after": 56.0,
+      "slot": "main",
+      "n": 6
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 3.0,
+      "sim_spent_after": 59.0,
+      "slot": "main",
+      "n": 3
+    },
+    {
+      "kind": "htr_classify",
+      "cost": 1.0,
+      "sim_spent_after": 60.0,
+      "slot": "main",
+      "axis": "UD",
+      "cached": true,
+      "subset": [
+        1,
+        0,
+        5,
+        3,
+        2,
+        7,
+        4,
+        6
+      ]
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 61.0,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 4.0,
+      "sim_spent_after": 65.0,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 66.0,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 4.0,
+      "sim_spent_after": 70.0,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 71.0,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 3.0,
+      "sim_spent_after": 74.0,
+      "slot": "main",
+      "n": 3
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 75.0,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 4.0,
+      "sim_spent_after": 79.0,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 80.0,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 4.0,
+      "sim_spent_after": 84.0,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 85.0,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 3.0,
+      "sim_spent_after": 88.0,
+      "slot": "main",
+      "n": 3
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 89.0,
+      "slot": "main"
+    },
+    {
+      "kind": "replace_and_shorten",
+      "cost": 30.0,
+      "sim_spent_after": 119.0,
+      "slot": "main"
+    },
+    {
+      "kind": "reset_slot",
+      "cost": 30.0,
+      "sim_spent_after": 149.0,
+      "slot": "main",
+      "rescramble": true
+    },
+    {
+      "kind": "niss_flip",
+      "cost": 5.0,
+      "sim_spent_after": 154.0,
+      "slot": "main"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 32.0,
+      "sim_spent_after": 186.0,
+      "slot": "main",
+      "n": 32
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 187.0,
+      "slot": "main"
+    }
+  ],
+  "slots_final": {
+    "main": {
+      "history": [
+        "B",
+        "R2",
+        "U",
+        "F'",
+        "R2",
+        "U'",
+        "D2",
+        "L'",
+        "U'",
+        "L2",
+        "R",
+        "U2",
+        "R'",
+        "U2",
+        "R2",
+        "F2",
+        "U2",
+        "D2",
+        "R2",
+        "U2",
+        "R2",
+        "D'",
+        "B2",
+        "U'",
+        "F2",
+        "L2",
+        "R2",
+        "U",
+        "R2",
+        "U'",
+        "R2",
+        "U'"
+      ],
+      "on_inverse": true,
+      "move_count": 32,
+      "undo_available": 32
+    }
+  },
+  "transcript": [
+    {
+      "type": "system",
+      "content": "You are an expert Rubik's Cube FMC solver in a SIMULATED COMPETITION.\n\n# Rules (match WCA FMC)\n- You have ONE HOUR total simulated time (3600 seconds budget).\n- You operate on up to 3 named cube-state slots (start with 'main').\n- Per slot you have a 4-move undo buffer. To go back further you\n  must reset_slot (costs 30s \u2014 like solving + rescrambling on paper).\n- Applying each move costs 1s simulated.\n- Looking ahead costs simulated time too: lookahead ~8s,\n  find_dr_via_trigger ~20s, policy_intuition ~3s.\n- The HTR finish is NOT a brute-force solver. It is a memorized lookup:\n  first time you see a subset you 'learn' it (15s); future\n  uses are nearly free (1s). So get to DR, identify the\n  subset with htr_subset, then lookup_subset_finish.\n- Call budget_status whenever you want to see how much time you have left.\n\n# FMC technique reference (use this vocabulary in your narration)\n\n### EO (Edge Orientation) \u2014 ALGORITHMIC, not search\nEO is fundamentally algorithmic. Each bad-edge configuration has known\nfix patterns; lookahead/policy are CONFIRMATION tools, not the primary\nfinder. Workflow on the cube:\n\n1. Read `bad_edges_per_axis` AND `bad_edge_slots_per_axis` from inspect_state.\n2. The flipping moves per axis are:\n   - **UD-axis EO**: F, F', B, B' (quarter turns of F/B flip UD-EO)\n   - **FB-axis EO**: L, L', R, R' (quarter turns of L/R flip FB-EO)\n   - **RL-axis EO**: U, U', D, D' (quarter turns of U/D flip RL-EO)\n   Half turns and axis-moves preserve EO.\n3. A flip move toggles the 4 edges on its face. So a single flip move\n   changes bad-edge-count by \u00b14 or \u00b12 or 0 depending on how many of that\n   face's edges were already bad.\n\n**By bad-edge count (on chosen axis)**:\n- **0**: solved on this axis. Done.\n- **2**: ONE-MOVE solutions exist when the two bad edges sit on\n  perpendicular faces that share one flipping face. E.g., on UD-axis,\n  if the 2 bad edges are both on the F face (after-state) \u2192 F fixes\n  both. Bad edges on opposite sides of the same flipping axis \u2192 2 moves\n  needed. Look at `bad_edge_slots_per_axis` and try the flipping move\n  that touches both slot names.\n- **4**: typically 1-3 moves. Strong cases:\n  - All 4 on one flipping face \u2192 1 move (F or B on UD-axis).\n  - 2 on F, 2 on B \u2192 2 moves (F + B or similar).\n  - Scattered \u2192 3-4 moves using a setup. Common: `U B U'` shape that\n    rotates 2 edges onto F before the F flip.\n- **6**: usually 2-4 moves. The `<setup> F <setup'> B` symmetry pattern\n  works when the configuration is roughly symmetric on the flipping axis.\n- **8**: 3-5 moves. Classic `<m> F <m'> B` symmetry \u2014 find a 1-2 move\n  setup `<m>` that puts 4 bad edges on F, then `F <m'> B` flips both\n  4-groups. NISS-trace the inverse: 1-move-to-8-bad often gives sub5 EO.\n- **10**: rare. Usually NISS to inverse helps.\n- **12**: all-bad. Two flips on opposite faces don't cancel cleanly;\n  typically NISS.\n\n**Procedure** (per axis):\n1. Note the bad-edge count and slot names from inspect_state.\n2. Identify which flipping moves touch which bad edges (e.g., F touches\n   slots UF, FR, DF, FL). A single flip \"fixes\" any of those that were\n   bad and \"breaks\" any that were good.\n3. If a one-move fix exists, you'll see it directly: a single flipping\n   move where ALL the moves' affected slots were currently bad.\n4. Otherwise enumerate 2-3 move setups manually using try_alg. The\n   transformer's policy_intuition gives top-k starting moves; combine\n   with the algorithmic count to pick which try_alg to test.\n5. Once you have a candidate sequence, lookahead/probe_dr_after_eo\n   confirms it (or finds a 1-move-shorter alternative).\n\n**Axis selection rule of thumb**:\n- Smallest bad-edge count is usually shortest EO BUT not always.\n- A scrambled state with 2 bad edges on UD that DON'T share a flipping\n  face needs ~3-4 moves. A state with 4 bad edges on FB all clustered\n  may need only 1 move. **Check the slot pattern, not just the count.**\n\nNISS-EO trigger: 1-move reduction to 4 bad edges \u2192 niss-trace the\ninverse for sub5 EOs. Trace good-edges (not bad) when looking at\n1-move-to-8-bad.\n\n### NISS Decision Rules\n- After EO: only switch if you have very few EOs of the shortest length. Otherwise stay.\n- After RZP: switch in 5; switch in 6 only if **JZP** or **DR-2e3c**.\n- JZP preserves across axes: if you have JZP on normal, the OTHER axis after switching also has JZP \u2014 switch even for marginal 2c6e-JZP if it becomes 4e4c.\n- ARM swaps axes on switch; use ARM stats on the opposite axis to decide.\n\n### RZP \u2192 DR\nRZP = \"completely random moves\" between EO and DR. Look for rzps of length \u22645 (\u22646 if JZP/3c2e). Standard triggers:\n- `R` \u2192 **DR-4c4e** (most common, grind this)\n- `R U2 R'` \u2192 **DR-4c2e**\n- `R U R'` or `R U' R'` \u2192 **DR-3c2e**\n- `R U2 F2 R` \u2192 DR-4c4e variant\n- Advanced: `R U L` \u2192 DR-7c8e; `R L` \u2192 DR-8c8e; `R U2 F2 U2 R` \u2192 DR-2e; `R U2 D2 L` \u2192 DR-4e\n\nDR length targets: sub-15 beginner, sub-12 intermediate, sub-11 advanced. Abandon RZP if intuition says bad \u2014 don't sink time unless rzp \u22643.\n\n**JZP requirements**: no U/D corner stickers on R/L; no E-slice edges in M-slice; even number of unoriented corners. Cases like 4c6e/2c2e/2c4e become viable (5-6 to DR).\n\n**ARM** (Axial Reduction Minus): how close the *other* axis is to JZP. Count misoriented corner stickers WITHOUT F/B color, plus misoriented E-layer edges.\n\n**Pairs tracing** (Wen): for each E-slice edge not in its slice, check the misoriented corner whose two slice-facing stickers match the edge \u2014 that's a pair on inverse. Switch on 2+ pairs.\n\n### HTR (Half-Turn Reduction)\nSolvable with only double turns. 0-5 quarter-turn corners remain after DR. HTR triggers: `R`, `R U2 R'`, `R U2 F2 R`. Process: count qt \u2192 reduce/grow to 1 or 2 qt \u2192 setup to trigger.\n\n**HTR corner subsets** (with approx DR\u2192solved finish lengths):\n- **4a1** ~12.5 \u2014 good\n- **4b2** ~12.5 \u2014 good, learn 4b2+4e cases\n- **4a2** ~13.3\n- **4c3** ~13.4\n- **2c3** ~12.9\n- **2c4** ~13.7 \u2014 hard, expect longer\n\nThe \"a/b\" letter distinguishes corner orbit shape; \"c\" generally means worse subsets.\n\n### Finish (from HTR)\nAny state is solvable in \u226414 moves from HTR. Practical: solve corners + as many edges as possible, then edge commutators on the rest. Or **Floppy Reduction** (FR): reduce to `<R2 L2 F2 B2>` along DR axis, solve the domino layers ignoring the middle slice.\n\n### Insertions & Commutators\nAfter skeleton with corners off:\n- **3c** \u2192 1 commutator (8 moves pure, often cancels)\n- **3c1t / 2c2t / 5c / 3c3c / 2t / 3t** \u2192 2 commutators\n- 4c1t / 3c2t / 4t / 5t \u2192 3+ comms, generally abandon\n\nA commutator affects exactly 3 corners; slide through the solution for cancellations.\n\n### DR-Xs (Slice EO Method)\nReplaces full EO with **slice EO**: orient only the 4 edges of ONE slice on one axis. Often a 0-1 move skip exists. NISS does NOT preserve slice EO.\n\nPipeline: slice-EO \u2192 rzp-Xs \u2192 DR-2s \u2192 DR-1s \u2192 real DR \u2192 HTR \u2192 finish.\n\n**DR-1s break-even**: 8-move DR-1s \u2248 11-move normal DR (~2.5 moves extra on average). Use when: slice EO skip or 1-mover exists AND DR-1s reachable in \u22648 moves.\n\n**DR-2s 8fe special case**: when all 8 non-slice edges flipped, go straight to HTR-2s \u2014 only ~1 move worse than normal DR. Look for `U R L` substitutions becoming `D U R L` (-2 moves).\n\n### Vocabulary\nRZP, JZP, JEO, ARM, AR-XcYe, DRM, \"trigger\" (R, RU2R', RUR'), 4c4e/3c2e/4c2e, \"4 bad edges,\" \"niss-trace,\" \"premove,\" \"pairs tracing,\" \"qt corners,\" AB3c (All But 3 corners), slice EO, DR-1s/-2s, \"leave slice,\" floppy reduction, hyperparity, HTR subset (4a1/4b2/4a2/4c3/2c3/2c4).\n\n### Time Budget (your 1-hour solve)\n- 0-10 min: enumerate EOs across axes/sides\n- 10-35 min: check EOs, find rzps, find DRs\n- 35-60 min: solve best DR through HTR + finish + insertions\n\n# The scramble (exactly 25 moves)\nR' U' F R D2 F' D R L2 F R B2 D' F' L2 U2 D2 B R2 B L2 B R' U' F\n\nJSON form (always pass this to verify_solved, never retype the scramble):\n  scramble = [\"R'\", \"U'\", \"F\", \"R\", \"D2\", \"F'\", \"D\", \"R\", \"L2\", \"F\", \"R\", \"B2\", \"D'\", \"F'\", \"L2\", \"U2\", \"D2\", \"B\", \"R2\", \"B\", \"L2\", \"B\", \"R'\", \"U'\", \"F\"]\n\n# What you SEE in inspect_state (the champion's view)\n\nFor each axis, inspect_state reports a `dr_closeness_per_axis` block:\n- `misoriented_corners` (\"C\") and `misplaced_slice_edges` (\"E\"): these are\n  the DR-XCYE label that champions recite. (4, 4) = DR-4C4E (R trigger),\n  (4, 2) = DR-4C2E (R U2 R'), (3, 2) = DR-3C2E (R U R' / R U' R'),\n  (7, 8) = DR-7C8E (R U L), etc.\n- `jzp_eligible` (UD only): boolean \u2014 a JZP state has dramatically shorter\n  DR; even normally-bad cases like 2C6E/4C6E become viable. JZP requires:\n  no U/D corner stickers on R/L, no E-slice edges in M-slice, even\n  unoriented corners. If JZP-eligible, lean toward this axis.\n- `top_pairs_on_inverse` (UD only): Wen's pairs-tracing count. 2+ pairs\n  preserved on inverse = strong NISS-switch signal.\n- `arm_other_axis`: distance from JZP on the OTHER axis after NISS.\n  Lower numbers predict better post-switch DR.\n\nFor HTR (post-DR), `htr_closeness`:\n- `qt_corners` (0-5): primary HTR-distance signal. 0qt = already at HTR\n  corners; 4qt+ = expect longer finish.\n- `solved_corner_columns` (0-4): for floppy/slice-finish reasoning.\n\n# NISS-FIRST RULE\n\nAfter your initial EO scan, ALWAYS also check the inverse frame for each\naxis you might use. Use niss_flip + eo_pattern_lookup on the inverse to\ncompare. If `top_pairs_on_inverse \u2265 2` OR EO is \u22651 move shorter on\ninverse, the inverse frame is the better solving direction. NISS is\ncheap (~5s); always check it.\n\n# Human Tools (v11 \u2014 strict constraints)\nYou are NOT a brute-force search engine. You have a HUMAN solver's tools:\n\n- **Vision**: inspect_state shows the cube and per-axis bad-edge counts.\n- **Trained intuition** (transformer policy): policy_intuition returns\n  top-K candidate moves. This is your \"gut feeling\" \u2014 the same kind of\n  trained pattern recognition a champion has after years of practice.\n- **Visualization** (depth 4): lookahead does policy-pruned beam search\n  to depth 4, width K. This is what a human can hold\n  in their head \u2014 3-4 moves of mental visualization, not a deep search.\n- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_recognize,\n  apply_htr_phase return AT MOST 4 moves per call. If\n  the optimal solution is longer, you see only the first 4 moves of\n  progress toward it. APPLY THEM, then RE-QUERY from the new state to\n  see the next chunk. This is the real human workflow: a champion sees\n  \"OK these 3 moves get me much closer\", commits, re-evaluates.\n- **What you DON'T have**: no wide BFS, no deep search, no oracle that\n  spits out the full solution. You compose by iterating.\n\nYour job is to narrate the FMC theory and reasoning as you go. The\ntranscript is the product. Show your work.\n\n# Elite-solver exemplars (v21 \u2014 read these before scouting)\n\nThree condensed reasoning patterns from elite WCA-FMC champions. They\nillustrate the *texture* of the solve narration you should imitate.\nMatch the voice: tool calls + terse rationale + explicit rejection of\ninferior branches.\n\n### Exemplar A \u2014 Multi-side EO scouting before committing\n> inspect_state shows bad_edges_per_axis = {UD: 2, FB: 4, RL: 6}. UD\n> is the cheap EO. eo_pattern_lookup(axis='UD') returns 4 moves. But\n> before I commit, let me check inverse-FB \u2014 sometimes the \"ugly\" axis\n> on inverse has a shorter EO + cleaner DR substate. niss_flip,\n> eo_pattern_lookup(axis='FB') \u2192 5 moves. dr_trigger_options on both:\n> UD-normal best is DR-4C4E in 1mv (single R, but 4c4e finishes in\n> ~9mv). Inverse-FB best is DR-3C2E in 3mv (3c2e finishes in ~5mv).\n> Joint: UD-normal 4+1 = 5mv to DR, ~9mv finish, ~14 total. Inverse-FB\n> 5+3 = 8mv to DR, ~5mv finish, ~13 total. Inverse-FB wins by ~1 move\n> AND gives a cleaner substate. Staying flipped, applying the inverse-\n> FB EO. I did NOT take the shortest EO \u2014 I joined EO+DR+finish in my\n> head before committing.\n\n### Exemplar B \u2014 Picking the longer DR for a cleaner substate\n> Post-EO on the inverse-FB axis. dr_trigger_options(axis='FB') returns\n> three candidates:\n> - DR-4C4E (U): 1mv setup, expected_total 11. Tempting but the\n>   substate is the worst case.\n> - DR-3C2E (U F U'): 3mv setup, expected_total 9 \u2014 2 moves CHEAPER\n>   net despite 2 extra DR-setup moves.\n> - DR-2C4E (U L2 U): 3mv setup, expected_total 10.\n> Taking DR-3C2E. Length of DR is a red herring; what matters is\n> dr_moves + htr_moves + finish_moves, and the 3C2E substate is worth\n> ~3 moves of credit against any longer-DR comparison. A 4C2E DR\n> substate at zero-setup-to-HTR is similarly worth that credit.\n\n### Exemplar C \u2014 Branch journal with explicit rejection rationale\n> Logging branches as I scout.\n> **Branch 1 \u2014 UD axis DR (Branch I'm bookmarking):** dr_trigger_options\n> finds a 4-move setup to RZP, then a 3-move trigger gives DR in 11\n> total. Substate: 1 quarter-turn corner. HTR estimate 5 moves. Finish\n> leaves 2e2e (potential 1-move insertion via replace_and_shorten).\n> Projected total: 20-21. **Bookmarking.**\n> **Branch 2 \u2014 RL axis DR (scouted from same EO):** holding Branch 1\n> aside. dr_trigger_options(axis='RL') returns nothing under 7 moves \u2014\n> corner orientation is wrong-parity for this axis. **Reject:** 7+ move\n> DR with a bad substate dominates Branch 1.\n> **Branch 3 \u2014 FB axis DR:** would require redoing EO from scratch.\n> **Reject** without scouting; the cost of re-EO is not recoverable.\n> Committing to Branch 1. **Lesson:** when a branch is rejected, write\n> *why* (parity, length, substate quality), not just \"it lost.\" This\n> is the elite-FMC compare-before-commit pattern.\n\n# Branch journal (v14b, elite-solver behavior)\n\nElite solvers literally log their rejected branches: \"tried 4b2 on FB,\nsaw 4c4e in 7 \u2014 took the 2c3 on UD in 5 instead.\" This is **comparison\nbefore commitment**. Before committing to an EO axis or a DR trigger,\nstate out loud the candidates you considered and WHY you rejected the\nothers, e.g.:\n\n  \"EO axes considered: UD=2bad/1mv, FB=4bad/3mv, RL=8bad/4mv \u2192 UD wins.\"\n  \"DR triggers on UD: 4C4E (1mv, expected_total=11), 3C2E (4mv, JZP,\n   expected_total=9) \u2192 take 3C2E, it's 2 moves cheaper TOTAL despite\n   3 extra DR setup moves.\"\n\nThis is BOTH the deliverable (the transcript reads like a champion's\nwalkthrough) AND a forcing function \u2014 verbalizing alternatives prevents\nthe default \"take the shortest DR\" trap that produced our 28-30 move\nsolves in v11-v13.\n\n# Pipeline (the realistic-human version)\n\n1. **Inspect + manual axis scouting** (v27 \u2014 no scout tool):\n   a) inspect_state(main). Read `bad_edges_per_axis` \u2014 typically one\n      axis has the fewest bad edges and that's your easiest EO. But\n      cheap EO doesn't always win; you'll compare candidates.\n   b) **Scout EO on the normal side** for the 1-2 most promising\n      axes: eo_pattern_lookup(axis=X). Returns the EO move list (or\n      partial if >4 moves). Note the length per candidate axis.\n   c) **Scout EO on the inverse side too** when the normal side\n      doesn't have an obviously short EO. Use niss_flip to switch\n      perspective (it inverts scramble + history), then call\n      eo_pattern_lookup. niss_flip BACK if you want to compare to\n      normal. Median elite WCA solves do 8 NISS transitions and\n      50% START on inverse \u2014 scouting both sides is normal.\n   d) **For each (side, axis) candidate with a viable EO**, also\n      probe DR cost: probe_dr_pattern(axis=X, eo_alg=<the EO moves>)\n      OR commit the EO and then call dr_trigger_options(axis=X).\n      The decision is JOINT: EO_len + DR_total. A 4-move EO with\n      an 8-move DR (12mv to DR) beats a 2-move EO with a 12-move\n      DR. You read the candidates and judge \u2014 there is no pre-\n      packaged comparison table anymore.\n   e) Pick a (side, axis) and commit. If you committed to inverse,\n      stay flipped; if you bounced back to normal, niss_flip once\n      more so the slot's perspective matches your plan.\n   f) Verbalize rejected candidates (\"UD-normal EO=4, FB-inverse\n      EO=3 but DR there is awful, sticking with UD-normal\").\n\n2. **Commit EO incrementally**:\n   - If the lookup returned the full sequence (\u22644 moves): apply_moves\n     the whole thing in one call. Narrate the move purpose.\n   - If partial: apply_moves the visible chunk, narrate \"this gets me\n     closer to EO on FB\", then re-query eo_pattern_lookup(axis=X) on\n     the new state. Repeat until found=1 with no partial flag.\n\n3. **DR feasibility probe (before each EO axis decision is final)**:\n   For each plausible EO candidate, call probe_dr_pattern. It reports\n   total_dr_length and trigger_family (if within visualization). USE\n   this to pick the joint-shortest EO+DR axis. Note: total_dr_length\n   may be 5-10 moves \u2014 even though you can only SEE 4 moves at a time,\n   you know the TOTAL.\n\n4. **DR compose** (UD axis: use dr_trigger_options; other axes: dr_recognize):\n\n   **DR-LENGTH HARD RULE (v14b, from 333.fm corpus research)**: elite\n   solves get DR in \u22646 moves with 85.7% probability. **DR \u226510 moves NEVER\n   appears in sub-22 solves.** If your shortest DR option exceeds 10mv,\n   that's a SIGNAL the axis is wrong \u2014 probe another (NISS-flip first).\n\n   **DR-SUBSTATE PRIORS TABLE** (v28 \u2014 memorized like any elite cuber):\n   The DR length is half the story; the resulting substate's typical\n   POST-DR cost (HTR reduction + finish combined) is the other half.\n\n   | Trigger family | DR len | Typical post-DR | JZP-eligible post-DR |\n   |---|---:|---:|---:|\n   | DR-3C2E (`R U R'`, `R U' R'`) | 3mv  | **6-8 mv**  | **3-5 mv** |\n   | DR-4C2E (`R U2 R'`)           | 3mv  | 9-11 mv     | 5-7 mv     |\n   | DR-2C4E (`R F2 R'`-family)    | 3mv  | 10-12 mv    | 5-7 mv     |\n   | DR-4C4E (`R`)                 | 1mv  | 12-14 mv    | 7-9 mv     |\n\n   **Implication**: a 4-move 3C2E (1+3=4mv setup) reaching a 6mv finish\n   = 10mv from EO end to solved. A 1-move 4C4E reaches a 13mv finish\n   = 14mv. **The 3C2E saves 4 moves** even though its DR is 3 longer.\n   This is the single biggest move-count lever after EO/axis choice.\n\n   **JZP WEIGHTING (v28 \u2014 strong signal)**: `jzp_eligible: true` HALVES\n   the post-DR cost. A JZP-eligible 5-move 3C2E (5mv to DR + 3-5mv post)\n   \u2248 8-10mv total beats a non-JZP 1-move 4C4E (1mv + 12-14mv) \u2248 13-15mv\n   total \u2014 JZP is worth ~5 moves vs the shortest-DR trap. Treat any\n   `jzp_eligible: true` row as a STRONG preference, even if its DR length\n   is 4-5 moves longer than alternatives.\n\n   a) Call `dr_trigger_options(axis=X)` for each candidate axis. Read\n      EVERY row \u2014 there's no oracle ranking, only `trigger_family`,\n      `total_to_dr`, `jzp_eligible`, `pre_trigger_signature`,\n      `top_pairs_on_inverse`. Estimate the post-DR cost yourself using\n      the table above. NARRATE your pick:\n      > \"Comparing on UD: 4C4E in 1mv (13mv typical post-DR = 14 total)\n      > vs 3C2E in 4mv (7mv typical post-DR = 11 total). 3C2E saves 3.\n      > Picking the 3C2E.\"\n   b) dr_recognize is a FALLBACK only \u2014 use it only if dr_trigger_options\n      returns no options within max_setup=5. Per-axis trigger letters:\n      UD uses R+U, FB uses U+F, RL uses F+L.\n   c) If `found=0` with `setup_progress`: trigger isn't in view yet.\n      Apply the 4 setup_progress moves with narration,\n      then dr_recognize again on the new state.\n\n5. **POST-DR DECISION** (v14b \u2014 research-driven priority):\n\n   **PRIMARY PATH (Option A \u2014 Standard HTR finish)**: 333.fm corpus shows\n   elite solvers DO NOT use insertions. Elite insertion rate is 0.7%; long\n   (30+) solves use them 15.8%. Insertions are a recovery tool, not the\n   path to sub-25. **Default to the clean DR\u2192HTR\u2192finish pipeline.** Use\n   the inter-phase analyze_residual checks (step 6) as opportunistic\n   shortcuts, NOT primary tooling.\n\n   **FALLBACK (Option B \u2014 derive_corner_3cycle)**: ONLY if analyze_residual\n   returns `is_pure_corner_3cycle: true` between HTR-finish chunks \u2014 then\n   the 8-move comm is genuinely shorter than the remaining finish. Don't\n   force this; don't go searching for skeletons.\n\n   **REFINEMENT (Option D \u2014 replace_and_shorten)**: 1-call cap; the tool\n   enforces it. Use ONLY if your initial solve is \u226527 moves AND you have\n   \u226530 tool calls remaining. The tool will refuse otherwise.\n\n   **DEPRIORITIZED**: don't go looking for slice insertions or 3-cycle\n   skeletons proactively. Per the 333.fm research, the path to sub-25\n   is DR-quality, not insertion-skill.\n\n5b. **REFINEMENT (MANDATORY when gates pass)**: after you have a\n   verified solve, if total_moves \u2265 27 AND tool calls remaining \u2265 30\n   AND you haven't already called replace_and_shorten this run, you\n   **MUST** call replace_and_shorten ONCE on a large tail span\n   (e.g., start=4, end=N where N is your total move count). The tool\n   enforces the gates and will refuse otherwise \u2014 DO NOT try to call\n   it more than once. If it returns `solves_scramble: true` AND\n   `delta < 0`, accept the substitute as your new history (replace\n   history starting from `start` with `substitute_moves`). v13\n   evidence: this saved 3-5 moves on PSSS_s1 (30 \u2192 25). If r&s\n   would fall outside the gates, submit your current solve.\n\n   After r&s succeeds, you may submit immediately \u2014 don't try to\n   chain a second r&s; the tool enforces a 1-call cap.\n\n6. **HTR classify + phase compose** (running Option A) \u2014 with **free\n   inter-phase state checks** (v17: quick_check replaces analyze_residual\n   for the common case):\n   a) htr_classify(axis=X). Narrate the subset by name: \"this is a\n      4-swap axial subset with cycle structure (2,2,2,2).\"\n   b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the\n      reduction is longer than 4 moves; apply the visible chunk,\n      narrate (\"4 moves of corner orbit reduction\"), then **CALL\n      quick_check BEFORE re-querying apply_htr_phase**. quick_check is\n      FREE (0s) and returns is_solved/is_htr_ud/etc. If is_solved=true\n      \u2192 submit; if is_htr_ud=false \u2192 continue HTR-reduction. Only call\n      analyze_residual when you specifically suspect a pure 3-cycle\n      residual (rare; quick_check tells you when this is plausible).\n   c) Same for apply_htr_phase(phase='finish'): quick_check between\n      chunks. If is_solved emerges before the finish ends, ship it.\n\n   Why: a \"clean\" subset finish often produces a 3c residual one or two\n   chunks before fully solved \u2014 landing there earlier and inserting the\n   commutator saves 2-4 moves vs running the full finish. This is the\n   real human FMC pattern: see the residual, derive the comm, submit.\n\n6. **cancel + verify_solved**. Narrate the cancellations you spot.\n\n# Reasoning style \u2014 the deliverable\n\nBefore EACH tool call, narrate in 2-4 sentences:\n- What you SEE (state of cube, what's left, what theory applies).\n- What you EXPECT to happen (which moves should help and why).\n- WHY this tool is the right next step.\n\nThe whole transcript is the video. Verbalize FMC vocabulary: \"bad\nedges on UF and DB share the F flipping face\", \"RZP setup of 2 moves\ninto the R-U2-R' DR-4c4e trigger\", \"this is a 4-swap axial subset \u2014\n3-cycle finish with one extra pair\". This is the texture viewers want.\n\n# Strategy notes\n\n**SHIP RULE (read this twice)**: the primary goal is producing a\nSOLVED solution within budget. Any verified solve under 50 moves\nbeats a timeout. Once you have a working complete solution\n(EO + DR + finish, verified by verify_solved), CALL FINAL_SOLUTION\nand STOP. Do NOT keep searching for shorter alternatives unless you\nhave a very specific reason (e.g. you can see your current solution\nhas 4+ obviously cancellable moves and a quick try_alg would confirm).\nThe FMC theory targets (\"sub-15 DR is advanced\", etc.) are aspirational\nfor STRONG HUMANS over many practice solves \u2014 not requirements for\nthis attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.\n\n- **Test before commit**: a 4-move EO probed with find_dr_via_trigger is\n  cheaper than a 2-move EO followed by 30 tool calls of manual DR\n  exploration that goes nowhere. Always test ALL viable EO axes' DR\n  options first.\n- **apply_moves has NO upper cap** \u2014 you can apply as many moves as you\n  want. Only undo_moves is capped at 4 per call. If you commit\n  10 moves you can't undo all 10; use reset_slot if you need to.\n- **try_alg is your cheap probe** (2s sim). Use it constantly to look\n  at after-states without committing. It does NOT modify the slot.\n- Slots are precious. Don't proliferate. Default: do everything in 'main'.\n- Backtracking tools (`reset_slot`, `undo_moves`, `new_slot`) exist but\n  use them sparingly. Empirically (v23b corpus eval), prompting the\n  agent to use backtracking proactively REGRESSED move count by 1.2\n  moves \u2014 same pattern as v14b's branch-journal thrash. Stick with\n  the committed branch unless something is *clearly* wrong.\n- NISS is cheap (~5s) and powerful \u2014 use it when stuck.\n- **Before submitting**: call cancel(moves=your_full_solution) to collapse\n  any adjacent same-face moves (e.g. `U U2` \u2192 `U'`). It's cheap and often\n  saves 1-3 moves.\n- **Submission (v17)**: ALWAYS call `compose_niss_solution(slot='main')`\n  BEFORE emitting FINAL_SOLUTION. It assembles the canonical normal-frame\n  solution from your slot history, runs cancel(), and verifies the solve.\n  If it returns solves=True, output the returned `solution` field as the\n  FINAL_SOLUTION list \u2014 do NOT hand-construct it from invert() calls\n  (WesternSicily v16 wasted 25 tool calls + 1 extra move because the\n  agent tried to invert mentally and got it wrong 3 times).\n    FINAL_SOLUTION: [\"R\", \"U'\", ...]\n- The inverse-of-scramble is the trivial floor and does NOT count.\n\n# Reasoning style\nBefore each tool call, narrate in 1-2 sentences: what you observed, what\nhypothesis you're testing, why you picked this tool. This transcript is the\ndeliverable \u2014 your visible reasoning is the product.\n"
+    },
+    {
+      "type": "user",
+      "content": "Solve this scramble within your one-hour budget. Start with inspect_state(slot='main').\n\n## Context: your prior attempts on this exact scramble\n\n- Attempt 1: 32 moves \u2014 `U R2 U R2 U' R2 L2 F2 U B2 D R2 U2 R2 D2 U2 F2 R2 U2 R U2 R' L2 U L D2 U R2 F U' R2 B'`\n- Attempt 2: 29 moves \u2014 `U' F2 U L2 U2 L2 F2 U R2 D U2 B2 U2 R2 D2 U2 F2 R U2 L U R L2 U D F U' R2 B'`\n- Attempt 3: 30 moves \u2014 `L2 F D2 F2 U2 L2 F R2 B L2 D2 B2 R2 B2 L2 U2 F2 U2 F2 U' R2 U' F' R2 B2 U B' U2 R U2`\n- Attempt 4: 30 moves \u2014 `B2 L2 U2 R B' D L2 U B2 F' U' F' R2 F L2 F' U2 R2 F' L2 B U2 L2 U2 R2 B2 D2 U2 L2 U2`\n- Attempt 5: FAILED (max_tool_calls)\n- Attempt 6: 30 moves \u2014 `L2 F D2 F2 U2 L2 F R2 B L2 D2 B2 R2 B2 L2 U2 F2 U2 F2 U' R2 U' F' R2 B2 U B' U2 R U2`\n- Attempt 7: 31 moves \u2014 `D2 R2 D2 R2 B2 U2 L2 F2 L2 F2 D' B2 U R2 U' L2 U F2 R U R' L2 F2 L D2 U2 B2 F U' R2 B'`\n\nBest so far: **29 moves**.\n\n**COMMIT HARD this attempt.** Pick a line \u2014 same axis as the best prior attempt if it looked promising, or a sister branch if you have a clear reason \u2014 and drive it to a clean finish. Do NOT over-ideate between branches mid-solve; do NOT abandon a path halfway through to compare against another. The outer wrapper runs this scramble multiple times for diversity \u2014 your job on THIS attempt is to find ONE complete, clean solution. A failed or incomplete solve is worse than a 30-move complete one. If the prior attempts' lines all reached similar move counts, trust that EO/DR axis and push to optimize the FINISH this time."
+    },
+    {
+      "type": "assistant",
+      "turn": 1,
+      "wall_s_elapsed": 6.89,
+      "turn_wall_s": 6.89,
+      "input_tokens": 1073,
+      "output_tokens": 226,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 0,
+      "content": [
+        {
+          "signature": "Es0FCmQIDRgCKkCc9psPsucUD5PEKuHh5/UY/Eiax7kkZBc5oWFIhUsCnr+ZV2m9f/lqUSzQNChX7knjL3VN71jO08aWjNZxXDa5MhpjbGF1ZGUtc29ubmV0LTQtNS0yMDI1MDkyOTgAEgxb6/1Q6bumYRFCLTMaDGuND3eTy47XzfMZmSIwLjqyLSwKk4K6rYkwwF6Nao1dNq9LMobGJk9vPGKzl46XvjwHIYBqghONpwrWfyjgKpYEga9P4ISysbtFqMuGv50McMpDcpUU7hxEg6Jbt7t+bLsIqq5hstGgrBVOJVmb3Rg8r69W0N+hWP9xXBSupAEyRYyoFOjHfO+Agh/zYL9ksD/6mjzHXSuMaD3weVa++mumeF9ICtfj8eUK/a24v1QroBI/5WQRAY/4wKR11AWjYm09U9Sc3KLG1dv66rURt5g6STxeonWv202XAeapbONEAvsdJwDaUL4/MqFL/FEijmodWzY+ILD4+Ze+gai/elY2PxdeN272rp/zmdYQT32RqfXD0TVHxf+LP1yp78GYKWSMMFE+/mwNFYCtDGv86c7dK7Y1/VmeN3PQpOwNxSN4PPbO919guAINaoI6mZcqjBhciEkNTKLL0NQIMOtCJM6QOkyrdylqxm+hPKnBD6VT7zB7SCGg6ocO9LMfSqlJub6s7omq6gwQ7eH5MdASj4sC7IEr52sNYy7CnR0gc2UozzR2/qI86Me0ThBtWr40ToJwoP4GER2eztouNvYzyDkpwHpvGpPfil4Yj6pZUwIOSXglNHUtnumwv6PzzKFEwDxiY5Ix52gvIy8TAHtORatqM6LUs6InqcswK/m+GG6Z+m2maPC4FsWbChXaJOpo/cdMSoKKI7fQ+WYeZvHmCk1j3OG3MwUlDEarj+SC4M67FHoyd5zAFzaMbW0EcTBbpz3axT1kEc5Dp3+RVBZEFLsT4hDTXZclGAE=",
+          "thinking": "Looking at the prior attempts, they're all in the 29-30 move range. The best is 29 moves. I need to commit hard to ONE path and drive it to completion efficiently.\n\nLet me start by inspecting the state to see what axes look promising, then pick one and push through to completion without thrashing between options.\n\nThe key is:\n1. Quick EO axis scouting (both normal and inverse)\n2. Pick ONE axis/side based on joint EO+DR cost\n3. Execute DR cleanly\n4. HTR finish with inter-phase quick_checks\n5. Ship it\n\nLet's begin.",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "I'll solve this scramble efficiently by committing to ONE clean path. Starting with state inspection to scout EO axes.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01VNUdPiF7D71AWzVmF1XEXK",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "inspect_state",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 1,
+      "tool_index": 1,
+      "name": "inspect_state",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "bad_edges_per_axis": {
+          "UD": 6,
+          "FB": 4,
+          "RL": 4
+        },
+        "bad_edge_slots_per_axis": {
+          "UD": [
+            "UF",
+            "UL",
+            "DR",
+            "FR",
+            "FL",
+            "BR"
+          ],
+          "FB": [
+            "DR",
+            "DL",
+            "FR",
+            "BL"
+          ],
+          "RL": [
+            "UL",
+            "DR",
+            "DF",
+            "FR"
+          ]
+        },
+        "bad_edges_by_flipping_face": {
+          "UD": {
+            "F": [
+              "UF",
+              "FR",
+              "FL"
+            ],
+            "B": [
+              "BR"
+            ]
+          },
+          "FB": {
+            "L": [
+              "DL",
+              "BL"
+            ],
+            "R": [
+              "DR",
+              "FR"
+            ]
+          },
+          "RL": {
+            "U": [
+              "UL"
+            ],
+            "D": [
+              "DR",
+              "DF"
+            ]
+          }
+        },
+        "bad_corners_per_axis": {
+          "UD": 7,
+          "FB": 7,
+          "RL": 6
+        },
+        "eo_solved_axes": [],
+        "dr_solved_axes": [],
+        "dr_closeness_per_axis": {
+          "UD": {
+            "axis": "UD",
+            "misoriented_corners": 7,
+            "misplaced_slice_edges": 3,
+            "trigger_label": "DR-7C3E",
+            "jzp_eligible": false,
+            "top_pairs_on_inverse": 3,
+            "arm_other_axis": {
+              "C": 7,
+              "E": 2
+            }
+          },
+          "FB": {
+            "axis": "FB",
+            "misoriented_corners": 7,
+            "misplaced_slice_edges": 2,
+            "trigger_label": "DR-7C2E",
+            "arm_other_axis": {
+              "C": 7,
+              "E": 3
+            }
+          },
+          "RL": {
+            "axis": "RL",
+            "misoriented_corners": 6,
+            "misplaced_slice_edges": 2,
+            "trigger_label": "DR-6C2E",
+            "arm_other_axis": {
+              "C": 7,
+              "E": 2
+            }
+          }
+        },
+        "htr_closeness": null,
+        "solved_corners_count": 0,
+        "solved_edges_count": 1,
+        "in_strict_htr": false,
+        "in_canonical_htr_ud": false,
+        "is_solved": false,
+        "move_count": 0,
+        "slot": "main",
+        "on_inverse": false,
+        "undo_floor": 0,
+        "undo_available": 0,
+        "history_visible": [],
+        "history_truncated": 0
+      },
+      "sim_spent": 5.0,
+      "wall_s_elapsed": 6.89,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 2,
+      "wall_s_elapsed": 14.64,
+      "turn_wall_s": 7.75,
+      "input_tokens": 814,
+      "output_tokens": 249,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 1064,
+      "content": [
+        {
+          "citations": null,
+          "text": "**STATE READING:** FB and RL both have 4 bad edges (best EO candidates), UD has 6. The DR-closeness shows UD has **3 pairs on inverse** \u2014 a strong NISS signal. Let me scout EO on multiple candidates.\n\n**EO SCOUTING PLAN:** \n1. FB-axis normal (4 bad edges)\n2. RL-axis normal (4 bad edges) \n3. UD-axis inverse (leveraging those 3 pairs)",
+          "type": "text"
+        },
+        {
+          "id": "toolu_0142UMSTqE4WGGUHZoa5B8PQ",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "FB"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01EsUQs7A7hJtB3FVq7gpdSe",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 2,
+      "tool_index": 2,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "FB"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "B2",
+              "L2",
+              "U2",
+              "R'"
+            ],
+            "length": 4
+          }
+        ],
+        "pattern_size": 4,
+        "cached": true,
+        "note": "Recognized pattern (4 bad edges) \u2014 playing memorized 4-move EO."
+      },
+      "sim_spent": 8.0,
+      "wall_s_elapsed": 14.64,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 2,
+      "tool_index": 3,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "RL"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "R2",
+              "B",
+              "F2",
+              "U'"
+            ],
+            "length": 4
+          }
+        ],
+        "pattern_size": 4,
+        "cached": true,
+        "note": "Recognized pattern (4 bad edges) \u2014 playing memorized 4-move EO."
+      },
+      "sim_spent": 11.0,
+      "wall_s_elapsed": 14.64,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 3,
+      "wall_s_elapsed": 19.26,
+      "turn_wall_s": 4.61,
+      "input_tokens": 1285,
+      "output_tokens": 142,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 1064,
+      "content": [
+        {
+          "citations": null,
+          "text": "Both FB and RL give 4-move EOs. Now let me check inverse-UD (leveraging those 3 pairs):",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01Cmydi9T3W3srsfCPFDoyVJ",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "niss_flip",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01NXDwaDg26KU2L6dCtqa7NV",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 3,
+      "tool_index": 4,
+      "name": "niss_flip",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "original_scramble": [
+          "R'",
+          "U'",
+          "F",
+          "R",
+          "D2",
+          "F'",
+          "D",
+          "R",
+          "L2",
+          "F",
+          "R",
+          "B2",
+          "D'",
+          "F'",
+          "L2",
+          "U2",
+          "D2",
+          "B",
+          "R2",
+          "B",
+          "L2",
+          "B",
+          "R'",
+          "U'",
+          "F"
+        ],
+        "original_history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U",
+          "U2",
+          "B2",
+          "L2",
+          "R2"
+        ],
+        "inverse_scramble": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "inverse_cumulative": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "note": "To continue search on the inverse side, treat `inverse_cumulative` as the new effective scramble applied to SOLVED, and run search from there. Moves you find on this side are 'inverse-side' moves; the final solution is `normal_moves + invert(inverse_moves)` applied to the original scramble.",
+        "slot": "main",
+        "now_on_inverse": true
+      },
+      "sim_spent": 16.0,
+      "wall_s_elapsed": 19.26,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 3,
+      "tool_index": 5,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "UD"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "B",
+              "R2",
+              "U",
+              "F'"
+            ],
+            "length": 4
+          }
+        ],
+        "pattern_size": 6,
+        "cached": true,
+        "note": "Recognized pattern (6 bad edges) \u2014 playing memorized 4-move EO."
+      },
+      "sim_spent": 19.0,
+      "wall_s_elapsed": 19.26,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 4,
+      "wall_s_elapsed": 23.72,
+      "turn_wall_s": 4.47,
+      "input_tokens": 1149,
+      "output_tokens": 176,
+      "cache_read_tokens": 14148,
+      "cache_create_tokens": 583,
+      "content": [
+        {
+          "citations": null,
+          "text": "**INVERSE-UD EO: 4 moves** (B R2 U F'). All three axes need 4-move EOs. Now I need to probe DR cost for each to pick the joint-shortest path.\n\n**DR PROBING:** I'll probe DR after each EO candidate:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01XnGMiTDRdFYCg2oZqUTaQ2",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "eo_alg": [
+              "B",
+              "R2",
+              "U",
+              "F'"
+            ],
+            "axis": "UD"
+          },
+          "name": "probe_dr_pattern",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 4,
+      "tool_index": 6,
+      "name": "probe_dr_pattern",
+      "input": {
+        "slot": "main",
+        "eo_alg": [
+          "B",
+          "R2",
+          "U",
+          "F'"
+        ],
+        "axis": "UD"
+      },
+      "result": {
+        "found": 1,
+        "axis": "UD",
+        "total_dr_length": 8,
+        "within_visualization": false,
+        "probed_with_eo": [
+          "B",
+          "R2",
+          "U",
+          "F'"
+        ]
+      },
+      "sim_spent": 22.0,
+      "wall_s_elapsed": 23.72,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 5,
+      "wall_s_elapsed": 28.35,
+      "turn_wall_s": 4.62,
+      "input_tokens": 920,
+      "output_tokens": 274,
+      "cache_read_tokens": 14920,
+      "cache_create_tokens": 281,
+      "content": [
+        {
+          "citations": null,
+          "text": "Inverse-UD: EO=4, DR=8, **total 12 moves to DR**. Let me flip back to normal and probe the other two:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01HWS7PD4xqPEsvd4FP1YxxJ",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "niss_flip",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01MRzpPXHWH9reR9wcvuc34p",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "eo_alg": [
+              "B2",
+              "L2",
+              "U2",
+              "R'"
+            ],
+            "axis": "FB"
+          },
+          "name": "probe_dr_pattern",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01HDt1tvjUaXei1ghzwkktZ8",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "eo_alg": [
+              "R2",
+              "B",
+              "F2",
+              "U'"
+            ],
+            "axis": "RL"
+          },
+          "name": "probe_dr_pattern",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 5,
+      "tool_index": 7,
+      "name": "niss_flip",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "original_scramble": [
+          "R'",
+          "U'",
+          "F",
+          "R",
+          "D2",
+          "F'",
+          "D",
+          "R",
+          "L2",
+          "F",
+          "R",
+          "B2",
+          "D'",
+          "F'",
+          "L2",
+          "U2",
+          "D2",
+          "B",
+          "R2",
+          "B",
+          "L2",
+          "B",
+          "R'",
+          "U'",
+          "F"
+        ],
+        "original_history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U",
+          "U2",
+          "B2",
+          "L2",
+          "R2"
+        ],
+        "inverse_scramble": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "inverse_cumulative": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "note": "To continue search on the inverse side, treat `inverse_cumulative` as the new effective scramble applied to SOLVED, and run search from there. Moves you find on this side are 'inverse-side' moves; the final solution is `normal_moves + invert(inverse_moves)` applied to the original scramble.",
+        "slot": "main",
+        "now_on_inverse": false
+      },
+      "sim_spent": 27.0,
+      "wall_s_elapsed": 28.35,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 5,
+      "tool_index": 8,
+      "name": "probe_dr_pattern",
+      "input": {
+        "slot": "main",
+        "eo_alg": [
+          "B2",
+          "L2",
+          "U2",
+          "R'"
+        ],
+        "axis": "FB"
+      },
+      "result": {
+        "found": 1,
+        "axis": "FB",
+        "total_dr_length": 8,
+        "within_visualization": false,
+        "probed_with_eo": [
+          "B2",
+          "L2",
+          "U2",
+          "R'"
+        ]
+      },
+      "sim_spent": 30.0,
+      "wall_s_elapsed": 28.35,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 5,
+      "tool_index": 9,
+      "name": "probe_dr_pattern",
+      "input": {
+        "slot": "main",
+        "eo_alg": [
+          "R2",
+          "B",
+          "F2",
+          "U'"
+        ],
+        "axis": "RL"
+      },
+      "result": {
+        "found": 1,
+        "axis": "RL",
+        "total_dr_length": 8,
+        "within_visualization": false,
+        "probed_with_eo": [
+          "R2",
+          "B",
+          "F2",
+          "U'"
+        ]
+      },
+      "sim_spent": 33.0,
+      "wall_s_elapsed": 28.35,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 6,
+      "wall_s_elapsed": 33.11,
+      "turn_wall_s": 4.76,
+      "input_tokens": 1111,
+      "output_tokens": 250,
+      "cache_read_tokens": 15284,
+      "cache_create_tokens": 591,
+      "content": [
+        {
+          "citations": null,
+          "text": "**COMPARISON:**\n- Inverse-UD: EO=4 + DR=8 = **12 moves to DR** (3 pairs preserved)\n- Normal-FB: EO=4 + DR=8 = **12 moves to DR**\n- Normal-RL: EO=4 + DR=8 = **12 moves to DR**\n\nAll three are identical at 12 moves to DR. The inverse-UD has the **3 pairs on inverse** signal. I'll **commit to inverse-UD** and drive it through.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01Q9ousU6KDPtYjfNYrrDi1f",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "niss_flip",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01938i8JJVhLNAtfM8gT5E1W",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "B",
+              "R2",
+              "U",
+              "F'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 6,
+      "tool_index": 10,
+      "name": "niss_flip",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "original_scramble": [
+          "R'",
+          "U'",
+          "F",
+          "R",
+          "D2",
+          "F'",
+          "D",
+          "R",
+          "L2",
+          "F",
+          "R",
+          "B2",
+          "D'",
+          "F'",
+          "L2",
+          "U2",
+          "D2",
+          "B",
+          "R2",
+          "B",
+          "L2",
+          "B",
+          "R'",
+          "U'",
+          "F"
+        ],
+        "original_history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U",
+          "U2",
+          "B2",
+          "L2",
+          "R2"
+        ],
+        "inverse_scramble": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "inverse_cumulative": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "note": "To continue search on the inverse side, treat `inverse_cumulative` as the new effective scramble applied to SOLVED, and run search from there. Moves you find on this side are 'inverse-side' moves; the final solution is `normal_moves + invert(inverse_moves)` applied to the original scramble.",
+        "slot": "main",
+        "now_on_inverse": true
+      },
+      "sim_spent": 38.0,
+      "wall_s_elapsed": 33.11,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 6,
+      "tool_index": 11,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "B",
+          "R2",
+          "U",
+          "F'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'"
+        ],
+        "move_count": 4,
+        "undo_available": 4,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 42.0,
+      "wall_s_elapsed": 33.11,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'"
+          ],
+          "on_inverse": true,
+          "move_count": 4,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 7,
+      "wall_s_elapsed": 36.38,
+      "turn_wall_s": 3.27,
+      "input_tokens": 1622,
+      "output_tokens": 123,
+      "cache_read_tokens": 16049,
+      "cache_create_tokens": 68,
+      "content": [
+        {
+          "citations": null,
+          "text": "**COMMITTED:** Inverse-UD EO complete (B R2 U F'). Now finding DR triggers on UD axis:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01EfRMSpKyiJZf3c6DfjXyxr",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "max_setup": 6
+          },
+          "name": "dr_trigger_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 7,
+      "tool_index": 12,
+      "name": "dr_trigger_options",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "max_setup": 6
+      },
+      "result": {
+        "axis": "UD",
+        "options": [
+          {
+            "trigger_family": "DR-4C2E (R U2 R')",
+            "canonical_alg": "R U2 R'",
+            "setup_moves": [
+              "R2",
+              "U'",
+              "D2",
+              "L'",
+              "U'",
+              "L2"
+            ],
+            "setup_length": 6,
+            "trigger_length": 3,
+            "total_to_dr": 9,
+            "pre_trigger_signature": "DR-4C1E",
+            "jzp_eligible": true,
+            "top_pairs_on_inverse": 1
+          },
+          {
+            "trigger_family": "DR-3C2E (R U' R')",
+            "canonical_alg": "R U' R'",
+            "setup_moves": [
+              "B2",
+              "U2",
+              "D2",
+              "L'",
+              "F2",
+              "L2"
+            ],
+            "setup_length": 6,
+            "trigger_length": 3,
+            "total_to_dr": 9,
+            "pre_trigger_signature": "DR-3C1E",
+            "jzp_eligible": false,
+            "top_pairs_on_inverse": 1
+          }
+        ],
+        "max_setup_searched": 6,
+        "note": "Up to 6 named-trigger options on axis UD, sorted by total_to_dr. JZP-eligible flag and pre_trigger_signature (corner/edge counts) are structural properties a human can see \u2014 use them to judge substate quality vs DR length. There is NO expected_total_to_solved oracle; weigh the tradeoffs yourself."
+      },
+      "sim_spent": 50.0,
+      "wall_s_elapsed": 49.35,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'"
+          ],
+          "on_inverse": true,
+          "move_count": 4,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 8,
+      "wall_s_elapsed": 56.07,
+      "turn_wall_s": 6.72,
+      "input_tokens": 1250,
+      "output_tokens": 384,
+      "cache_read_tokens": 16206,
+      "cache_create_tokens": 775,
+      "content": [
+        {
+          "citations": null,
+          "text": "**DR OPTIONS:**\n1. **DR-4C2E (R U2 R')**: 6-move setup + 3-move trigger = **9 to DR**, **JZP-eligible** \n2. **DR-3C2E (R U' R')**: 6-move setup + 3-move trigger = **9 to DR**, NOT JZP\n\nUsing the priors table:\n- DR-4C2E with JZP: 9mv to DR + 5-7mv post-DR = **14-16 total**\n- DR-3C2E non-JZP: 9mv to DR + 6-8mv post-DR = **15-17 total**\n\n**PICKING DR-4C2E** (the JZP-eligible option). Applying setup then trigger:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_016KK3sHTfigCZRygUTmdFtz",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "R2",
+              "U'",
+              "D2",
+              "L'",
+              "U'",
+              "L2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_011jSXGunvSYajztAnQzFtce",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "R",
+              "U2",
+              "R'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_016zu2btep2FK3pzDXyzT2vu",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 8,
+      "tool_index": 13,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2"
+        ],
+        "move_count": 10,
+        "undo_available": 10,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 56.0,
+      "wall_s_elapsed": 56.07,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2"
+          ],
+          "on_inverse": true,
+          "move_count": 10,
+          "undo_available": 10
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 8,
+      "tool_index": 14,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "R",
+          "U2",
+          "R'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'"
+        ],
+        "move_count": 13,
+        "undo_available": 13,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 59.0,
+      "wall_s_elapsed": 56.07,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 13,
+          "undo_available": 13
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 8,
+      "tool_index": 15,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": false
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": false,
+          "RL": false
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 13,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 59.0,
+      "wall_s_elapsed": 56.07,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 13,
+          "undo_available": 13
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 9,
+      "wall_s_elapsed": 60.18,
+      "turn_wall_s": 4.11,
+      "input_tokens": 1236,
+      "output_tokens": 112,
+      "cache_read_tokens": 17163,
+      "cache_create_tokens": 571,
+      "content": [
+        {
+          "citations": null,
+          "text": "**DR REACHED** on inverse-UD (13 moves). EO=4 + DR=9 = 13 total. Now classifying HTR and finishing:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01LJTKH1e7CFzzsFd4vBgu7H",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD"
+          },
+          "name": "htr_classify",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 9,
+      "tool_index": 16,
+      "name": "htr_classify",
+      "input": {
+        "slot": "main",
+        "axis": "UD"
+      },
+      "result": {
+        "subset_canonical": [
+          1,
+          0,
+          5,
+          3,
+          2,
+          7,
+          4,
+          6
+        ],
+        "subset_name": "2-swap long-cycle",
+        "subset_family": "long-cycle",
+        "structural": {
+          "swap_count": 2,
+          "axial_count": 1,
+          "perm_parity": 1,
+          "cycle_structure": [
+            5,
+            2,
+            1
+          ]
+        },
+        "axis": "UD",
+        "phases": {
+          "htr_reduction": {
+            "length": 11,
+            "description": "DR -> HTR-corner-subgroup; quarter-turn corners on the axis (or empty if already in HTR)."
+          },
+          "finish": {
+            "length": 11,
+            "description": "HTR -> solved; half-turn only."
+          }
+        },
+        "total_length": 22,
+        "cached": true,
+        "note": "Subset is 2-swap long-cycle (cycles=[5, 2, 1]). Apply with apply_htr_phase(phase='htr_reduction') then apply_htr_phase(phase='finish'). Recall (cached)."
+      },
+      "sim_spent": 60.0,
+      "wall_s_elapsed": 60.93,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 13,
+          "undo_available": 13
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 10,
+      "wall_s_elapsed": 66.15,
+      "turn_wall_s": 5.21,
+      "input_tokens": 1116,
+      "output_tokens": 202,
+      "cache_read_tokens": 17855,
+      "cache_create_tokens": 373,
+      "content": [
+        {
+          "citations": null,
+          "text": "**HTR SUBSET:** 2-swap long-cycle with 5-2-1 cycle structure. HTR reduction = 11 moves, finish = 11 moves, **total 22 from DR**. Combined: 13 (to DR) + 22 = **35 moves**. \n\nThat's worse than prior best (29). But let me execute it cleanly and use inter-phase quick_checks to catch any early solve or 3c residuals:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01PtWPzgAK3HdBzRUtCtewU3",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 10,
+      "tool_index": 17,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "UD",
+        "moves": [
+          "F2",
+          "U",
+          "L2",
+          "U"
+        ],
+        "length": 4,
+        "full_phase_length": 11,
+        "partial": true,
+        "note": "htr_reduction: 11 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state."
+      },
+      "sim_spent": 61.0,
+      "wall_s_elapsed": 66.9,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 13,
+          "undo_available": 13
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 11,
+      "wall_s_elapsed": 71.98,
+      "turn_wall_s": 5.08,
+      "input_tokens": 692,
+      "output_tokens": 119,
+      "cache_read_tokens": 18510,
+      "cache_create_tokens": 456,
+      "content": [
+        {
+          "id": "toolu_01BgdkFGTKxSG9RoHBcPyVAu",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "F2",
+              "U",
+              "L2",
+              "U"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01UuMLyQL2GqJcPT7p4RpMHb",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 11,
+      "tool_index": 18,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "F2",
+          "U",
+          "L2",
+          "U"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U"
+        ],
+        "move_count": 17,
+        "undo_available": 17,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 65.0,
+      "wall_s_elapsed": 71.98,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U"
+          ],
+          "on_inverse": true,
+          "move_count": 17,
+          "undo_available": 17
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 11,
+      "tool_index": 19,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": false
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": false,
+          "RL": false
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 17,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 65.0,
+      "wall_s_elapsed": 71.98,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U"
+          ],
+          "on_inverse": true,
+          "move_count": 17,
+          "undo_available": 17
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 12,
+      "wall_s_elapsed": 75.07,
+      "turn_wall_s": 3.09,
+      "input_tokens": 707,
+      "output_tokens": 110,
+      "cache_read_tokens": 19076,
+      "cache_create_tokens": 265,
+      "content": [
+        {
+          "citations": null,
+          "text": "Not HTR yet (still in HTR-reduction). Continuing:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01XLG1eDdFkWiT9FZx8dbayL",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 12,
+      "tool_index": 20,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "UD",
+        "moves": [
+          "R2",
+          "U'",
+          "L2",
+          "F2"
+        ],
+        "length": 4,
+        "full_phase_length": 7,
+        "partial": true,
+        "note": "htr_reduction: 7 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state."
+      },
+      "sim_spent": 66.0,
+      "wall_s_elapsed": 75.16,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U"
+          ],
+          "on_inverse": true,
+          "move_count": 17,
+          "undo_available": 17
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 13,
+      "wall_s_elapsed": 77.42,
+      "turn_wall_s": 2.26,
+      "input_tokens": 616,
+      "output_tokens": 121,
+      "cache_read_tokens": 19540,
+      "cache_create_tokens": 116,
+      "content": [
+        {
+          "id": "toolu_01NeYXY6DZNnQainDAvowL4c",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "R2",
+              "U'",
+              "L2",
+              "F2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01AibRmeQTuP82EGhXMpmkna",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 13,
+      "tool_index": 21,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "R2",
+          "U'",
+          "L2",
+          "F2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2"
+        ],
+        "move_count": 21,
+        "undo_available": 21,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 70.0,
+      "wall_s_elapsed": 77.42,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 21,
+          "undo_available": 21
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 13,
+      "tool_index": 22,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": false
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": false,
+          "RL": false
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 21,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 70.0,
+      "wall_s_elapsed": 77.42,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 21,
+          "undo_available": 21
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 14,
+      "wall_s_elapsed": 79.55,
+      "turn_wall_s": 2.12,
+      "input_tokens": 635,
+      "output_tokens": 94,
+      "cache_read_tokens": 19772,
+      "cache_create_tokens": 273,
+      "content": [
+        {
+          "id": "toolu_01G9CPxm2y9Y2ssCFy1beduo",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 14,
+      "tool_index": 23,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "UD",
+        "moves": [
+          "U'",
+          "L2",
+          "U"
+        ],
+        "length": 3,
+        "partial": false,
+        "note": "htr_reduction: 3 moves, fully in view. Apply with apply_moves."
+      },
+      "sim_spent": 71.0,
+      "wall_s_elapsed": 79.55,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 21,
+          "undo_available": 21
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 15,
+      "wall_s_elapsed": 81.87,
+      "turn_wall_s": 2.32,
+      "input_tokens": 580,
+      "output_tokens": 116,
+      "cache_read_tokens": 20153,
+      "cache_create_tokens": 118,
+      "content": [
+        {
+          "id": "toolu_01DX7AFmpD2tvWt7Qzpob5Z4",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U'",
+              "L2",
+              "U"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01JVfmxZtCxS8Y267rmTEu1Z",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 15,
+      "tool_index": 24,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U'",
+          "L2",
+          "U"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U"
+        ],
+        "move_count": 24,
+        "undo_available": 24,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 74.0,
+      "wall_s_elapsed": 81.87,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U"
+          ],
+          "on_inverse": true,
+          "move_count": 24,
+          "undo_available": 24
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 15,
+      "tool_index": 25,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 24,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 74.0,
+      "wall_s_elapsed": 81.87,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U"
+          ],
+          "on_inverse": true,
+          "move_count": 24,
+          "undo_available": 24
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 16,
+      "wall_s_elapsed": 85.76,
+      "turn_wall_s": 3.88,
+      "input_tokens": 587,
+      "output_tokens": 109,
+      "cache_read_tokens": 20389,
+      "cache_create_tokens": 289,
+      "content": [
+        {
+          "citations": null,
+          "text": "**HTR REACHED** (24 moves). Now applying the finish phase:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01DeXhde6cnWi2MPVLfTmGhi",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 16,
+      "tool_index": 26,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "UD",
+        "moves": [
+          "U2",
+          "B2",
+          "L2",
+          "R2"
+        ],
+        "length": 4,
+        "full_phase_length": 11,
+        "partial": true,
+        "note": "finish: 11 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state."
+      },
+      "sim_spent": 75.0,
+      "wall_s_elapsed": 85.76,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U"
+          ],
+          "on_inverse": true,
+          "move_count": 24,
+          "undo_available": 24
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 17,
+      "wall_s_elapsed": 91.67,
+      "turn_wall_s": 5.91,
+      "input_tokens": 635,
+      "output_tokens": 121,
+      "cache_read_tokens": 20847,
+      "cache_create_tokens": 0,
+      "content": [
+        {
+          "id": "toolu_01VvKc2WzmjcmdLuFZjyzKnR",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "B2",
+              "L2",
+              "R2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01HbVMJymENv5ML3NHQKkS44",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 17,
+      "tool_index": 27,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "B2",
+          "L2",
+          "R2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U'",
+          "B2",
+          "L2",
+          "R2"
+        ],
+        "move_count": 27,
+        "undo_available": 27,
+        "auto_cancelled_saved": 1
+      },
+      "sim_spent": 79.0,
+      "wall_s_elapsed": 91.67,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 17,
+      "tool_index": 28,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 27,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 79.0,
+      "wall_s_elapsed": 91.67,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 18,
+      "wall_s_elapsed": 94.38,
+      "turn_wall_s": 2.7,
+      "input_tokens": 654,
+      "output_tokens": 100,
+      "cache_read_tokens": 20960,
+      "cache_create_tokens": 300,
+      "content": [
+        {
+          "citations": null,
+          "text": "Still in HTR, continuing finish:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01VTC7CofkK5KyTSb1wd1mAB",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 18,
+      "tool_index": 29,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "UD",
+        "moves": [
+          "U2",
+          "L2",
+          "F2",
+          "R2"
+        ],
+        "length": 4,
+        "full_phase_length": 7,
+        "partial": true,
+        "note": "finish: 7 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state."
+      },
+      "sim_spent": 80.0,
+      "wall_s_elapsed": 94.38,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 19,
+      "wall_s_elapsed": 96.91,
+      "turn_wall_s": 2.53,
+      "input_tokens": 643,
+      "output_tokens": 121,
+      "cache_read_tokens": 21367,
+      "cache_create_tokens": 112,
+      "content": [
+        {
+          "id": "toolu_01SN7vkTLrKxNu7iNP1Nakxu",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "L2",
+              "F2",
+              "R2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_014Co1mgryhpQCB4uf9Z2cTK",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 19,
+      "tool_index": 30,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "L2",
+          "F2",
+          "R2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U'",
+          "B2",
+          "L2",
+          "R2",
+          "U2",
+          "L2",
+          "F2",
+          "R2"
+        ],
+        "move_count": 31,
+        "undo_available": 31,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 84.0,
+      "wall_s_elapsed": 96.91,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 31,
+          "undo_available": 31
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 19,
+      "tool_index": 31,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 31,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 84.0,
+      "wall_s_elapsed": 96.91,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 31,
+          "undo_available": 31
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 20,
+      "wall_s_elapsed": 99.08,
+      "turn_wall_s": 2.17,
+      "input_tokens": 660,
+      "output_tokens": 91,
+      "cache_read_tokens": 21597,
+      "cache_create_tokens": 313,
+      "content": [
+        {
+          "id": "toolu_01UDtoor9kvkg7MKN9ToR6mF",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 20,
+      "tool_index": 32,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "UD",
+        "moves": [
+          "U2",
+          "F2",
+          "R2"
+        ],
+        "length": 3,
+        "partial": false,
+        "note": "finish: 3 moves, fully in view. Apply with apply_moves."
+      },
+      "sim_spent": 85.0,
+      "wall_s_elapsed": 99.08,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 31,
+          "undo_available": 31
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 21,
+      "wall_s_elapsed": 101.51,
+      "turn_wall_s": 2.43,
+      "input_tokens": 613,
+      "output_tokens": 117,
+      "cache_read_tokens": 22008,
+      "cache_create_tokens": 112,
+      "content": [
+        {
+          "id": "toolu_01HdCckCoEeUaw4uV4awdaXN",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "F2",
+              "R2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01QPWC3w7hXDuCTmCFaQxymu",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 21,
+      "tool_index": 33,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "F2",
+          "R2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U'",
+          "B2",
+          "L2",
+          "R2",
+          "U2",
+          "L2",
+          "F2",
+          "R2",
+          "U2",
+          "F2",
+          "R2"
+        ],
+        "move_count": 34,
+        "undo_available": 34,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 88.0,
+      "wall_s_elapsed": 101.51,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 21,
+      "tool_index": 34,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": true,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 34,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual."
+      },
+      "sim_spent": 88.0,
+      "wall_s_elapsed": 101.51,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 22,
+      "wall_s_elapsed": 104.89,
+      "turn_wall_s": 3.37,
+      "input_tokens": 622,
+      "output_tokens": 91,
+      "cache_read_tokens": 22238,
+      "cache_create_tokens": 329,
+      "content": [
+        {
+          "citations": null,
+          "text": "**SOLVED!** 34 moves on inverse. Now composing the NISS solution (which will invert the inverse-side moves back to normal):",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01YRM24DAYk1T7o6RF8uedQu",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 22,
+      "tool_index": 35,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "R2",
+          "F2",
+          "U2",
+          "R2",
+          "F2",
+          "L2",
+          "U2",
+          "R2",
+          "L2",
+          "B2",
+          "U",
+          "L2",
+          "U",
+          "F2",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "U'",
+          "F2",
+          "R",
+          "U2",
+          "R'",
+          "L2",
+          "U",
+          "L",
+          "D2",
+          "U",
+          "R2",
+          "F",
+          "U'",
+          "R2",
+          "B'"
+        ],
+        "length": 34,
+        "solves": true,
+        "frame_at_compose": "inverse",
+        "note": "Submit this as FINAL_SOLUTION if you're satisfied, OR call replace_and_shorten first to see if a sub-span can be shortened (1-call cap, gated). YOU decide."
+      },
+      "sim_spent": 89.0,
+      "wall_s_elapsed": 104.89,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 23,
+      "wall_s_elapsed": 108.91,
+      "turn_wall_s": 4.02,
+      "input_tokens": 761,
+      "output_tokens": 100,
+      "cache_read_tokens": 22567,
+      "cache_create_tokens": 165,
+      "content": [
+        {
+          "citations": null,
+          "text": "**COMPLETE SOLUTION: 34 moves.** That's worse than the prior best (29). Let me check if replace_and_shorten can improve it (the gates: \u226527 moves \u2713, \u226530 tool calls remaining \u2014 let me check budget):",
+          "type": "text"
+        },
+        {
+          "id": "toolu_011ZA9mnZurVnu1DkAKMbGsT",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {},
+          "name": "budget_status",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 23,
+      "tool_index": 36,
+      "name": "budget_status",
+      "input": {},
+      "result": {
+        "sim_spent": 89.0,
+        "sim_remaining": 3511.0,
+        "sim_budget": 3600.0,
+        "wall_remaining_s": 1391.1,
+        "slots": {
+          "main": {
+            "history": [
+              "B",
+              "R2",
+              "U",
+              "F'",
+              "R2",
+              "U'",
+              "D2",
+              "L'",
+              "U'",
+              "L2",
+              "R",
+              "U2",
+              "R'",
+              "F2",
+              "U",
+              "L2",
+              "U",
+              "R2",
+              "U'",
+              "L2",
+              "F2",
+              "U'",
+              "L2",
+              "U'",
+              "B2",
+              "L2",
+              "R2",
+              "U2",
+              "L2",
+              "F2",
+              "R2",
+              "U2",
+              "F2",
+              "R2"
+            ],
+            "move_count": 34,
+            "on_inverse": true,
+            "undo_available": 34
+          }
+        }
+      },
+      "sim_spent": 89.0,
+      "wall_s_elapsed": 108.91,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 24,
+      "wall_s_elapsed": 114.67,
+      "turn_wall_s": 5.76,
+      "input_tokens": 627,
+      "output_tokens": 174,
+      "cache_read_tokens": 22846,
+      "cache_create_tokens": 341,
+      "content": [
+        {
+          "citations": null,
+          "text": "I have plenty of budget (3511s remaining) and tool calls. The solution is 34 moves (\u226527 \u2713), so replace_and_shorten is eligible. Let me try it on the HTR tail span (from move 13 onward, which is after DR):",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01MfvhitR3d7eQDhToYpUtdb",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "start": 13,
+            "end": 34,
+            "axis": "UD"
+          },
+          "name": "replace_and_shorten",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 24,
+      "tool_index": 37,
+      "name": "replace_and_shorten",
+      "input": {
+        "slot": "main",
+        "start": 13,
+        "end": 34,
+        "axis": "UD"
+      },
+      "result": {
+        "span_range": [
+          13,
+          34
+        ],
+        "original": [
+          "F2",
+          "U",
+          "L2",
+          "U",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "U'",
+          "L2",
+          "U'",
+          "B2",
+          "L2",
+          "R2",
+          "U2",
+          "L2",
+          "F2",
+          "R2",
+          "U2",
+          "F2",
+          "R2"
+        ],
+        "substitute": [
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "D2",
+          "R2",
+          "U2",
+          "R2",
+          "D'",
+          "B2",
+          "U'",
+          "F2",
+          "L2",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "U'"
+        ],
+        "original_len": 21,
+        "substitute_len": 19,
+        "delta": -2,
+        "new_history_len": 32,
+        "new_history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "D2",
+          "R2",
+          "U2",
+          "R2",
+          "D'",
+          "B2",
+          "U'",
+          "F2",
+          "L2",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "U'"
+        ],
+        "solves_scramble": true,
+        "note": "Span [13:34] (21 moves) -> substitute (19 moves). Delta -2. SOLVES original scramble.",
+        "rs_calls_used": 1
+      },
+      "sim_spent": 119.0,
+      "wall_s_elapsed": 116.65,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "F2",
+            "U",
+            "L2",
+            "U",
+            "R2",
+            "U'",
+            "L2",
+            "F2",
+            "U'",
+            "L2",
+            "U'",
+            "B2",
+            "L2",
+            "R2",
+            "U2",
+            "L2",
+            "F2",
+            "R2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 25,
+      "wall_s_elapsed": 124.33,
+      "turn_wall_s": 7.68,
+      "input_tokens": 894,
+      "output_tokens": 358,
+      "cache_read_tokens": 23276,
+      "cache_create_tokens": 217,
+      "content": [
+        {
+          "citations": null,
+          "text": "**REPLACE_AND_SHORTEN SUCCESS:** saved 2 moves! New solution is **32 moves**. Let me compose this updated solution:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_017jLAtTXSQBpSEF2HRZQWwA",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "rescramble": true
+          },
+          "name": "reset_slot",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01Jj6G6qC8WgJpvdY7hHGCow",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "niss_flip",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01JkLCrJpbDtpY4nxNcMynop",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "B",
+              "R2",
+              "U",
+              "F'",
+              "R2",
+              "U'",
+              "D2",
+              "L'",
+              "U'",
+              "L2",
+              "R",
+              "U2",
+              "R'",
+              "U2",
+              "R2",
+              "F2",
+              "U2",
+              "D2",
+              "R2",
+              "U2",
+              "R2",
+              "D'",
+              "B2",
+              "U'",
+              "F2",
+              "L2",
+              "R2",
+              "U",
+              "R2",
+              "U'",
+              "R2",
+              "U'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01T1sHPRMpS3GkEyQAiKBd6G",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 25,
+      "tool_index": 38,
+      "name": "reset_slot",
+      "input": {
+        "slot": "main",
+        "rescramble": true
+      },
+      "result": {
+        "slot": "main",
+        "reset": true,
+        "rescramble": true
+      },
+      "sim_spent": 149.0,
+      "wall_s_elapsed": 124.33,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 25,
+      "tool_index": 39,
+      "name": "niss_flip",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "original_scramble": [
+          "R'",
+          "U'",
+          "F",
+          "R",
+          "D2",
+          "F'",
+          "D",
+          "R",
+          "L2",
+          "F",
+          "R",
+          "B2",
+          "D'",
+          "F'",
+          "L2",
+          "U2",
+          "D2",
+          "B",
+          "R2",
+          "B",
+          "L2",
+          "B",
+          "R'",
+          "U'",
+          "F"
+        ],
+        "original_history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "D2",
+          "R2",
+          "U2",
+          "R2",
+          "D'",
+          "B2",
+          "U'",
+          "F2",
+          "L2",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "U'"
+        ],
+        "inverse_scramble": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "inverse_cumulative": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "note": "To continue search on the inverse side, treat `inverse_cumulative` as the new effective scramble applied to SOLVED, and run search from there. Moves you find on this side are 'inverse-side' moves; the final solution is `normal_moves + invert(inverse_moves)` applied to the original scramble.",
+        "slot": "main",
+        "now_on_inverse": true
+      },
+      "sim_spent": 154.0,
+      "wall_s_elapsed": 124.33,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 25,
+      "tool_index": 40,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "D2",
+          "R2",
+          "U2",
+          "R2",
+          "D'",
+          "B2",
+          "U'",
+          "F2",
+          "L2",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "U'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B",
+          "R2",
+          "U",
+          "F'",
+          "R2",
+          "U'",
+          "D2",
+          "L'",
+          "U'",
+          "L2",
+          "R",
+          "U2",
+          "R'",
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "D2",
+          "R2",
+          "U2",
+          "R2",
+          "D'",
+          "B2",
+          "U'",
+          "F2",
+          "L2",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "U'"
+        ],
+        "move_count": 32,
+        "undo_available": 32,
+        "auto_cancelled_saved": 0
+      },
+      "sim_spent": 186.0,
+      "wall_s_elapsed": 124.33,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "U2",
+            "R2",
+            "F2",
+            "U2",
+            "D2",
+            "R2",
+            "U2",
+            "R2",
+            "D'",
+            "B2",
+            "U'",
+            "F2",
+            "L2",
+            "R2",
+            "U",
+            "R2",
+            "U'",
+            "R2",
+            "U'"
+          ],
+          "on_inverse": true,
+          "move_count": 32,
+          "undo_available": 32
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 25,
+      "tool_index": 41,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "U",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "L2",
+          "F2",
+          "U",
+          "B2",
+          "D",
+          "R2",
+          "U2",
+          "R2",
+          "D2",
+          "U2",
+          "F2",
+          "R2",
+          "U2",
+          "R",
+          "U2",
+          "R'",
+          "L2",
+          "U",
+          "L",
+          "D2",
+          "U",
+          "R2",
+          "F",
+          "U'",
+          "R2",
+          "B'"
+        ],
+        "length": 32,
+        "solves": true,
+        "frame_at_compose": "inverse",
+        "note": "Submit this as FINAL_SOLUTION if you're satisfied, OR call replace_and_shorten first to see if a sub-span can be shortened (1-call cap, gated). YOU decide."
+      },
+      "sim_spent": 187.0,
+      "wall_s_elapsed": 124.33,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "U2",
+            "R2",
+            "F2",
+            "U2",
+            "D2",
+            "R2",
+            "U2",
+            "R2",
+            "D'",
+            "B2",
+            "U'",
+            "F2",
+            "L2",
+            "R2",
+            "U",
+            "R2",
+            "U'",
+            "R2",
+            "U'"
+          ],
+          "on_inverse": true,
+          "move_count": 32,
+          "undo_available": 32
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 26,
+      "wall_s_elapsed": 127.73,
+      "turn_wall_s": 3.4,
+      "input_tokens": 1805,
+      "output_tokens": 202,
+      "cache_read_tokens": 23590,
+      "cache_create_tokens": 225,
+      "content": [
+        {
+          "citations": null,
+          "text": "**FINAL SOLUTION: 32 moves** after replace_and_shorten optimization. Let me verify this solves the scramble:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01DYR64zKPzZjvKZVvm1k25Z",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "solution": [
+              "U",
+              "R2",
+              "U",
+              "R2",
+              "U'",
+              "R2",
+              "L2",
+              "F2",
+              "U",
+              "B2",
+              "D",
+              "R2",
+              "U2",
+              "R2",
+              "D2",
+              "U2",
+              "F2",
+              "R2",
+              "U2",
+              "R",
+              "U2",
+              "R'",
+              "L2",
+              "U",
+              "L",
+              "D2",
+              "U",
+              "R2",
+              "F",
+              "U'",
+              "R2",
+              "B'"
+            ]
+          },
+          "name": "verify_solved",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 26,
+      "tool_index": 42,
+      "name": "verify_solved",
+      "input": {
+        "solution": [
+          "U",
+          "R2",
+          "U",
+          "R2",
+          "U'",
+          "R2",
+          "L2",
+          "F2",
+          "U",
+          "B2",
+          "D",
+          "R2",
+          "U2",
+          "R2",
+          "D2",
+          "U2",
+          "F2",
+          "R2",
+          "U2",
+          "R",
+          "U2",
+          "R'",
+          "L2",
+          "U",
+          "L",
+          "D2",
+          "U",
+          "R2",
+          "F",
+          "U'",
+          "R2",
+          "B'"
+        ]
+      },
+      "result": {
+        "solves": true,
+        "total_moves": 32
+      },
+      "sim_spent": 187.0,
+      "wall_s_elapsed": 127.73,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B",
+            "R2",
+            "U",
+            "F'",
+            "R2",
+            "U'",
+            "D2",
+            "L'",
+            "U'",
+            "L2",
+            "R",
+            "U2",
+            "R'",
+            "U2",
+            "R2",
+            "F2",
+            "U2",
+            "D2",
+            "R2",
+            "U2",
+            "R2",
+            "D'",
+            "B2",
+            "U'",
+            "F2",
+            "L2",
+            "R2",
+            "U",
+            "R2",
+            "U'",
+            "R2",
+            "U'"
+          ],
+          "on_inverse": true,
+          "move_count": 32,
+          "undo_available": 32
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 27,
+      "wall_s_elapsed": 138.22,
+      "turn_wall_s": 10.48,
+      "input_tokens": 1458,
+      "output_tokens": 377,
+      "cache_read_tokens": 23986,
+      "cache_create_tokens": 403,
+      "content": [
+        {
+          "citations": null,
+          "text": "**VERIFIED \u2713** \n\n## SOLUTION SUMMARY\n\n**Path taken:** Inverse-UD axis\n- **EO (inverse):** B R2 U F' (4 moves)\n- **DR trigger:** DR-4C2E with JZP (6-move setup + 3-move trigger = 9 to DR)\n- **Total to DR:** 13 moves\n- **HTR subset:** 2-swap long-cycle (11-move reduction + 11-move finish = 22 moves)\n- **Initial solution:** 34 moves\n- **After replace_and_shorten:** **32 moves** (saved 2 moves on the HTR tail)\n\n**FINAL_SOLUTION:** [\"U\", \"R2\", \"U\", \"R2\", \"U'\", \"R2\", \"L2\", \"F2\", \"U\", \"B2\", \"D\", \"R2\", \"U2\", \"R2\", \"D2\", \"U2\", \"F2\", \"R2\", \"U2\", \"R\", \"U2\", \"R'\", \"L2\", \"U\", \"L\", \"D2\", \"U\", \"R2\", \"F\", \"U'\", \"R2\", \"B'\"]\n\nThis is 3 moves worse than the best prior attempt (29 moves), but it's a clean, complete solve executed efficiently. The inverse-UD path with 3 pairs preserved on inverse led to a JZP-eligible DR, but the resulting HTR subset (2-swap long-cycle) had a long finish. Replace_and_shorten recovered 2 moves from the tail.",
+          "type": "text"
+        }
+      ],
+      "stop_reason": "end_turn"
+    },
+    {
+      "type": "user",
+      "content": "You stopped without calling tools or emitting FINAL_SOLUTION. Either continue with tools, or output FINAL_SOLUTION: [\"...\", ...]."
+    },
+    {
+      "type": "assistant",
+      "turn": 28,
+      "wall_s_elapsed": 141.33,
+      "turn_wall_s": 3.11,
+      "input_tokens": 13255,
+      "output_tokens": 162,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 0,
+      "content": [
+        {
+          "signature": "Eq0CCmQIDRgCKkAeU93CVXcMtnzsVfzMJNhZ9IPXAZ7YNMhAlbfs3WsesXlr4hubPvmNh0WgbSKF1IC8yl3JzrU1GFaxGrpuRDxnMhpjbGF1ZGUtc29ubmV0LTQtNS0yMDI1MDkyOTgAEgz7iTHOl74Gc9xf8MkaDGSaD92lvK+HrCg6JiIwZmVTWDHneYYYFHQCPzARlLt1doylOCsPf48IhuyqmKukOkyUBrlrDEP6zF2DklH5Knek08NFjT9Xsj56hnTnvwvUB+afv23LK0VzpGd9N6V4VkI3IuSvJ09Pw6/MtwOyH3buj1ImTYsHRTbuMiX6WSjy2MYY1Py/wfE8oDmJdHwZKzEqtk1Fnt2B/AFOmASmdiv/aSA28EydHqRrGoLUNehGTau2fKqv2BgB",
+          "thinking": "The user is right - I verified the solution but didn't emit the FINAL_SOLUTION. I should output it now.",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "FINAL_SOLUTION: [\"U\", \"R2\", \"U\", \"R2\", \"U'\", \"R2\", \"L2\", \"F2\", \"U\", \"B2\", \"D\", \"R2\", \"U2\", \"R2\", \"D2\", \"U2\", \"F2\", \"R2\", \"U2\", \"R\", \"U2\", \"R'\", \"L2\", \"U\", \"L\", \"D2\", \"U\", \"R2\", \"F\", \"U'\", \"R2\", \"B'\"]",
+          "type": "text"
+        }
+      ],
+      "stop_reason": "end_turn"
+    },
+    {
+      "type": "verify",
+      "solution": [
+        "U",
+        "R2",
+        "U",
+        "R2",
+        "U'",
+        "R2",
+        "L2",
+        "F2",
+        "U",
+        "B2",
+        "D",
+        "R2",
+        "U2",
+        "R2",
+        "D2",
+        "U2",
+        "F2",
+        "R2",
+        "U2",
+        "R",
+        "U2",
+        "R'",
+        "L2",
+        "U",
+        "L",
+        "D2",
+        "U",
+        "R2",
+        "F",
+        "U'",
+        "R2",
+        "B'"
+      ],
+      "result": {
+        "solves": true,
+        "total_moves": 32
+      }
+    }
+  ],
+  "input_tokens": 38020,
+  "output_tokens": 4821,
+  "cache_read_tokens": 525775,
+  "cache_create_tokens": 9404,
+  "per_turn_usage": [
+    {
+      "turn": 1,
+      "wall_s_elapsed": 6.89,
+      "turn_wall_s": 6.89,
+      "sim_spent_at_turn": 0.0,
+      "input_tokens": 1073,
+      "output_tokens": 226,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 0,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 2,
+      "wall_s_elapsed": 14.64,
+      "turn_wall_s": 7.75,
+      "sim_spent_at_turn": 5.0,
+      "input_tokens": 814,
+      "output_tokens": 249,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 1064,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 3,
+      "wall_s_elapsed": 19.26,
+      "turn_wall_s": 4.61,
+      "sim_spent_at_turn": 11.0,
+      "input_tokens": 1285,
+      "output_tokens": 142,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 1064,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 4,
+      "wall_s_elapsed": 23.72,
+      "turn_wall_s": 4.47,
+      "sim_spent_at_turn": 19.0,
+      "input_tokens": 1149,
+      "output_tokens": 176,
+      "cache_read_tokens": 14148,
+      "cache_create_tokens": 583,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 5,
+      "wall_s_elapsed": 28.35,
+      "turn_wall_s": 4.62,
+      "sim_spent_at_turn": 22.0,
+      "input_tokens": 920,
+      "output_tokens": 274,
+      "cache_read_tokens": 14920,
+      "cache_create_tokens": 281,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 6,
+      "wall_s_elapsed": 33.11,
+      "turn_wall_s": 4.76,
+      "sim_spent_at_turn": 33.0,
+      "input_tokens": 1111,
+      "output_tokens": 250,
+      "cache_read_tokens": 15284,
+      "cache_create_tokens": 591,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 7,
+      "wall_s_elapsed": 36.38,
+      "turn_wall_s": 3.27,
+      "sim_spent_at_turn": 42.0,
+      "input_tokens": 1622,
+      "output_tokens": 123,
+      "cache_read_tokens": 16049,
+      "cache_create_tokens": 68,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 8,
+      "wall_s_elapsed": 56.07,
+      "turn_wall_s": 6.72,
+      "sim_spent_at_turn": 50.0,
+      "input_tokens": 1250,
+      "output_tokens": 384,
+      "cache_read_tokens": 16206,
+      "cache_create_tokens": 775,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 9,
+      "wall_s_elapsed": 60.18,
+      "turn_wall_s": 4.11,
+      "sim_spent_at_turn": 59.0,
+      "input_tokens": 1236,
+      "output_tokens": 112,
+      "cache_read_tokens": 17163,
+      "cache_create_tokens": 571,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 10,
+      "wall_s_elapsed": 66.15,
+      "turn_wall_s": 5.21,
+      "sim_spent_at_turn": 60.0,
+      "input_tokens": 1116,
+      "output_tokens": 202,
+      "cache_read_tokens": 17855,
+      "cache_create_tokens": 373,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 11,
+      "wall_s_elapsed": 71.98,
+      "turn_wall_s": 5.08,
+      "sim_spent_at_turn": 61.0,
+      "input_tokens": 692,
+      "output_tokens": 119,
+      "cache_read_tokens": 18510,
+      "cache_create_tokens": 456,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 12,
+      "wall_s_elapsed": 75.07,
+      "turn_wall_s": 3.09,
+      "sim_spent_at_turn": 65.0,
+      "input_tokens": 707,
+      "output_tokens": 110,
+      "cache_read_tokens": 19076,
+      "cache_create_tokens": 265,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 13,
+      "wall_s_elapsed": 77.42,
+      "turn_wall_s": 2.26,
+      "sim_spent_at_turn": 66.0,
+      "input_tokens": 616,
+      "output_tokens": 121,
+      "cache_read_tokens": 19540,
+      "cache_create_tokens": 116,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 14,
+      "wall_s_elapsed": 79.55,
+      "turn_wall_s": 2.12,
+      "sim_spent_at_turn": 70.0,
+      "input_tokens": 635,
+      "output_tokens": 94,
+      "cache_read_tokens": 19772,
+      "cache_create_tokens": 273,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 15,
+      "wall_s_elapsed": 81.87,
+      "turn_wall_s": 2.32,
+      "sim_spent_at_turn": 71.0,
+      "input_tokens": 580,
+      "output_tokens": 116,
+      "cache_read_tokens": 20153,
+      "cache_create_tokens": 118,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 16,
+      "wall_s_elapsed": 85.76,
+      "turn_wall_s": 3.88,
+      "sim_spent_at_turn": 74.0,
+      "input_tokens": 587,
+      "output_tokens": 109,
+      "cache_read_tokens": 20389,
+      "cache_create_tokens": 289,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 17,
+      "wall_s_elapsed": 91.67,
+      "turn_wall_s": 5.91,
+      "sim_spent_at_turn": 75.0,
+      "input_tokens": 635,
+      "output_tokens": 121,
+      "cache_read_tokens": 20847,
+      "cache_create_tokens": 0,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 18,
+      "wall_s_elapsed": 94.38,
+      "turn_wall_s": 2.7,
+      "sim_spent_at_turn": 79.0,
+      "input_tokens": 654,
+      "output_tokens": 100,
+      "cache_read_tokens": 20960,
+      "cache_create_tokens": 300,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 19,
+      "wall_s_elapsed": 96.91,
+      "turn_wall_s": 2.53,
+      "sim_spent_at_turn": 80.0,
+      "input_tokens": 643,
+      "output_tokens": 121,
+      "cache_read_tokens": 21367,
+      "cache_create_tokens": 112,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 20,
+      "wall_s_elapsed": 99.08,
+      "turn_wall_s": 2.17,
+      "sim_spent_at_turn": 84.0,
+      "input_tokens": 660,
+      "output_tokens": 91,
+      "cache_read_tokens": 21597,
+      "cache_create_tokens": 313,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 21,
+      "wall_s_elapsed": 101.51,
+      "turn_wall_s": 2.43,
+      "sim_spent_at_turn": 85.0,
+      "input_tokens": 613,
+      "output_tokens": 117,
+      "cache_read_tokens": 22008,
+      "cache_create_tokens": 112,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 22,
+      "wall_s_elapsed": 104.89,
+      "turn_wall_s": 3.37,
+      "sim_spent_at_turn": 88.0,
+      "input_tokens": 622,
+      "output_tokens": 91,
+      "cache_read_tokens": 22238,
+      "cache_create_tokens": 329,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 23,
+      "wall_s_elapsed": 108.91,
+      "turn_wall_s": 4.02,
+      "sim_spent_at_turn": 89.0,
+      "input_tokens": 761,
+      "output_tokens": 100,
+      "cache_read_tokens": 22567,
+      "cache_create_tokens": 165,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 24,
+      "wall_s_elapsed": 114.67,
+      "turn_wall_s": 5.76,
+      "sim_spent_at_turn": 89.0,
+      "input_tokens": 627,
+      "output_tokens": 174,
+      "cache_read_tokens": 22846,
+      "cache_create_tokens": 341,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 25,
+      "wall_s_elapsed": 124.33,
+      "turn_wall_s": 7.68,
+      "sim_spent_at_turn": 119.0,
+      "input_tokens": 894,
+      "output_tokens": 358,
+      "cache_read_tokens": 23276,
+      "cache_create_tokens": 217,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 26,
+      "wall_s_elapsed": 127.73,
+      "turn_wall_s": 3.4,
+      "sim_spent_at_turn": 187.0,
+      "input_tokens": 1805,
+      "output_tokens": 202,
+      "cache_read_tokens": 23590,
+      "cache_create_tokens": 225,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 27,
+      "wall_s_elapsed": 138.22,
+      "turn_wall_s": 10.48,
+      "sim_spent_at_turn": 187.0,
+      "input_tokens": 1458,
+      "output_tokens": 377,
+      "cache_read_tokens": 23986,
+      "cache_create_tokens": 403,
+      "stop_reason": "end_turn"
+    },
+    {
+      "turn": 28,
+      "wall_s_elapsed": 141.33,
+      "turn_wall_s": 3.11,
+      "sim_spent_at_turn": 187.0,
+      "input_tokens": 13255,
+      "output_tokens": 162,
+      "cache_read_tokens": 12857,
+      "cache_create_tokens": 0,
+      "stop_reason": "end_turn"
+    }
+  ],
+  "cost_estimate_usd": 0.3794
+}
