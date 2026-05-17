@@ -582,7 +582,7 @@ def _build_handlers(
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         axis = args.get("axis", "UD")
-        max_setup = args.get("max_setup", 4)  # v31: default depth 4
+        max_setup = args.get("max_setup", 5)  # v31b: default depth 5
         out = dr_to_mod.dr_trigger_options(
             sc, hist,
             axis=axis,
@@ -617,13 +617,13 @@ def _build_handlers(
                 f"trigger catalog elite cubers memorize."
             ),
         }
-        # v31: charge proportional to states explored. A depth-4 search
-        # over EO-preserving moves explores roughly 14^4 / dedup ≈ several
-        # thousand states. At 0.005s per state of "looking at a move," a
-        # full 4-deep search runs ~20-40s — actually expensive thinking.
-        # Empty result (depth 4 too tight) still costs the search time.
+        # v31b: charge proportional to states explored, but DFS now caps
+        # at 5000 states (down from unbounded). At 0.003s per state of
+        # "looking at a move in my head," a saturated 5000-state search
+        # runs 15s + 5s base = 20s. Shorter searches (early-stop after
+        # 3 families found) cost less.
         states_explored = out.get("states_explored", 0)
-        cost = 5.0 + 0.005 * states_explored
+        cost = 5.0 + 0.003 * states_explored
         budget.charge("dr_trigger_options", cost, slot=slot.name, axis=axis,
                       states=states_explored)
         return out

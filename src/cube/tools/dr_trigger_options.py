@@ -150,8 +150,11 @@ def dr_trigger_options(
     """
     if axis not in _TRIGGER_CATALOG_BY_AXIS:
         return {"error": f"axis must be one of UD/FB/RL; got {axis!r}"}
-    # v31: hard-cap depth at 4.
-    max_setup = min(max_setup, 4)
+    # v31b: hard-cap depth at 5 (was 4 in v31). 4 was too tight —
+    # some scrambles genuinely need a 5-move setup. Elite cubers
+    # do sometimes see 5 deep when they have a strong intuition
+    # about the path.
+    max_setup = min(max_setup, 5)
     ax = {"UD": Axis.UD, "FB": Axis.FB, "RL": Axis.RL}[axis]
 
     state = SOLVED.apply_alg(parse_alg(" ".join(scramble))) if scramble else SOLVED
@@ -174,8 +177,13 @@ def dr_trigger_options(
 
     found: dict[str, dict] = {}
     states_visited = [0]
-    visited: dict[tuple, int] = {}  # (co, marker) -> shortest_depth seen
-    EARLY_STOP_N_FAMILIES = 3  # human bails out once 3 viable options are in hand
+    EARLY_STOP_N_FAMILIES = 3
+    # v31b: NO hard state cap. The per-state cost penalty (0.003s/state
+    # charged in the handler) is what bounds wasteful search. A depth-5
+    # BFS explores ~100K states ≈ 300s sim cost — significant (8% of
+    # budget) but not crippling. Agent learns to do at most ~10 deep
+    # DR scouts per attempt. Early-stop at 3 families found.
+    MAX_STATES = 10**9  # effectively unbounded
 
     def _check_triggers_here(co, marker, path):
         for label, alg_str, moves in trigger_parsed:
@@ -198,26 +206,36 @@ def dr_trigger_options(
                     "top_pairs_on_inverse": count_top_pairs(pre_state),
                 }
 
-    def _dfs(co, marker, path, last_face, depth):
-        if len(found) >= EARLY_STOP_N_FAMILIES:
-            return
-        key = (co, marker)
-        # Dedup: if we've reached this state at equal or shallower depth, skip.
-        prev = visited.get(key)
-        if prev is not None and prev <= depth:
-            return
-        visited[key] = depth
-        states_visited[0] += 1
-        _check_triggers_here(co, marker, path)
-        if depth >= max_setup:
-            return
+    # v31b: BFS with global dedup, depth cap, state cap, family early-stop.
+    # BFS-discovery-order IS the natural human "shortest setups first"
+    # pattern — a human checks depth 0 (direct triggers) before depth 1
+    # (1-move setups), etc. The state cap reflects "I gave up after
+    # thinking about ~5K setups." Within those bounds, BFS finds the
+    # SHORTEST setup per family — which is what a human reports.
+    visited: dict[tuple, int] = {(start_co, start_marker): 0}
+    frontier: deque = deque()
+    frontier.append((start_co, start_marker, (), None))
+    states_visited[0] = 1
+    _check_triggers_here(start_co, start_marker, ())
+    while frontier and len(found) < EARLY_STOP_N_FAMILIES and states_visited[0] < MAX_STATES:
+        co, marker, path, last_face = frontier.popleft()
+        if len(path) >= max_setup:
+            continue
         for m in eo_preserving:
             if last_face is not None and m.face == last_face:
                 continue
             child_co, child_marker = _apply_to_reduced(co, marker, m, ax)
-            _dfs(child_co, child_marker, path + (m,), m.face, depth + 1)
-
-    _dfs(start_co, start_marker, (), None, 0)
+            key = (child_co, child_marker)
+            if key in visited:
+                continue
+            visited[key] = len(path) + 1
+            states_visited[0] += 1
+            _check_triggers_here(child_co, child_marker, path + (m,))
+            if len(found) >= EARLY_STOP_N_FAMILIES:
+                break
+            if states_visited[0] >= MAX_STATES:
+                break
+            frontier.append((child_co, child_marker, path + (m,), m.face))
 
     options = list(found.values())
 
