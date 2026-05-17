@@ -903,7 +903,8 @@ def _build_handlers(
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
-        "niss_scout": _h_niss_scout,
+        # v27: niss_scout removed — agent must do manual axis exploration via
+        # inspect_state + per-axis eo_pattern_lookup + dr_trigger_options.
         "dr_trigger_options": _h_dr_trigger_options,
         "dr_recognize": _h_dr_recognize,
         "probe_dr_pattern": _h_probe_dr_pattern,
@@ -1053,25 +1054,6 @@ def _tool_schemas() -> list[dict]:
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
                 },
                 "required": ["slot", "axis"],
-            },
-        },
-        {
-            "name": "niss_scout",
-            "description": (
-                "v16 — 6-row read-only scout. Computes the best EO+DR option "
-                "on BOTH normal AND inverse for all 3 axes (UD/FB/RL), returns "
-                "a comparison table sorted by expected_total_to_solved. The "
-                "table is the explicit branch-and-discard ledger elite WCA "
-                "solvers keep in their head; the median elite solve has 8 "
-                "NISS transitions and 50% START on inverse. Call this ONCE "
-                "right after inspect_state on a fresh scramble — before any "
-                "EO commit — and use the recommendation (or override with "
-                "an explicit rationale). Does NOT modify any slot. Cost: 30s sim."
-            ),
-            "input_schema": {
-                "type": "object",
-                "properties": {"slot": _SLOT},
-                "required": ["slot"],
             },
         },
         {
@@ -1471,14 +1453,18 @@ Match the voice: tool calls + terse rationale + explicit rejection of
 inferior branches.
 
 ### Exemplar A — Multi-side EO scouting before committing
-> Scramble loaded. niss_scout returns the 12-row joint table. UD-normal
-> top row: EO 4mv + DR-4C4E expected_total 18. But inverse-FB row 2 has
-> EO 5mv + DR-3C2E expected_total 17 (better HTR substate). Picking the
-> inverse branch: cost saved is 1 expected move, more importantly the
-> 3C2E substate finishes in ~5 vs ~9 for 4C4E. niss_flip, then apply EO
-> on the inverse frame. I did NOT take the row that gave a "free pseudo-
-> slot" — EO blocks are a trap, they constrain DR axis choice. Keep EO
-> clean, let DR do the structural work.
+> inspect_state shows bad_edges_per_axis = {{UD: 2, FB: 4, RL: 6}}. UD
+> is the cheap EO. eo_pattern_lookup(axis='UD') returns 4 moves. But
+> before I commit, let me check inverse-FB — sometimes the "ugly" axis
+> on inverse has a shorter EO + cleaner DR substate. niss_flip,
+> eo_pattern_lookup(axis='FB') → 5 moves. dr_trigger_options on both:
+> UD-normal best is DR-4C4E in 1mv (single R, but 4c4e finishes in
+> ~9mv). Inverse-FB best is DR-3C2E in 3mv (3c2e finishes in ~5mv).
+> Joint: UD-normal 4+1 = 5mv to DR, ~9mv finish, ~14 total. Inverse-FB
+> 5+3 = 8mv to DR, ~5mv finish, ~13 total. Inverse-FB wins by ~1 move
+> AND gives a cleaner substate. Staying flipped, applying the inverse-
+> FB EO. I did NOT take the shortest EO — I joined EO+DR+finish in my
+> head before committing.
 
 ### Exemplar B — Picking the longer DR for a cleaner substate
 > Post-EO on the inverse-FB axis. dr_trigger_options(axis='FB') returns
@@ -1530,22 +1516,31 @@ solves in v11-v13.
 
 # Pipeline (the realistic-human version)
 
-1. **Inspect + NISS-scout** (v16):
-   a) inspect_state(main).
-   b) **niss_scout(slot='main')**. ONE call returns a 6-row table
-      (normal × inverse × {{UD, FB, RL}}) sorted by
-      expected_total_to_solved. The first row is the recommendation.
-      Median elite WCA solve has 8 NISS transitions and 50% start on
-      inverse — scouting is mandatory, not optional. Verbalize the
-      rejected rows: "Picked normal-UD with expected 18 (EO 4 + DR
-      8 + HTR 6); rejected inverse-FB at 19 because the EO is 5
-      moves and the DR substate's worse."
-   c) If the recommendation picks the INVERSE side, call niss_flip
-      BEFORE applying the EO. Otherwise continue on normal.
-   d) For the chosen (side, axis), call eo_pattern_lookup(axis=X) to
-      get the actual EO move list to apply (the scout reports
-      lengths; this returns the moves themselves, possibly chunked
-      4 at a time if partial).
+1. **Inspect + manual axis scouting** (v27 — no scout tool):
+   a) inspect_state(main). Read `bad_edges_per_axis` — typically one
+      axis has the fewest bad edges and that's your easiest EO. But
+      cheap EO doesn't always win; you'll compare candidates.
+   b) **Scout EO on the normal side** for the 1-2 most promising
+      axes: eo_pattern_lookup(axis=X). Returns the EO move list (or
+      partial if >4 moves). Note the length per candidate axis.
+   c) **Scout EO on the inverse side too** when the normal side
+      doesn't have an obviously short EO. Use niss_flip to switch
+      perspective (it inverts scramble + history), then call
+      eo_pattern_lookup. niss_flip BACK if you want to compare to
+      normal. Median elite WCA solves do 8 NISS transitions and
+      50% START on inverse — scouting both sides is normal.
+   d) **For each (side, axis) candidate with a viable EO**, also
+      probe DR cost: probe_dr_pattern(axis=X, eo_alg=<the EO moves>)
+      OR commit the EO and then call dr_trigger_options(axis=X).
+      The decision is JOINT: EO_len + DR_total. A 4-move EO with
+      an 8-move DR (12mv to DR) beats a 2-move EO with a 12-move
+      DR. You read the candidates and judge — there is no pre-
+      packaged comparison table anymore.
+   e) Pick a (side, axis) and commit. If you committed to inverse,
+      stay flipped; if you bounced back to normal, niss_flip once
+      more so the slot's perspective matches your plan.
+   f) Verbalize rejected candidates ("UD-normal EO=4, FB-inverse
+      EO=3 but DR there is awful, sticking with UD-normal").
 
 2. **Commit EO incrementally**:
    - If the lookup returned the full sequence (≤4 moves): apply_moves
@@ -1753,6 +1748,7 @@ def solve(
     sim_budget: float = _TOTAL_SIM_BUDGET,
     dr_trigger_setup_width: int = _SIM_DR_TRIGGER_SETUP_WIDTH,
     dr_trigger_setup_depth: int = _SIM_DR_TRIGGER_SETUP_DEPTH,
+    prior_attempts: list[dict] | None = None,
 ) -> dict:
     client = anthropic.Anthropic()
     slots: dict[str, Slot] = {"main": Slot(name="main")}
@@ -1785,7 +1781,38 @@ def solve(
         cost_niss=int(_COST_NISS_FLIP),
         MAX_HUMAN_RECALL=MAX_HUMAN_RECALL,
     )
-    user_msg = f"Solve this scramble within your one-hour budget. Start with inspect_state(slot='main')."
+    user_msg = "Solve this scramble within your one-hour budget. Start with inspect_state(slot='main')."
+
+    # v27b: cross-attempt memory. Humans don't restart blind — they remember
+    # what they tried and pick a different branch next time. If the caller
+    # has prior attempts on this same scramble, brief the agent on them.
+    if prior_attempts:
+        lines = ["", "## Continuous memory: your previous attempts on this exact scramble", ""]
+        best_so_far = None
+        for i, prev in enumerate(prior_attempts, 1):
+            if prev.get("solves"):
+                mv = prev.get("total_moves", "?")
+                sol = " ".join(prev.get("final_solution", []) or [])
+                lines.append(f"- Attempt {i}: **{mv} moves** — `{sol}`")
+                if best_so_far is None or (isinstance(mv, int) and mv < best_so_far):
+                    best_so_far = mv if isinstance(mv, int) else best_so_far
+            else:
+                lines.append(f"- Attempt {i}: FAILED ({prev.get('halt_reason','unknown')})")
+        lines.append("")
+        if best_so_far is not None:
+            lines.append(
+                f"Your current best is **{best_so_far} moves**. Beat it or match it — "
+                "this attempt only counts if it improves your previous best."
+            )
+        lines.append(
+            "Pick a DIFFERENT branch than your prior attempts: a different EO axis, "
+            "the opposite side (normal vs inverse), or a different DR trigger family. "
+            "Real WCA-FMC competitors get one scramble and one hour — they iterate "
+            "with memory, they don't restart blind. Use what you learned: if a path "
+            "led to a long finish, switch axes; if a substate finished cleanly, "
+            "try to find an EVEN cheaper EO+DR setup that reaches a similar substate."
+        )
+        user_msg += "\n" + "\n".join(lines)
 
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_msg}]
     transcript: list[dict[str, Any]] = [

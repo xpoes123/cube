@@ -78,6 +78,7 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
     """
     if n_best > 1:
         best: dict | None = None
+        prior_attempts: list[dict] = []
         for attempt in range(n_best):
             single = _run_single(
                 f"{scramble_id}__attempt{attempt+1}",
@@ -85,7 +86,16 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
                 model=model, out_dir=out_dir,
                 wall_limit_s=wall_limit_s,
                 max_tool_calls=max_tool_calls,
+                prior_attempts=prior_attempts if prior_attempts else None,
             )
+            # v27b: brief memory for the next attempt — keep it cheap (just
+            # the solution string and move count, no transcript).
+            prior_attempts.append({
+                "solves": single["solves"],
+                "total_moves": single.get("total_moves"),
+                "final_solution": (single.get("solution") or "").split() if isinstance(single.get("solution"), str) else single.get("solution") or [],
+                "halt_reason": single.get("halt_reason"),
+            })
             # Rank: prefer solves; among solves prefer shorter; among non-solves prefer "less broken" (won't matter much)
             if best is None:
                 best = single
@@ -107,7 +117,8 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
 
 
 def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
-                wall_limit_s: float, max_tool_calls: int) -> dict:
+                wall_limit_s: float, max_tool_calls: int,
+                prior_attempts: list[dict] | None = None) -> dict:
     print(f"\n{'=' * 60}\n  {scramble_id}: {scramble}\n{'=' * 60}", flush=True)
     moves = scramble.split()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -122,6 +133,7 @@ def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
         transcript_path=transcript_path,
         wall_limit_s=wall_limit_s,
         sim_budget=3600.0,
+        prior_attempts=prior_attempts,
     )
     elapsed = time.time() - t0
 
@@ -262,6 +274,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--n-best", type=int, default=1,
                         help="v19: run each scramble N times and report the best solve. "
                              "Deterministic way to beat per-scramble variance. Cost scales linearly.")
+    parser.add_argument("--limit", type=int, default=None,
+                        help="Cap number of scrambles evaluated (after corpus load). "
+                             "Useful when n_best>1 already burns cycles per scramble.")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -274,6 +289,8 @@ def main(argv: list[str] | None = None) -> int:
         corpus, human_meta = load_333fm_corpus(args.corpus_333fm)
     else:
         corpus = build_corpus(extra=args.extra_random, seed=args.random_seed)
+    if args.limit is not None:
+        corpus = corpus[:args.limit]
     summaries: list[dict] = []
     for scramble_id, scramble in corpus:
         try:
