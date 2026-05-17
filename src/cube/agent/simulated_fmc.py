@@ -53,20 +53,22 @@ DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 MAX_HUMAN_RECALL = 4
 
 # Simulated-time costs (seconds of WCA wall, NOT real wall).
-_COST_APPLY_MOVE = 1.0
-_COST_NISS_FLIP = 5.0
-_COST_SLOT_NEW = 10.0
-_COST_SLOT_SWITCH = 2.0
-_COST_RESCRAMBLE = 30.0
-_COST_INSPECT = 5.0       # bumped 1->5: humans count by looking at the cube
-_COST_TRY_ALG = 2.0
+# v31: calibrated to real human-on-cube tempo. WCA FMC is 1 hour with
+# 3 cubes and a pen; moves are physical, scouting is mental.
+_COST_APPLY_MOVE = 0.1    # v31: 10 TPS (was 1.0 — wildly slow)
+_COST_NISS_FLIP = 2.0     # v31: pen-and-paper flip, no physical (was 5.0)
+_COST_SLOT_NEW = 8.0      # v31: re-pickup + initial inspection (was 10.0)
+_COST_SLOT_SWITCH = 1.0   # v31: glance to the other cube (was 2.0)
+_COST_RESCRAMBLE = 25.0   # v31: re-apply the whole scramble (was 30.0)
+_COST_INSPECT = 5.0       # humans count by looking at the cube
+_COST_TRY_ALG = 1.5
 _COST_POLICY_INTUITION = 3.0
 # Search tool simulated costs reflect "thinking time," not real CPU.
 _COST_LOOKAHEAD = 8.0
-_COST_DR_TRIGGER = 20.0
+_COST_DR_TRIGGER = 20.0   # v31: DFS depth-4 over EO-preserving moves
 _COST_SUBSET_LOOKUP_CACHED = 1.0
 _COST_SUBSET_LOOKUP_MISS = 15.0
-_COST_HTR_SUBSET = 10.0   # bumped 2->10: subset recognition is real visual work
+_COST_HTR_SUBSET = 10.0   # subset recognition is real visual work
 
 # Working-memory cap: humans don't perfectly recall a 25-move solve in
 # their head. inspect_state shows only the last K moves of history; the
@@ -572,20 +574,15 @@ def _build_handlers(
     def _h_dr_trigger_options(args):
         """List named DR-trigger options from the current EO-solved state.
 
-        Returns a ranked menu of trigger families (DR-4C4E, DR-3C2E, etc.)
-        with their setup moves, total-to-DR, and JZP/pairs flags. The agent
-        picks by family preference and structural flags, not just by
-        shortest moves. Champion-shaped decision-making. v15: supports
-        all 3 axes (UD/FB/RL) via per-axis trigger catalogs derived by
-        cube symmetry from the UD reference.
-
-        v31: returns an explicit `search_method` block so the agent (and
-        the reviewer) can see what the tool actually did — no black-box.
+        v31: DFS depth ≤4 (capped from caller). Charges per-state-explored
+        so wider/deeper searches genuinely cost more sim time (a 4-deep
+        full search is ~20-40s of "thinking on paper"). If 0 options
+        come back, the agent commits a setup move and re-calls.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
         axis = args.get("axis", "UD")
-        max_setup = args.get("max_setup", 5)
+        max_setup = args.get("max_setup", 4)  # v31: default depth 4
         out = dr_to_mod.dr_trigger_options(
             sc, hist,
             axis=axis,
@@ -620,7 +617,15 @@ def _build_handlers(
                 f"trigger catalog elite cubers memorize."
             ),
         }
-        budget.charge("dr_trigger_options", 8.0, slot=slot.name, axis=axis)
+        # v31: charge proportional to states explored. A depth-4 search
+        # over EO-preserving moves explores roughly 14^4 / dedup ≈ several
+        # thousand states. At 0.005s per state of "looking at a move," a
+        # full 4-deep search runs ~20-40s — actually expensive thinking.
+        # Empty result (depth 4 too tight) still costs the search time.
+        states_explored = out.get("states_explored", 0)
+        cost = 5.0 + 0.005 * states_explored
+        budget.charge("dr_trigger_options", cost, slot=slot.name, axis=axis,
+                      states=states_explored)
         return out
 
     def _h_dr_recognize(args):

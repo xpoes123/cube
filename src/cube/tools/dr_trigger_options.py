@@ -135,18 +135,23 @@ def _apply_trigger_reduced(co, marker, trigger_moves, axis):
 
 def dr_trigger_options(
     scramble: list[str], history: list[str],
-    *, axis: str = "UD", max_setup: int = 5,
+    *, axis: str = "UD", max_setup: int = 4,
 ) -> dict:
-    """Return a ranked menu of named DR triggers reachable from the current
-    EO-solved state with at most `max_setup` EO-preserving setup moves.
+    """Return named DR triggers reachable via short setup, DFS-style.
 
-    v15: now supports all 3 axes (UD/FB/RL). Each axis uses its own
-    trigger catalog by symmetric substitution from the UD reference.
+    v31: switched from BFS (computer-shape, finds guaranteed shortest)
+    to bounded DFS with dedup at depth ≤4 (human-shape: try moves,
+    look 4 deep, backtrack, don't re-try same state). Returns the
+    first viable trigger PER FAMILY in DFS discovery order. Stops
+    early once 3 families are found. Hard caps depth at 4 — a human's
+    working visualization scope. If 0 triggers fit in 4 moves, the
+    agent must commit a setup move or two by hand and re-call from
+    the new state.
     """
     if axis not in _TRIGGER_CATALOG_BY_AXIS:
-        return {
-            "error": f"axis must be one of UD/FB/RL; got {axis!r}",
-        }
+        return {"error": f"axis must be one of UD/FB/RL; got {axis!r}"}
+    # v31: hard-cap depth at 4.
+    max_setup = min(max_setup, 4)
     ax = {"UD": Axis.UD, "FB": Axis.FB, "RL": Axis.RL}[axis]
 
     state = SOLVED.apply_alg(parse_alg(" ".join(scramble))) if scramble else SOLVED
@@ -158,91 +163,76 @@ def dr_trigger_options(
                      f"and apply EO moves first."
         }
 
-    # Reduced state for BFS (CO + slice membership)
     start_co = _axis_co_from_state(state, ax)
     start_marker = _slice_marker_from_state(state, ax)
     solved_co = (0,) * 8
     solved_marker = _SOLVED_MARKER[ax]
     eo_preserving = _EO_PRESERVING_BY_AXIS[ax]
 
-    # Precompute reduced-state trigger effects relative to the starting state:
-    # we'll apply each trigger from each visited (co, marker) and check if
-    # it lands on (solved_co, solved_marker).
     trigger_parsed = [(label, alg_str, parse_alg(alg_str))
                       for label, alg_str in _TRIGGER_CATALOG_BY_AXIS[axis]]
 
-    # BFS in reduced-state space, tracking the move PATH so we can reconstruct
-    # the setup as actual Move objects.
-    frontier: deque = deque()
-    frontier.append((start_co, start_marker, (), None))
-    visited = {(start_co, start_marker): 0}
+    found: dict[str, dict] = {}
+    states_visited = [0]
+    visited: dict[tuple, int] = {}  # (co, marker) -> shortest_depth seen
+    EARLY_STOP_N_FAMILIES = 3  # human bails out once 3 viable options are in hand
 
-    # Find shortest setup per trigger family.
-    best: dict[str, dict] = {}
-
-    while frontier:
-        co, marker, path, last_face = frontier.popleft()
-        plen = len(path)
-        # Test all triggers from this state.
+    def _check_triggers_here(co, marker, path):
         for label, alg_str, moves in trigger_parsed:
-            if label in best:
+            if label in found:
                 continue
             t_co, t_marker = _apply_trigger_reduced(co, marker, moves, ax)
             if t_co == solved_co and t_marker == solved_marker:
-                # Found a setup for this trigger.
-                # Compute structural flags on the actual State (the agent
-                # cares about JZP and pairs at the pre-trigger moment).
                 pre_state = state.apply_alg(list(path)) if path else state
                 pre_c = co_count(pre_state, ax)
                 pre_e = slice_misplaced_count(pre_state, ax)
-                total_to_dr = plen + len(moves)
-                # v23a (Phase A): drop expected_htr_moves and
-                # expected_total_to_solved. These were oracle judgments
-                # derived from empirical corpus stats — not something a
-                # human solver would have. The LLM should weigh the
-                # tradeoff (longer DR vs better substate) itself.
-                best[label] = {
+                found[label] = {
                     "trigger_family": label,
                     "canonical_alg": alg_str,
                     "setup_moves": [str(m) for m in path],
-                    "setup_length": plen,
+                    "setup_length": len(path),
                     "trigger_length": len(moves),
-                    "total_to_dr": total_to_dr,
+                    "total_to_dr": len(path) + len(moves),
                     "pre_trigger_signature": trigger_label(pre_c, pre_e),
                     "jzp_eligible": is_jzp_eligible(pre_state),
                     "top_pairs_on_inverse": count_top_pairs(pre_state),
                 }
-        if plen >= max_setup:
-            continue
+
+    def _dfs(co, marker, path, last_face, depth):
+        if len(found) >= EARLY_STOP_N_FAMILIES:
+            return
+        key = (co, marker)
+        # Dedup: if we've reached this state at equal or shallower depth, skip.
+        prev = visited.get(key)
+        if prev is not None and prev <= depth:
+            return
+        visited[key] = depth
+        states_visited[0] += 1
+        _check_triggers_here(co, marker, path)
+        if depth >= max_setup:
+            return
         for m in eo_preserving:
             if last_face is not None and m.face == last_face:
                 continue
             child_co, child_marker = _apply_to_reduced(co, marker, m, ax)
-            if (child_co, child_marker) in visited:
-                continue
-            visited[(child_co, child_marker)] = plen + 1
-            frontier.append((child_co, child_marker, path + (m,), m.face))
+            _dfs(child_co, child_marker, path + (m,), m.face, depth + 1)
 
-    options = list(best.values())
+    _dfs(start_co, start_marker, (), None, 0)
 
-    # v23a (Phase A): sort by total_to_dr only (raw length). The agent
-    # has to weigh substate quality (4c4e vs 3c2e) itself, like a human
-    # solver. JZP and pre_trigger_signature flags are visible structural
-    # properties a human would notice; they're NOT a ranked oracle.
-    def rank_key(o: dict):
-        return (o["total_to_dr"], o["setup_length"])
+    options = list(found.values())
 
-    options.sort(key=rank_key)
     return {
         "axis": axis,
-        "options": options[:6],
+        "options": options,
         "max_setup_searched": max_setup,
+        "states_explored": states_visited[0],
         "note": (
-            f"Up to 6 named-trigger options on axis {axis}, sorted by "
-            f"total_to_dr. JZP-eligible flag and pre_trigger_signature "
-            f"(corner/edge counts) are structural properties a human can "
-            f"see — use them to judge substate quality vs DR length. "
-            f"There is NO expected_total_to_solved oracle; weigh the "
-            f"tradeoffs yourself."
+            f"DFS depth ≤{max_setup} (hard-capped — human visualization scope). "
+            f"Explored {states_visited[0]} unique states, stopped after "
+            f"{len(options)} trigger families found (early-bail at "
+            f"{EARLY_STOP_N_FAMILIES}). Options in DFS-discovery order — NOT a "
+            f"ranked oracle. If 0 options: commit a setup move you think looks "
+            f"promising via apply_moves, then re-call from the new state. "
+            f"Read jzp_eligible and pre_trigger_signature for substate quality."
         ),
     }
