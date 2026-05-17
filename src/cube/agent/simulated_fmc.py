@@ -578,15 +578,49 @@ def _build_handlers(
         shortest moves. Champion-shaped decision-making. v15: supports
         all 3 axes (UD/FB/RL) via per-axis trigger catalogs derived by
         cube symmetry from the UD reference.
+
+        v31: returns an explicit `search_method` block so the agent (and
+        the reviewer) can see what the tool actually did — no black-box.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
+        axis = args.get("axis", "UD")
+        max_setup = args.get("max_setup", 5)
         out = dr_to_mod.dr_trigger_options(
             sc, hist,
-            axis=args.get("axis", "UD"),
-            max_setup=args.get("max_setup", 5),
+            axis=axis,
+            max_setup=max_setup,
         )
-        budget.charge("dr_trigger_options", 8.0, slot=slot.name, axis=args.get("axis", "UD"))
+        # v31: expose the search method explicitly. This is NOT a brute-
+        # force search of all DRs; it's a BFS over EO-preserving moves
+        # (10-14 per axis depending on axis) up to depth `max_setup`,
+        # checking after each setup whether ANY of the ~10 named trigger
+        # families lands on a DR-solved state. Per-axis trigger catalog:
+        # UD uses R+U combinations, FB uses U+F, RL uses F+L (10 families
+        # × 3 axes = 30 named algs total, the same set elite cubers
+        # memorize). Total search width ≈ 10 triggers × 14^max_setup ≈
+        # 10K-100K states — bounded human-scope, not stockfish.
+        out["search_method"] = {
+            "kind": "BFS-over-EO-preserving-moves",
+            "axis": axis,
+            "max_setup_depth": max_setup,
+            "trigger_catalog_size": 10,
+            "trigger_families_checked": [
+                "DR-4C4E (R)", "DR-4C4E (R')", "DR-3C2E (R U R')",
+                "DR-3C2E (R U' R')", "DR-4C2E (R U2 R')", "DR-4C4E (R U2 F2 R)",
+                # ... (axis-rotated equivalents on FB use U+F, on RL use F+L)
+            ],
+            "note": (
+                "BFS over EO-preserving moves (~14/axis) up to depth "
+                f"{max_setup}; each visited state is checked against {10} "
+                f"named DR trigger algorithms. Returned options are the "
+                f"shortest setup found for each trigger family (some "
+                f"families may not appear if no setup ≤{max_setup} reaches "
+                f"them). NOT a wide BFS over all DRs; bounded to the named "
+                f"trigger catalog elite cubers memorize."
+            ),
+        }
+        budget.charge("dr_trigger_options", 8.0, slot=slot.name, axis=axis)
         return out
 
     def _h_dr_recognize(args):
@@ -1561,15 +1595,23 @@ solves in v11-v13.
    a) inspect_state(main). Read `bad_edges_per_axis` — typically one
       axis has the fewest bad edges and that's your easiest EO. But
       cheap EO doesn't always win; you'll compare candidates.
+
+      **NISS INVARIANT** (v31): `bad_edges_per_axis` is IDENTICAL on
+      normal and inverse — proven for every WCA scramble. The edges
+      that are bad don't change under inversion; only the SOLUTION
+      to fix them differs (because the cumulative state is different).
+      Do NOT call inspect_state again after niss_flip — you already
+      know the bad-edge counts. Save the tool call.
    b) **Scout EO on the normal side** for the 1-2 most promising
       axes: eo_pattern_lookup(axis=X). Returns the EO move list (or
       partial if >4 moves). Note the length per candidate axis.
    c) **Scout EO on the inverse side too** when the normal side
-      doesn't have an obviously short EO. Use niss_flip to switch
-      perspective (it inverts scramble + history), then call
-      eo_pattern_lookup. niss_flip BACK if you want to compare to
-      normal. Median elite WCA solves do 8 NISS transitions and
-      50% START on inverse — scouting both sides is normal.
+      doesn't have an obviously short EO. niss_flip switches the
+      slot's perspective (you're now on the inverse state); call
+      eo_pattern_lookup again on the same axis — the SOLUTION will
+      differ (different moves to reach EO) even though the bad-edge
+      count is the same. Median elite WCA solves do 8 NISS
+      transitions and 50% START on inverse.
    d) **For each (side, axis) candidate with a viable EO**, also
       probe DR cost: probe_dr_pattern(axis=X, eo_alg=<the EO moves>)
       OR commit the EO and then call dr_trigger_options(axis=X).

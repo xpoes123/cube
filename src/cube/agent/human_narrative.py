@@ -145,19 +145,37 @@ def _t_niss_flip(inp: dict, res: dict) -> list[str]:
 
 def _t_dr_trigger_options(inp: dict, res: dict) -> list[str]:
     axis = inp.get("axis", "?")
+    max_setup = inp.get("max_setup", 5)
     opts = res.get("options", []) if isinstance(res, dict) else []
     if "error" in (res or {}):
         return [f"DR trigger menu on {axis}: {res['error']}"]
+    # v31: surface the search method so a reviewer can see what the
+    # tool actually did (BFS over EO-preserving moves up to max_setup,
+    # checked against the 10-family named-trigger catalog).
+    method_pieces = [
+        f"_DR survey on {axis}: BFS over EO-preserving moves "
+        f"(setup depth ≤{max_setup}), checking each visited state against "
+        f"the 10 named trigger families (DR-4C4E, DR-3C2E, DR-4C2E, ...). "
+        f"Returns the shortest setup found for each family that fit._"
+    ]
     if not opts:
-        return [f"DR trigger menu on {axis}: no named trigger fits within 5 setup moves."]
-    pieces = [f"I survey the named DR triggers on {axis}:"]
+        method_pieces.append(
+            f"**No trigger family had a setup ≤{max_setup} moves on {axis}.**"
+        )
+        return method_pieces
+    method_pieces.append(f"I survey the named DR triggers on {axis}:")
     for o in opts[:3]:
         fam = o.get("trigger_family", "?")
         setup = o.get("setup_length", "?")
         trig = o.get("trigger_length", "?")
         jzp = " [JZP]" if o.get("jzp_eligible") else ""
-        pieces.append(f"  • {fam}: {setup}-mv setup + {trig}-mv trigger ({setup + trig if isinstance(setup, int) and isinstance(trig, int) else '?'} total){jzp}")
-    return pieces
+        sig = o.get("pre_trigger_signature")
+        sig_str = f" pre={sig}" if sig else ""
+        total = setup + trig if isinstance(setup, int) and isinstance(trig, int) else "?"
+        method_pieces.append(
+            f"  • {fam}: {setup}-mv setup + {trig}-mv trigger ({total} total){jzp}{sig_str}"
+        )
+    return method_pieces
 
 
 def _t_htr_classify(inp: dict, res: dict) -> list[str]:
