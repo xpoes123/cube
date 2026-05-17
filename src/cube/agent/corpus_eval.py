@@ -173,13 +173,21 @@ def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
 def write_summary(
     out_dir: Path, summaries: list[dict], model: str,
     human_meta: dict[str, dict] | None = None,
+    version_notes: str | None = None,
 ) -> Path:
     rows: list[str] = []
-    rows.append(f"# Corpus eval — sim mode on {len(summaries)} scrambles")
+    version_label = out_dir.name.replace("corpus_eval_", "")
+    rows.append(f"# Corpus eval — `{version_label}`")
     rows.append("")
-    rows.append(f"Model: `{model}`")
-    rows.append(f"Run: {datetime.now().isoformat(timespec='seconds')}")
+    rows.append(f"- **Model**: `{model}`")
+    rows.append(f"- **Run**: {datetime.now().isoformat(timespec='seconds')}")
+    rows.append(f"- **Scrambles**: {len(summaries)}")
     rows.append("")
+    if version_notes:
+        rows.append("## What changed in this version")
+        rows.append("")
+        rows.append(version_notes.strip())
+        rows.append("")
     if human_meta:
         rows.append("| ID | Result | Sim moves | Human (WCA) | Gap | Solver | Tool calls | Sim time | Wall | Cost |")
         rows.append("|---|---|---:|---:|---:|---|---:|---:|---:|---:|")
@@ -232,23 +240,6 @@ def write_summary(
     total_cost = total_in * 3 / 1_000_000 + total_out * 15 / 1_000_000
     rows.append(f"**Total API cost (rough, no cache discount)**: ${total_cost:.2f}")
     rows.append("")
-    if human_meta:
-        rows.append("## Human reconstructions (for comparison)")
-        rows.append("")
-        for s in summaries:
-            meta = human_meta.get(s["id"])
-            if not meta:
-                continue
-            rows.append(f"### {s['id']} — {meta['solver']} ({meta['human_moves']} moves)")
-            rows.append("```")
-            rows.append(meta["human_solution"])
-            rows.append("```")
-            if meta.get("human_comment"):
-                rows.append("Annotation:")
-                rows.append("```")
-                rows.append(meta["human_comment"])
-                rows.append("```")
-            rows.append("")
     rows.append("## Per-scramble narratives")
     for s in summaries:
         rows.append(f"- [{s['id']}]({Path(s['narrative_path']).name})")
@@ -271,12 +262,15 @@ def main(argv: list[str] | None = None) -> int:
                         help="If set, load scrambles from this 333.fm JSON (produced "
                              "by cube.agent.fetch_333fm_corpus) instead of the default + random corpus. "
                              "Summary will include human-solver baselines per scramble.")
-    parser.add_argument("--n-best", type=int, default=1,
+    parser.add_argument("--n-best", type=int, default=8,
                         help="v19: run each scramble N times and report the best solve. "
-                             "Deterministic way to beat per-scramble variance. Cost scales linearly.")
+                             "Default 8 (bumped from 4 in v28). With cross-attempt memory, "
+                             "attempts 5-8 see all prior failures and can refine. Cost scales linearly.")
     parser.add_argument("--limit", type=int, default=None,
                         help="Cap number of scrambles evaluated (after corpus load). "
                              "Useful when n_best>1 already burns cycles per scramble.")
+    parser.add_argument("--version-notes", type=str, default=None,
+                        help="One-paragraph 'what changed in this version' for the SUMMARY.md header.")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -312,7 +306,10 @@ def main(argv: list[str] | None = None) -> int:
                 "transcript_path": "", "narrative_path": "",
             })
 
-    summary_path = write_summary(args.out_dir, summaries, args.model, human_meta=human_meta)
+    summary_path = write_summary(
+        args.out_dir, summaries, args.model,
+        human_meta=human_meta, version_notes=args.version_notes,
+    )
     print(f"\nwrote {summary_path}")
     # Regenerate the top-level runs index so new transcripts surface immediately.
     try:
