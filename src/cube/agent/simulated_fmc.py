@@ -986,8 +986,10 @@ def _build_handlers(
         # v27: niss_scout removed — agent must do manual axis exploration via
         # inspect_state + per-axis eo_pattern_lookup + dr_trigger_options.
         "dr_trigger_options": _h_dr_trigger_options,
-        "dr_recognize": _h_dr_recognize,
-        "probe_dr_pattern": _h_probe_dr_pattern,
+        # v32: dr_recognize + probe_dr_pattern removed. Both backed by the
+        # 3.2M-entry dr_pattern_library.pkl — no human memorizes 3M DR
+        # algorithms. Agent uses only dr_trigger_options (BFS over the
+        # 10-family named-trigger catalog) for DR.
         "analyze_residual": _h_analyze_residual,
         "derive_corner_3cycle": _h_derive_corner_3cycle,
         "replace_and_shorten": _h_replace_and_shorten,
@@ -1161,46 +1163,9 @@ def _tool_schemas() -> list[dict]:
                 "required": ["slot", "axis"],
             },
         },
-        {
-            "name": "dr_recognize",
-            "description": (
-                "PRIMARY DR TOOL — recognize the DR pattern on `axis` and "
-                "split the memorized completion into NAMED setup + trigger. "
-                "Returns trigger_family (e.g. \"X-U2-X' (DR-4c4e)\"), "
-                "setup_moves (may be empty), and trigger_moves. Like a "
-                "champion: name what you're seeing, then apply the named "
-                "pieces. Then apply setup_moves and trigger_moves with "
-                "SEPARATE apply_moves calls so the narration shows each "
-                "piece. EO on `axis` must already be solved. 3s simulated."
-            ),
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "slot": _SLOT,
-                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
-                },
-                "required": ["slot", "axis"],
-            },
-        },
-        {
-            "name": "probe_dr_pattern",
-            "description": (
-                "Run dr_recognize AS IF the given eo_alg were applied, "
-                "WITHOUT modifying the slot. Returns trigger_family + "
-                "setup/trigger lengths + total. Use to compare DR options "
-                "across candidate EOs by trigger family AND total. "
-                "Cost: 3s simulated."
-            ),
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "slot": _SLOT,
-                    "eo_alg": {**_MOVE_LIST, "description": "Hypothetical EO moves to test."},
-                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
-                },
-                "required": ["slot", "eo_alg", "axis"],
-            },
-        },
+        # v32: dr_recognize + probe_dr_pattern removed (relied on the
+        # 3.2M-entry DR pattern library — no human memorizes that).
+        # Agent uses ONLY dr_trigger_options for DR scouting now.
         {
             "name": "analyze_residual",
             "description": (
@@ -1513,7 +1478,7 @@ You are NOT a brute-force search engine. You have a HUMAN solver's tools:
 - **Visualization** (depth 4): lookahead does policy-pruned beam search
   to depth {MAX_HUMAN_RECALL}, width K. This is what a human can hold
   in their head — 3-4 moves of mental visualization, not a deep search.
-- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_recognize,
+- **Pattern memory** (4-move recall): eo_pattern_lookup,
   apply_htr_phase return AT MOST {MAX_HUMAN_RECALL} moves per call. If
   the optimal solution is longer, you see only the first 4 moves of
   progress toward it. APPLY THEM, then RE-QUERY from the new state to
@@ -1618,12 +1583,12 @@ solves in v11-v13.
       count is the same. Median elite WCA solves do 8 NISS
       transitions and 50% START on inverse.
    d) **For each (side, axis) candidate with a viable EO**, also
-      probe DR cost: probe_dr_pattern(axis=X, eo_alg=<the EO moves>)
-      OR commit the EO and then call dr_trigger_options(axis=X).
-      The decision is JOINT: EO_len + DR_total. A 4-move EO with
-      an 8-move DR (12mv to DR) beats a 2-move EO with a 12-move
-      DR. You read the candidates and judge — there is no pre-
-      packaged comparison table anymore.
+      probe DR cost: commit the EO via apply_moves, then call
+      dr_trigger_options(axis=X) from the new state. The decision
+      is JOINT: EO_len + DR_total. A 4-move EO with an 8-move DR
+      (12mv to DR) beats a 2-move EO with a 12-move DR. You read
+      the candidates and judge — there is no pre-packaged
+      comparison table anymore.
    e) Pick a (side, axis) and commit. If you committed to inverse,
       stay flipped; if you bounced back to normal, niss_flip once
       more so the slot's perspective matches your plan.
@@ -1637,14 +1602,14 @@ solves in v11-v13.
      closer to EO on FB", then re-query eo_pattern_lookup(axis=X) on
      the new state. Repeat until found=1 with no partial flag.
 
-3. **DR feasibility probe (before each EO axis decision is final)**:
-   For each plausible EO candidate, call probe_dr_pattern. It reports
-   total_dr_length and trigger_family (if within visualization). USE
-   this to pick the joint-shortest EO+DR axis. Note: total_dr_length
-   may be 5-10 moves — even though you can only SEE 4 moves at a time,
-   you know the TOTAL.
+3. **DR feasibility check (before each EO axis decision is final)**:
+   v32: apply the EO candidate first, then call dr_trigger_options
+   on the new state. Use the trigger family + setup length to judge
+   the joint EO+DR cost. There's no pre-EO probe tool anymore — you
+   commit moves to see DR options (more human-shape; the cost is
+   tracked by apply_moves at 10 TPS).
 
-4. **DR compose** (UD axis: use dr_trigger_options; other axes: dr_recognize):
+4. **DR compose** (dr_trigger_options is your ONLY DR tool — all 3 axes):
 
    **DR-LENGTH HARD RULE (v14b, from 333.fm corpus research)**: elite
    solves get DR in ≤6 moves with 85.7% probability. **DR ≥10 moves NEVER
@@ -1682,12 +1647,12 @@ solves in v11-v13.
       > "Comparing on UD: 4C4E in 1mv (13mv typical post-DR = 14 total)
       > vs 3C2E in 4mv (7mv typical post-DR = 11 total). 3C2E saves 3.
       > Picking the 3C2E."
-   b) dr_recognize is a FALLBACK only — use it only if dr_trigger_options
-      returns no options within max_setup=5. Per-axis trigger letters:
-      UD uses R+U, FB uses U+F, RL uses F+L.
-   c) If `found=0` with `setup_progress`: trigger isn't in view yet.
-      Apply the {MAX_HUMAN_RECALL} setup_progress moves with narration,
-      then dr_recognize again on the new state.
+   b) Per-axis trigger letters in the named catalog: UD uses R+U,
+      FB uses U+F, RL uses F+L (cube-symmetry equivalents).
+   c) v32: If `dr_trigger_options` returns no options at depth 5,
+      commit 1-2 setup moves you think look promising via apply_moves,
+      then re-call from the new state. Iterative scouting from new
+      committed positions is how a human discovers longer DRs.
 
 5. **POST-DR DECISION** (v14b — research-driven priority):
 

@@ -156,7 +156,7 @@ def _try_solve_micro_scramble(micro_moves: list[str], axis: str = "UD") -> dict:
     short solve found, or empty if pipeline fails.
     """
     from cube.tools.eo_pattern_lib import eo_pattern_lookup
-    from cube.tools.dr_pattern_lib import dr_pattern_lookup
+    from cube.tools.dr_trigger_options import dr_trigger_options
     from cube.tools import search as tsearch
 
     sc = list(micro_moves)
@@ -166,11 +166,22 @@ def _try_solve_micro_scramble(micro_moves: list[str], axis: str = "UD") -> dict:
         return {"solved": False, "reason": "no EO found"}
     eo_moves = eo["options"][0]["moves"]
     hist = list(eo_moves)
-    dr = dr_pattern_lookup(sc, hist, axis=axis)
-    if dr.get("found") != 1:
+    # v32: replace dr_pattern_lookup with dr_trigger_options (the 10-family
+    # named-trigger BFS) — same source the agent uses for DR. If no
+    # trigger fits within 5 setup moves, this micro-scramble doesn't have
+    # a clean DR path.
+    dr = dr_trigger_options(sc, hist, axis=axis, max_setup=5)
+    dr_opts = dr.get("options", []) if isinstance(dr, dict) else []
+    if not dr_opts:
         return {"solved": False, "reason": "no DR found"}
-    dr_moves = dr["options"][0]["moves"]
-    hist += list(dr_moves)
+    # Use the shortest (first BFS-discovery is shortest-setup per family).
+    best = min(dr_opts, key=lambda o: o["total_to_dr"])
+    from cube.engine.notation import parse_alg
+    dr_moves = list(best.get("setup_moves", []))
+    canon = best.get("canonical_alg", "")
+    if canon:
+        dr_moves += [str(m) for m in parse_alg(canon)]
+    hist += dr_moves
     # Now run htr_and_finish.
     full = tsearch.solve_htr_and_finish_from_dr(sc, hist, axis=axis)
     if "error" in full:
