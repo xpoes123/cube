@@ -195,27 +195,29 @@ def niss_scout(scramble: list[str], history: list[str], *, dr_per_cell: int = 2)
             cell["side"] = "inverse"
             rows.append(cell)
 
-    # v24: sort by total_to_solved_actual when available (real ground
-    # truth from the warm subset cache), else fall back to
-    # eo_plus_dr_length. Still no "recommendation" field — the LLM
-    # picks. The sort is just to put the most-informative rows first.
-    def _sort_key(r: dict):
-        actual = r.get("total_to_solved_actual")
-        if actual is not None:
-            return (0, actual, r.get("eo_length") or 99)
-        # Rows without actual total sort after, by raw EO+DR
-        return (1, r.get("eo_plus_dr_length") or 999, r.get("eo_length") or 99)
-
-    rows.sort(key=_sort_key)
+    # v26: NO length-based sort. Return rows in canonical (side, axis,
+    # trigger-index) order so there's no "best is first" oracle signal.
+    # Empirical finding (v25 analysis): when rows were sorted by
+    # total_to_solved_actual, the LLM picked row 0 on 20/25 attempts.
+    # The "agent reasoning" was actually "agent transcribing the sort."
+    # By removing the sort, force the LLM to read every row and judge.
+    _side_rank = {"normal": 0, "inverse": 1}
+    _axis_rank = {"UD": 0, "FB": 1, "RL": 2}
+    rows.sort(key=lambda r: (
+        _side_rank.get(r.get("side", ""), 9),
+        _axis_rank.get(r.get("axis", ""), 9),
+    ))
 
     return {
         "rows": rows,
         "note": (
-            "Up to 12 rows (2 sides × 3 axes × top-2 DR triggers). "
-            "Each row carries: eo_length, dr_option, post_dr_subset, "
-            "finish_length_actual (from the warm 176-entry HTR-subset cache), "
-            "and total_to_solved_actual (= EO + DR + finish, real ground truth). "
-            "Rows without a cached subset show total_to_solved_actual=null; "
-            "judge those by trigger family. Sort is informational; you choose."
+            "Up to 12 rows (2 sides × 3 axes × top-2 DR triggers), in "
+            "canonical (side, axis) order — NO LENGTH SORT. There is no "
+            "'best' row; you must read each row's eo_length, dr_option, "
+            "post_dr_subset, finish_length_actual, and total_to_solved_actual "
+            "(if cached) and choose by your own judgment. JZP-eligible "
+            "flags and trigger families are structural signals; weigh them. "
+            "If you commit to the inverse side, call niss_flip BEFORE "
+            "applying EO moves."
         ),
     }
