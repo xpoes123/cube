@@ -629,15 +629,12 @@ def _build_handlers(
         return out
 
     def _h_dr_recognize(args):
-        """Recognize the DR pattern. If the trigger is reachable within
-        MAX_HUMAN_RECALL moves, return setup_moves + trigger_moves + named
-        family. Otherwise return only the first MAX_HUMAN_RECALL moves of
-        the optimal path as `setup_progress` — partial setup toward an
-        eventual trigger. Apply, then re-query.
-
-        This mirrors how a champion solves: see the trigger (R, R U2 R',
-        etc.) when it's close; or, if the trigger isn't yet in view,
-        apply a short setup chunk and look again.
+        """v33: lookup against the small DR memory (~3,657 patterns within
+        4 moves of solved per axis). If found, return setup + trigger.
+        If not in memory, fall back to brain_suggest (the trained policy
+        predicts the most likely DR move). This is how a human cuber
+        operates: recognize the pattern by sight if it's familiar; if
+        not, use trained intuition to pick a next move.
         """
         slot = _resolve_slot(slots, args["slot"])
         sc, hist = _materialize(scramble, slot)
@@ -646,7 +643,9 @@ def _build_handlers(
             full_moves = out["options"][0]["moves"]
             if len(full_moves) <= MAX_HUMAN_RECALL:
                 setup, trigger, trigger_name = dr_triggers.identify_trigger(full_moves)
-                out = {
+                budget.charge("dr_recognize", 3.0, slot=slot.name, axis=args["axis"])
+                return {
+                    "source": "memory",
                     "found": 1,
                     "axis": args["axis"],
                     "trigger_family": trigger_name,
@@ -654,27 +653,63 @@ def _build_handlers(
                     "trigger_moves": trigger,
                     "total_length": len(full_moves),
                     "note": (
-                        f"DR within visualization: {trigger_name}. "
+                        f"DR recognized from memory: {trigger_name}. "
                         f"{len(setup)}-move setup + {len(trigger)}-move trigger."
                     ),
                 }
             else:
+                # Memory has the state but the path is longer than visual scope.
                 chunk = full_moves[:MAX_HUMAN_RECALL]
-                out = {
+                budget.charge("dr_recognize", 3.0, slot=slot.name, axis=args["axis"])
+                return {
+                    "source": "memory_partial",
                     "found": 0,
                     "axis": args["axis"],
                     "setup_progress": chunk,
                     "full_optimal_length": len(full_moves),
                     "note": (
-                        f"Trigger not yet in view — full optimal is "
-                        f"{len(full_moves)} moves, beyond your "
-                        f"{MAX_HUMAN_RECALL}-move visualization. You see "
-                        f"{len(chunk)} moves of useful setup. Apply them, "
-                        f"then re-query to see the trigger."
+                        f"DR optimal is {len(full_moves)} moves — beyond "
+                        f"{MAX_HUMAN_RECALL}-move visualization. Showing "
+                        f"first {len(chunk)} setup moves. Apply, then "
+                        f"re-query from the new state."
                     ),
                 }
-        budget.charge("dr_recognize", 3.0, slot=slot.name, axis=args["axis"])
-        return out
+        # v33: NOT in memory. Fall back to brain_suggest — the trained
+        # transformer predicts the most likely next move toward DR.
+        from cube.brain import infer as brain_infer
+        if brain_infer.is_brain_available("dr"):
+            s = SOLVED.apply_alg(parse_alg(" ".join(sc))) if sc else SOLVED
+            if hist:
+                s = s.apply_alg(parse_alg(" ".join(hist)))
+            try:
+                suggestions = brain_infer.policy_suggest(s, "dr", k=4)
+            except Exception:
+                suggestions = []
+            budget.charge("dr_recognize", 4.0, slot=slot.name, axis=args["axis"])
+            return {
+                "source": "brain",
+                "found": 0,
+                "axis": args["axis"],
+                "brain_top_moves": [
+                    {"move": m, "prob": round(p, 3)} for m, p in suggestions
+                ],
+                "note": (
+                    "DR pattern not in your 3,657-pattern memory (this state "
+                    "is >4 moves from solved-DR). Brain's top-K suggestions "
+                    "above — pick the most plausible single move, apply it, "
+                    "and re-query. This is the human flow when you don't "
+                    "instantly recognize the case: try a move you trained "
+                    "intuition says is likely, then look again."
+                ),
+            }
+        # Neither memory nor brain available.
+        budget.charge("dr_recognize", 2.0, slot=slot.name, axis=args["axis"])
+        return {
+            "source": "none",
+            "found": 0,
+            "axis": args["axis"],
+            "note": "DR pattern not in memory and brain unavailable; use dr_trigger_options instead.",
+        }
 
     def _h_probe_dr_pattern(args):
         """Estimate DR feasibility after a hypothetical EO. Reports the
@@ -986,10 +1021,10 @@ def _build_handlers(
         # v27: niss_scout removed — agent must do manual axis exploration via
         # inspect_state + per-axis eo_pattern_lookup + dr_trigger_options.
         "dr_trigger_options": _h_dr_trigger_options,
-        # v32: dr_recognize + probe_dr_pattern removed. Both backed by the
-        # 3.2M-entry dr_pattern_library.pkl — no human memorizes 3M DR
-        # algorithms. Agent uses only dr_trigger_options (BFS over the
-        # 10-family named-trigger catalog) for DR.
+        # v33: dr_recognize back, but now reads from a 3,657-entry JSON
+        # memory (DR states ≤4 moves from solved) + brain fallback for
+        # states outside the memory. probe_dr_pattern stays removed.
+        "dr_recognize": _h_dr_recognize,
         "analyze_residual": _h_analyze_residual,
         "derive_corner_3cycle": _h_derive_corner_3cycle,
         "replace_and_shorten": _h_replace_and_shorten,
@@ -1163,9 +1198,35 @@ def _tool_schemas() -> list[dict]:
                 "required": ["slot", "axis"],
             },
         },
-        # v32: dr_recognize + probe_dr_pattern removed (relied on the
-        # 3.2M-entry DR pattern library — no human memorizes that).
-        # Agent uses ONLY dr_trigger_options for DR scouting now.
+        # v33: dr_recognize is back, with a much smaller scope: looks up
+        # the current DR state in a 3,657-pattern memory (DR states ≤4
+        # moves from solved per axis), and falls back to brain_suggest
+        # if the state isn't memorized. probe_dr_pattern stays removed.
+        {
+            "name": "dr_recognize",
+            "description": (
+                "Recognize the DR pattern at the current EO-solved state. "
+                "Three possible sources of answer (returned in `source` field):\n"
+                "  - 'memory': state is one of ~3,657 patterns within 4 moves "
+                "of solved-DR per axis. Returns the trigger_family (DR-3C2E, "
+                "DR-4C4E, etc.), setup_moves, and trigger_moves.\n"
+                "  - 'brain': state is OUTSIDE the memory (>4 moves from "
+                "solved). Returns brain_top_moves — the trained policy's "
+                "top-K next-move suggestions. Apply the most plausible one "
+                "and re-query, like a human using trained intuition.\n"
+                "  - 'memory_partial': state is in memory but full path > "
+                "4 moves; returns the first 4 setup moves to apply.\n"
+                "EO on `axis` must already be solved. Cost: 3-4s simulated."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "slot": _SLOT,
+                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                },
+                "required": ["slot", "axis"],
+            },
+        },
         {
             "name": "analyze_residual",
             "description": (
@@ -1478,7 +1539,7 @@ You are NOT a brute-force search engine. You have a HUMAN solver's tools:
 - **Visualization** (depth 4): lookahead does policy-pruned beam search
   to depth {MAX_HUMAN_RECALL}, width K. This is what a human can hold
   in their head — 3-4 moves of mental visualization, not a deep search.
-- **Pattern memory** (4-move recall): eo_pattern_lookup,
+- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_recognize (3,657-pattern DR memory + brain fallback),
   apply_htr_phase return AT MOST {MAX_HUMAN_RECALL} moves per call. If
   the optimal solution is longer, you see only the first 4 moves of
   progress toward it. APPLY THEM, then RE-QUERY from the new state to
@@ -1649,10 +1710,16 @@ solves in v11-v13.
       > Picking the 3C2E."
    b) Per-axis trigger letters in the named catalog: UD uses R+U,
       FB uses U+F, RL uses F+L (cube-symmetry equivalents).
-   c) v32: If `dr_trigger_options` returns no options at depth 5,
-      commit 1-2 setup moves you think look promising via apply_moves,
-      then re-call from the new state. Iterative scouting from new
-      committed positions is how a human discovers longer DRs.
+   c) v33: if `dr_trigger_options` returns 0 options at depth 5, try
+      `dr_recognize(axis=X)` next. It looks up your current DR state
+      in a 3,657-pattern memory (DR states ≤4 moves from solved):
+      - `source: memory` → here are the moves to DR, apply them.
+      - `source: brain` → state isn't in memory; brain suggests the
+        top-K next moves. Pick the most plausible (often R, U, F, or
+        their inverses), apply ONE move via apply_moves, then re-call
+        dr_recognize from the new state. Iterate. This is the human
+        flow: when you don't instantly recognize a case, you use
+        trained intuition for a single move, then look again.
 
 5. **POST-DR DECISION** (v14b — research-driven priority):
 

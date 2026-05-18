@@ -31,7 +31,10 @@ from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED, State, _FACE_TURN_CW
 
 _AXIS_LOOKUP = {a.value: a for a in Axis}
+# v33: legacy pickle path kept for save_library() — agent only ever READS
+# from the JSON memory now. The 3.2M-entry pickle was deleted in v32.
 LIBRARY_PATH = Path("checkpoints/dr_pattern_library.pkl")
+MEMORY_JSON_PATH = Path("data/memory/dr_patterns.json")
 
 # (axis_name, co_tuple, marker_tuple) -> list[str] moves to reach DR
 DRLibrary = dict[tuple[str, tuple[int, ...], tuple[int, ...]], list[str]]
@@ -208,17 +211,37 @@ def _slice_marker_from_state(state: State, axis: Axis) -> tuple[int, ...]:
 
 
 def _ensure_loaded() -> DRLibrary:
+    """v33: load the small (~3,657-entry) DR memory from JSON.
+
+    Format: `data/memory/dr_patterns.json` with keys
+    "axis|co_csv|marker_csv" → list of move strings. Covers DR states
+    within 4 moves of solved — the human-visualization scope. States
+    deeper than that are NOT in the library; callers should fall back
+    to brain_suggest (the trained policy) or commit setup moves and
+    re-query from a closer state.
+    """
     global _LIBRARY
     if _LIBRARY is not None:
         return _LIBRARY
-    if LIBRARY_PATH.exists():
-        try:
-            with LIBRARY_PATH.open("rb") as f:
-                _LIBRARY = pickle.load(f)
-        except (pickle.UnpicklingError, OSError):
-            _LIBRARY = {}
-    else:
+    import json
+    if not MEMORY_JSON_PATH.exists():
         _LIBRARY = {}
+        return _LIBRARY
+    try:
+        raw = json.loads(MEMORY_JSON_PATH.read_text())
+    except (json.JSONDecodeError, OSError):
+        _LIBRARY = {}
+        return _LIBRARY
+    lib: DRLibrary = {}
+    for str_key, moves in raw.items():
+        try:
+            axis, co_csv, marker_csv = str_key.split("|")
+            co = tuple(int(x) for x in co_csv.split(","))
+            marker = tuple(int(x) for x in marker_csv.split(","))
+            lib[(axis, co, marker)] = list(moves)
+        except (ValueError, KeyError):
+            continue
+    _LIBRARY = lib
     return _LIBRARY
 
 
