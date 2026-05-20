@@ -2023,7 +2023,19 @@ this attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.
   (WesternSicily v16 wasted 25 tool calls + 1 extra move because the
   agent tried to invert mentally and got it wrong 3 times).
     FINAL_SOLUTION: ["R", "U'", ...]
-- The inverse-of-scramble is the trivial floor and does NOT count.
+- **HARD RULE — inverse-of-scramble is REJECTED**: applying the
+  cube-theoretic inverse of the scramble (each move reversed and
+  negated, e.g. scramble `R U F` → inverse `F' U' R'`) trivially
+  returns the cube to SOLVED. THIS IS NOT AN FMC SOLVE. The harness
+  detects this exact sequence and rejects the submission BEFORE
+  scoring it. A v35 attempt was caught knowingly submitting this and
+  rationalizing "24 moves is good enough"; that path is now closed.
+  If you find yourself with N moves of a verified solve and they
+  happen to equal `[negate(m) for m in reversed(scramble)]`, you do
+  NOT have a solve — go back and find a non-trivial one. The SHIP
+  RULE ("any verified solve under 50 moves beats a timeout") does
+  NOT override this; an inverse-of-scramble "solve" is treated as
+  a DNF and you will be told to keep working.
 
 # Reasoning style
 Before each tool call, narrate in 1-2 sentences: what you observed, what
@@ -2050,6 +2062,33 @@ def _extract_solution(text: str) -> list[str] | None:
     if not isinstance(parsed, list) or not all(isinstance(x, str) for x in parsed):
         return None
     return parsed
+
+
+def _negate_move(m: str) -> str:
+    """Return the move that undoes `m`. R → R', R' → R, R2 → R2."""
+    if m.endswith("'"):
+        return m[:-1]
+    if m.endswith("2"):
+        return m
+    return m + "'"
+
+
+def is_inverse_of_scramble(solution: list[str], scramble: list[str]) -> bool:
+    """v35: detect the inverse-of-scramble cheat.
+
+    The cube-theoretic inverse of a move sequence reverses the order and
+    negates each move. Applying it to the scrambled cube returns SOLVED
+    by definition — but it's the trivial undo, not an FMC solve.
+
+    A v35 incident showed Sonnet submitting this exact sequence as a
+    "24-move solution" even though the system prompt prohibited it.
+    The harness now rejects matches at extraction time so the agent
+    cannot bypass the rule even if the prompt fails to deter it.
+    """
+    if not scramble or len(solution) != len(scramble):
+        return False
+    expected = [_negate_move(m) for m in reversed(scramble)]
+    return list(solution) == expected
 
 
 def _format_text_blocks(blocks) -> str:
@@ -2403,6 +2442,31 @@ def solve(
         text = _format_text_blocks(resp.content)
         proposed = _extract_solution(text)
         if proposed is not None:
+            # v35: reject the inverse-of-scramble cheat at the harness
+            # level. The agent cannot override this regardless of what
+            # the prompt says.
+            if is_inverse_of_scramble(proposed, scramble):
+                transcript.append({
+                    "type": "verify",
+                    "solution": proposed,
+                    "result": {
+                        "solves": False,
+                        "rejected": "inverse_of_scramble",
+                        "reason": "Submitting the inverse of the scramble is the trivial undo and does NOT count as an FMC solve.",
+                    },
+                })
+                feedback = (
+                    "Your proposed FINAL_SOLUTION is the cube-theoretic "
+                    "inverse of the scramble. The harness REJECTS this "
+                    "as a cheat — it's the trivial 'do the scramble "
+                    "backwards' move that any cube does by definition, "
+                    "not an FMC solve. You must construct a NON-TRIVIAL "
+                    "solution. Keep working with the slot state via the "
+                    "tools; do not resubmit the scramble inverse."
+                )
+                messages.append({"role": "user", "content": feedback})
+                transcript.append({"type": "user", "content": feedback})
+                continue
             check = state.verify_solved(scramble, proposed)
             transcript.append({"type": "verify", "solution": proposed, "result": check})
             if check["solves"]:
