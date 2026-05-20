@@ -349,7 +349,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run sim mode on a scramble corpus.")
     parser.add_argument("--model", default=simulated_fmc.DEFAULT_MODEL)
     parser.add_argument("--wall-limit-s", type=float, default=900.0)
-    parser.add_argument("--max-tool-calls", type=int, default=50)
+    parser.add_argument("--max-tool-calls", type=int, default=150,
+                        help="v35: raised from 80 to 150. Without the named-"
+                             "trigger shortcuts of v34, drafts need more "
+                             "BFS-and-commit iterations to navigate DR.")
     parser.add_argument("--out-dir", type=Path, default=Path("runs/corpus_eval"))
     parser.add_argument("--extra-random", type=int, default=0,
                         help="Append N freshly-generated WCA-style scrambles to the default 4.")

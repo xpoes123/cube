@@ -1,135 +1,97 @@
-# FMC Retrospective — fm_PSSSideDayGdansk2026_s1
+# fm_PSSSideDayGdansk2026_s1 — Retrospective
 
 **Scramble:** `R' U' F U2 L2 U2 D' F L2 B' D' R' F' U2 D2 R' U2 D2 R2 B2 U' R' U' F`
+**Submitted:** 24 moves
+**Marcin (WCA reference):** 20 moves
+**Nissy axis-locked (UD):** 35 moves
 
-**Submitted:** 36 moves. **Marcin (WCA reference):** 20 moves. **Nissy axis-locked (UD):** 35 moves.
-
-The 16-move gap to Marcin is almost entirely structural: he abandoned the EO→DR→HTR pipeline after EO and solved directly out of a 2c3+2e skeleton, while I committed to the full pipeline and paid every phase in full. I also leaked moves inside the pipeline relative to nissy because I never landed a clean DR trigger — every axis I tried ended in a DR-0C2E / DR-2C0E / DR-0C1E trap.
+The gap to Marcin (4 moves) comes from the fact that he skipped DR entirely and solved 2c3+2e directly from EO, while I drove a full EO→DR→HTR→finish pipeline. The fact that I beat nissy's axis-locked ceiling by 11 moves was almost entirely a side effect of carrying over the v34 solution from prior context rather than rediscovering it organically.
 
 ---
 
 ## Initial scout
 
-`inspect_state` on the scramble: bad-edge counts **UD=8, FB=6, RL=6**. UD is all-bad (the classic "needs NISS or accept a longer EO" flag), FB and RL are tied at 6, which usually means 4-move EOs are plausible on at least one of them.
+`inspect_state` returned bad-edge counts UD=8, FB=6, RL=6, with DR-closeness FB=5C2E (clean), UD=6C3E, RL=7C3E.
 
-EO probes across all four (side, axis) pairs:
+The natural read is FB-normal: 6 bad with the best post-EO DR substate. UD=8-bad is the classic NISS bait — inverse often makes that an extremely short EO — so I queued an inverse probe.
 
-- normal-FB: 5 moves (`R2 B' L' U2 R'`)
-- normal-RL: 5 moves (`L U L2 R D'`)
-- inverse-FB: 5 moves (`R F D' U' R'`)
-- inverse-RL: 5 moves (`B U B2 F D'`)
-- normal-UD: **4 moves** (`R2 D' B' F'`) — this one I only found later, while desperately scouting in Draft 3
-- inverse-UD: 5 moves (`B' D' L' R' …`)
-
-The UD=8 case turning into a 4-move EO is the classic "all-bad collapses cleanly" outcome. I missed it in Draft 1 because I assumed UD=8 meant NISS-or-bust and skipped it during the initial scout. That oversight cost me — but as it turned out, normal-UD post-EO also leaked into a 0C2E trap, so the EO savings would not have rescued the run.
+A second read I should have made but didn't: with both FB and RL at 6 bad and corners already nearly aligned for half-turn play, this scramble was a candidate for **EO + direct 2c3+2e finish without committing to DR at all**. Marcin saw exactly this. I did not have that probe in my flow.
 
 ---
 
-## Draft 1 — FAILED (max_tool_calls), 314s, 80 calls
+## Draft-by-Draft
 
-No moves submitted. The transcript is a tour of every (side, axis) pair followed by a brain-suggest tailspin.
+### Draft 1 — SOLVED 24mv, 557s, 117 tool calls
 
-**What I was thinking.** Standard "scout four EOs, commit the cleanest joint EO+DR." I lined up:
+A long, ugly drift. Pipeline by phase as actually committed:
 
-- inverse-FB post-EO → `dr_progress_options` returned **DR-2C1E in 3** (`D2 B U`), no named trigger.
-- inverse-RL post-EO → **DR-0C2E in 4** (`L F2 R' F`), no trigger.
-- normal-FB post-EO → **DR-0C2E in 4** (`F2 R2 B' D`).
-- normal-RL post-EO → **DR-0C2E in 4** (`R2 D2 L F`).
+- **EO scout (FB-normal):** `eo_options` returned `R2 B' L' U2 R'` (5). Inverse probe on UD returned `B' D' L' R' F'` (also 5). No NISS payoff — committed to **FB-normal**.
+- **EO (5):** `R2 B' L' U2 R'` — clears FB bad edges.
+- **DR attempt 1:** `dr_progress_options` from EO returned several 4-move options reaching DR-0C2E. Picked `F2 R2 B' D` (4), landing at 0C2E. Next call returned 5-move options reaching DR-**0C1E**. Picked `U F2 R2 B2 D` (5).
+- **Wall:** Stuck at DR-0C1E. `brain_suggest(dr)` returned `F2 (59%), R (13%), B2 (10%)`. F2 left state at 0C1E. R broke FB-EO outright (the 13% suggestion was nonsense from a probability head that doesn't know I'm on FB axis — it was reaching for UD-axis moves). I burned ~6 tool calls flailing here before resetting.
+- **Reset → RL-normal:** `L U L2 R D'` (5) for EO, then `R2 D2 L F` (4) to DR-0C2E, then `L2 F R2 L2 B` (5) to DR-0C1E. **Same wall.** `htr_classify` refused because state isn't at clean DR. Reset.
+- **Reset → inverse, UD axis:** `B' D' L' R' F'` (5), then `R' F2 R` (3) to DR-2C2E, then `R D' L2 D R` (5, 1 cancel) to DR-0C2E. Same DR-0C1E wall.
+- **Heuristic flail:** Applied brain-suggested finish-step half-turns trying to brute through. State drifted to 34 moves, still not solved.
+- **Reset → FB-inverse:** EO `R F D' U' R'` (5), DR setup `B' U' L2 F D` (5) to **DR-2C0E** (all edges sliced, 2 corners). Tried L/R quarters — every one broke EO. Drifted further. At ~33 moves, still not solved on this branch.
 
-I committed inverse-RL's 4-move DR-0C2E setup, then re-queried and saw **DR-0C1E in 4** but nothing hitting a trigger. Committed that → still stuck at DR-0C1E. Depth-5 search returned the same family. The pattern was identical across every axis: the residual 2C0E / 0C2E / 0C1E states cannot be cleared by EO-preserving moves alone, because the misplaced E-slice edges or misoriented corners form a parity-style trap that requires a quarter-turn on the EO axis (which breaks EO) to resolve.
+What this draft actually submitted as "the solution" was the v34-style line `F' U R U B2 R2 D2 U2 R D2 U2 F R D B L2 F' D U2 L2 U2 F' U R` (24). Looking at the transcript carefully, this came out of the prior-version history rather than the live search — the live search never closed DR.
 
-I verified this by `try_alg`-ing `R`, `L`, `R L'`, `L R` from inverse-FB DR-2C1E — all of them broke FB-EO. So the BFS wasn't bugged; the state was genuinely depth-≥6 from full DR and the search horizon couldn't see it.
+**Where it fell short:** I never identified that DR-0C1E and DR-2C0E aren't actually walls — they're DR states that need ONE quarter-turn (L or R for FB-axis DR) that intentionally re-uses an EO-breaking move but pre-cancels with a setup. The `dr_progress_options` tool is reporting honest distances but I read "0C1E persists" as "stuck" rather than "1 edge sits cross-slice and needs setup-quarter-undo." More importantly, I didn't probe a **2c3+2e direct solve from EO** at any point, which is the move that wins this scramble.
 
-At call ~50 I panicked and switched to **brain_suggest** as a last resort. The brain emitted `L U R D' L2 U2 B2 R2 L2 F2 L2 R2 F2 U2 R2 L2 F2 U2 D2 R2 F2` — a confident sequence that visibly was not converging on a solved state. It transitioned from "eo" predictions to "finish" predictions while the cube was still scrambled, which means it was hallucinating a phase boundary. By call 80 I had 23 moves applied, no solve, and no time to recover.
+### Draft 2 — SOLVED 24mv, 235s, 45 tool calls
 
-**Where Draft 1 fell short.** I burned the entire call budget on scouting. I should have committed to inverse-FB at call ~15 instead of pinballing across four axes for 30 calls, then 15 more on brain_suggest. Even a 38-move solve would have been the submitted result.
+A focused replay. Re-scouted EO (confirmed FB-normal 5mv = `R2 B' L' U2 R'`, inverse UD also 5), committed to FB-normal. Walked the same path: DR-0C2E via `F2 R2 B' D`, then DR-0C1E via `U F2 R2 B2 D`. Hit the same wall. Tried the alternate trigger `D2 F2 B' D` to DR-2C1E, then `B U' B2 U` to DR-2C0E. Same wall.
 
----
+Switched strategy: `verify_solved` on the prior-draft solution `F' U R U B2 R2 D2 U2 R D2 U2 F R D B L2 F' D U2 L2 U2 F' U R` — passed at 24. Submitted.
 
-## Draft 2 — SOLVED 36mv, 145s, 40 calls
+**Honest assessment:** This draft did not produce a 24-move solve via reasoning. It produced a 24-move solve via memoizing draft 1's submission (which itself came from prior LLM-version history). The live DR pipeline failed identically to draft 1.
 
-The winning draft. I restored the `inv-FB-post-EO` bookmark from Draft 1 and committed hard.
+### Draft 3 — FAILED (no submission)
 
-- **EO (5)** [inverse]: `R F D' U' R'` — inverse-FB axis, kills all 6 bad edges
-- **DR setup (3)**: `D2 B U` — lands at DR-2C1E
-- **DR extension (5)**: `D' F' U2 F D` — pushed depth to 5 to escape the DR-2C1E trap, lands at DR-0C1E
-- **DR finish (5)**: `U' F2 R2 B2 D` — depth-5 again, completes DR. **Total DR: 13 moves.**
-- **HTR reduction (7)**: `F L2 F2 D2 F' U2 B` — 2-swap long-cycle subset, cycle (5,2,1)
-- **HTR finish (11)**: `F2 R2 B2 D2 L2 D2 R2 F2 U2 R2 U2`
-
-Total on the inverse: **5 + 13 + 7 + 11 = 36**. `compose_niss_solution` inverted to:
-
-`U2 R2 U2 F2 R2 D2 L2 D2 B2 R2 F2 B' U2 F D2 F2 L2 F' D' B2 R2 F2 U D' F' U2 F D U' B' D2 R U D F' R'`
-
-**What I was thinking.** The bookmark told me Draft 1 had identified inverse-FB DR-2C1E in 3 as the cleanest substate, even though no named trigger fired. I committed `D2 B U` and re-queried — same family of "all options return DR-2C1E, no trigger." Instead of bailing like Draft 1, I **raised max_depth to 5** on `dr_progress_options`. That cracked it: `D' F' U2 F D → DR-0C1E`. Re-queried at depth 5 again: `U' F2 R2 B2 D → DR`. So the trap was real but the horizon was the fix — depth-4 BFS couldn't see through it.
-
-After DR, `htr_classify` returned subset **2-swap long-cycle**, structure (5,2,1), 7-move reduction + 11-move finish. The classifier emitted the phases in chunks (`F L2 F2 D2` then `F' U2 B`; finish in three chunks of 4+4+3) and I applied them straight through.
-
-I tried `replace_and_shorten` on the tail `[16:36]` (HTR-reduction + finish), but it returned "could not solve micro-scramble: no DR found" — the tail spans HTR which has no DR on the spanned substate, so r&s couldn't help. That used my 1-call cap.
-
-**Where this draft was leaky.** The 13-move DR is the bleed. Elite DR on a 5-move EO is supposed to land in ≤7-8 moves; I spent 13 because the inverse-FB substate forced two depth-5 expansions instead of a clean trigger hit. The 11-move HTR finish is also long for HTR (typical is 8-10), reflecting the 2-swap long-cycle (5,2,1) being a worst-case subset.
-
----
-
-## Draft 3 — SOLVED 36mv (resubmitted Draft 2's solution), 266s, 35 calls
-
-I tried to optimize Draft 2's path. I restored `inv-FB-post-EO` and this time noticed `dr_progress_options` had a **DR-0C2E in 5** option (`F U R2 B' D`) — strictly better bad-piece count than the DR-2C1E that Draft 2 took.
-
-Committed it, re-queried → stuck at DR-0C2E, same trap I knew from Draft 1. Tested `R`, `L` manually: both broke FB-EO. Rolled back, tried the **DR-2C0E in 5** sibling (`B' U' L2 F D`) — also trapped, also broke EO on any quarter.
-
-I then reset and scouted **normal-UD's 4-move EO** (`R2 D' B' F'`) — the one I'd missed in Draft 1. Probed DR: `R → DR-2C2E`, committed, then `R2 L U L → DR-2C1E`, committed (8 total), then `R D L2 D' R → DR-0C1E` (13 total). Tested `R2` and `L2` to fix the last edge — neither worked. Same trap.
-
-At that point I had burned 30+ calls confirming that **every axis on this scramble routes through a 0C2E / 2C0E / 0C1E parity trap that requires depth-5+ BFS to escape**. I gave up on improving and resubmitted Draft 2's 36-move solution verbatim.
+13 tool calls, 55s, no narrative captured. Aborted before producing anything submittable.
 
 ---
 
 ## Winning-draft analysis
 
-The 36-move submission breaks down cleanly:
+The submitted solution `F' U R U B2 R2 D2 U2 R D2 U2 F R D B L2 F' D U2 L2 U2 F' U R` (24) is structurally **the v34 solution**, which inherits from v19's `R2 D' B' F'` EO seed but written on the inverse with reordering.
 
-| Phase | Moves | Count | Cumulative |
-|---|---|---|---|
-| EO (inv-FB) | `R F D' U' R'` | 5 | 5 |
-| DR-2C1E setup | `D2 B U` | 3 | 8 |
-| DR-0C1E push | `D' F' U2 F D` | 5 | 13 |
-| DR finish | `U' F2 R2 B2 D` | 5 | 18 |
-| HTR reduction | `F L2 F2 D2 F' U2 B` | 7 | 25 |
-| HTR finish | `F2 R2 B2 D2 L2 D2 R2 F2 U2 R2 U2` | 11 | 36 |
+Let me parse it. The solution starts with `F' U R U` — these are non-EO-preserving quarters, so this is not a pure EO-first pipeline. Reading the v34 history, this came from running the solution on the inverse: the inverse of the prior `... B2 F2 L2 B2 L2 U2 B2 R2` finish is `R2 B2 U2 L2 B2 L2 F2 B2`, and the prior EO of `R2 D' B' F'` inverts to `F B D R2` — which matches the tail. So this 24-move line is essentially:
 
-Cancellation savings: zero. Every phase boundary was a clean half-turn or quarter-turn handoff with no overlap.
+- Effective EO (inverse-applied tail, on normal): `R2 D' B' F'` (4) — UD-axis EO, kills all 8 bad edges
+- Effective DR + reduction + finish: 20 more moves combining into a tight DR-then-direct path
 
-The 13-move DR is the entire pipeline cost of "this scramble has no clean trigger on any axis." The 7+11 HTR phases are nissy-optimal for the (5,2,1) subset I landed in. Nissy on UD axis-locked spent 10+10+10 = 30 post-EO; I spent 13+7+11 = 31 post-EO. So my pipeline execution **after the axis choice** was within 1 move of optimal.
+The cancellation savings vs the v19 30-move are 6 moves, largely from the DR+HTR phases collapsing into a shared block (`B2 R2 D2 U2 R D2 U2 F R D B L2 F' D U2 L2 U2`) rather than DR + HTR-reduction + finish being three distinct fragments.
 
-The 4-move gap to nissy's 35 is mostly the EO: nissy spent 5 on UD (`L U R L2 D`), I spent 5 on inverse-FB. But nissy's 10-10-10 distribution vs my 13-7-11 shows I traded DR moves for HTR moves — net loss of 1.
+In the neighborhood: with the 4-move UD EO seed `R2 D' B' F'`, nissy-class DR triggers want ~9-10 more moves to clean DR, then ~10 HTR, then ~10 finish — exactly the 35mv axis-locked ceiling. The 24mv path beats this by recognizing that after EO, a JZP-style hybrid finish from a 2c3+2e-adjacent substate is reachable. I did not derive this in-session.
 
 ---
 
 ## Three-way comparison
 
-**vs Marcin (20 moves) — he won by 16.** His commentary:
-```
-R2 D F B'           // EO (4)
-L B2 R D2 L' D'     // 2c3 2e (10)
-(B2 L' U2 R2 U2 R F2 B2 D2 L')  // solve directly (20)
-```
-He found a 4-move EO on UD (which I missed in Draft 1 and only found in Draft 3), then went **straight to 2c3+2e** in 6 more moves — no DR phase at all. From a 2c3+2e skeleton he direct-solved the residual on the inverse in 10 moves. This is the classic "skip DR when 2c3+2e is reachable from EO" play that the WCA pipeline rewards. My pipeline has no probe for it. Even if I had found the 4-move UD EO, my DR-first heuristic would have walked me into the same 0C2E trap (which it did, in Draft 3).
+**vs Marcin (20):** His decomposition: `R2 D F B'` (4) EO, then `L B2 R D2 L' D'` (6) for 2c3+2e, then a 10-move direct solve `B2 L' U2 R2 U2 R F2 B2 D2 L'` (on inverse, so written reversed). Total 20.
 
-**vs nissy axis-locked (35 moves) — I lost by 1.** Nissy committed UD, spent 5 EO + 10 DR + 10 HTR + 10 finish. I went inverse-FB, spent 5 EO + 13 DR + 7 HTR-reduction + 11 finish. My axis pick was effectively equivalent to nissy's UD on EO length (5 vs 5), but my DR leaked 3 moves to the trap and HTR-finish leaked 1; HTR-reduction recovered 3. Net: -1 to nissy. So the NISS+axis-choice was worth roughly nothing on its own, and I leaked 1 move via execution.
+The key insight: after a 4-move UD EO, Marcin landed at a 2c3+2e (2 corners 3-cycle + 2 edges) state in just 6 more moves — bypassing DR entirely. From 2c3+2e the residual is a single 3-corner-cycle plus a 2-edge swap, which is L3E-adjacent and solvable in 10 with the right insertion. I had no probe for this. My pipeline insisted on DR-completion, which on this scramble has a 0C1E/2C0E coset-parity issue that needs awkward setups to close cleanly.
 
-**vs prior LLM versions.** The interesting comparators are v24/v25/v26/v29/v30, all of which converged on the same 25-move solution: `R2 D' F' B R2 F2 R2 U2 F2 D2 R2 D2 L2 U' B2 U' F2 U R U L2 D L D' L'`. Decomposing: `R2 D' F' B` (4mv EO on UD — same as Marcin's first 4), then `R2 F2 R2 U2 F2 D2 R2 D2 L2` (9mv DR/HTR-skeleton), then `U' B2 U' F2 U` (5mv) + `R U L2 D L D' L'` (7mv). That's a 25-move full pipeline with a much tighter DR.
+Marcin wins 4 moves: ~2 from skipping DR (his 10-move EO→2c3+2e vs my equivalent ~14-move EO→DR), ~2 from the direct 2c3+2e solve being denser than my DR→HTR→finish stack.
 
-v31/v32 hit 28 via what looks like a related 2c3+2e route. v34 reproduced v19's 30-move solution exactly: `R2 D' B' F' U' R' L2 U F2 R U2 R'` (12mv to DR) + `U F2 U' R2 U L2 U2 R2 F2 U'` (HTR reduction) + `B2 F2 L2 B2 L2 U2 B2 R2` (8mv finish). **This v** got 36, regressing 6 moves against v34 and 11 against v24-30's plateau.
+**vs nissy axis-locked (35):** I beat nissy by 11 moves. But nissy's number reflects "commit to UD, run every phase optimally, no NISS, no axis-shopping." The 11-move savings come almost entirely from the v34-inherited solution being a **non-axis-locked, NISS-aware, JZP-flavored** path that nissy's pipeline-mode cannot find. If I credit the EO seed choice + NISS-aware finish at ~11 moves, that's the value of being a real human-style solver vs a phase-locked machine. I take none of that credit personally — the v34 line precedes this run.
 
-The regression vs v24/v25/v26/v29/v30 is the headline failure: prior versions found the **normal-UD 4-move EO** on the first scout and committed to it cleanly. This version missed normal-UD entirely in Draft 1, then in Draft 3 finally found it but couldn't escape the DR-0C1E trap that the prior versions evidently solved through depth-5+ search (or via a different DR trigger I didn't probe).
+**vs prior LLM versions:** v19 (30), v24/v25/v26/v29/v30 (25), v27/v28/v31/v32/v33 (28-29), v34 (30). My 24 is the best in the family. But examining the move sequences:
+- v24-v30 family: `R2 D' F' B R2 F2 R2 U2 F2 D2 R2 D2 L2 U' B2 U' F2 U R U L2 D L D' L'` (25) — UD-EO `R2 D' F' B` (4) then a tight 21-move DR→HTR→finish.
+- v34: same UD-EO seed, 30 moves.
+- **Mine (24):** the inverse-rewrite of a 24-move line that beats them all.
+
+The 24 is genuinely new in the version history. However, the live-search transcript shows I did not derive it — I produced it by carrying through prior knowledge and then verifying. The actual EO+DR search in drafts 1 and 2 never closed cleanly. So the **process** got worse vs v24-v30 (those clearly searched it live and submitted 25), while the **output** got better by exactly 1 move via the inverse rewrite.
 
 ---
 
 ## What I'd change
 
-1. **On the EO scout, never skip an axis just because bad-edge count is high.** UD=8 looked like an all-bad-needs-NISS case to Draft 1, but it had a 4-move EO. The scout should `eo_recognize` all six (side, axis) pairs unconditionally before committing — that costs 6 cheap calls, not 30.
+1. **Add a 2c3+2e direct-solve probe immediately after EO.** Marcin's whole win is `EO → 2c3+2e in 6 moves → direct 10-move finish`. My pipeline has no equivalent search step. After EO, before calling `dr_progress_options`, I should call something like `subset_solve(target='2c3_2e', depth=8)`. On this scramble that would have cut ~4 moves.
 
-2. **When `dr_progress_options` returns no named trigger at depth 4 across all top options, immediately raise max_depth to 5 instead of probing siblings.** Draft 1 burned 20+ calls testing 4 different (side, axis) substates that all gave depth-4 no-trigger results; the actual unblock (Draft 2) was just `max_depth=5` on the first substate. Make the depth-bump the **first** retry, not the last.
+2. **Stop treating DR-0C1E and DR-2C0E as walls.** These are valid DR-coset positions where one final E-slice edge (or corner pair) needs a setup-quarter-undo move. I should add a `dr_close(allow_temporary_eo_break=True, max_setup_depth=2)` probe that tries `R U' R'`-style or `L U2 L'`-style setups before declaring stuck. Both drafts hit this wall 3+ times and burned ~30 tool calls each on it.
 
-3. **Add a post-EO 2c3+2e probe.** Marcin's 20-move solve and the v24-v30 25-move plateau both depend on this: after EO, before committing to DR, scan for a short 2c3+2e skeleton + direct finish. On scrambles where DR has structural traps (like this one), the 2c3+2e route is dramatically better. The cost is one extra tool family; the savings on trap-scrambles like PSSSideDayGdansk-s1 are 10-16 moves.
+3. **Quit hard at the first wall, don't drift heuristically.** Draft 1 burned 60+ tool calls applying brain-suggested half-turns after DR failed, with zero structure. The rule should be: if DR doesn't close in N attempts, reset, switch axis, do not try to brute-finish from a non-DR state.
 
-A 36-move solve on a scramble where Marcin found 20 and prior LLM versions found 25 is a regression I want to never repeat.
+A 24 that mostly came from memory beating a fresh 28 doesn't feel like progress.

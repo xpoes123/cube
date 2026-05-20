@@ -1217,9 +1217,18 @@ def _tool_schemas() -> list[dict]:
                 "transformer trained on optimal-move distributions from nissy. "
                 "Unlike policy_intuition (history-sequence-conditioned), this "
                 "directly conditions on the current cube state and outputs only "
-                "moves that are legal for the named step. Falls back to "
-                "policy_intuition if the brain checkpoint for that step is not "
-                "trained yet (response includes `from_brain: false`)."
+                "moves that are legal for the named step.\n\n"
+                "**v35 USAGE WARNING**: this tool is a LAST RESORT for DR. "
+                "Calling brain_suggest in a tight loop ('apply one move, "
+                "re-query, apply one move') burned through 80 tool calls "
+                "without converging in v35 smoke testing. For DR navigation "
+                "use `dr_progress_options` — it shows you a depth-4 horizon "
+                "of options with state-readable progress counts, which is "
+                "how a human actually picks the next move. Reserve "
+                "brain_suggest for the EO phase (where lookahead works well) "
+                "and for the rare case where dr_progress_options returns "
+                "options that ALL look bad and you want a sanity-check second "
+                "opinion on a single next move."
             ),
             "input_schema": {
                 "type": "object",
@@ -1863,6 +1872,14 @@ solves in v11-v13.
    reading the state.
 
    **The v35 search-and-commit loop**:
+
+   **DO NOT brain-walk DR.** Calling `brain_suggest(step='dr')` and
+   then applying one move and re-querying is the most expensive way
+   to navigate the cube. It burns tool calls (80-call wall is real)
+   without consulting the BFS horizon. Always use `dr_progress_options`
+   for DR navigation. Only use `brain_suggest` for the EO phase or as
+   a tie-breaker after `dr_progress_options` has shown you the top-k
+   options and you want a second opinion on which one to pick.
 
    a) Call `dr_progress_options(slot, axis=X, max_depth=4, k=5)`.
       Returns up to k continuations sorted by total bad pieces
