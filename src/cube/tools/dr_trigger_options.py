@@ -21,11 +21,7 @@ from __future__ import annotations
 
 from collections import deque
 
-from cube.classifier.dr_heuristics import (
-    count_top_pairs,
-    is_jzp_eligible,
-    trigger_label,
-)
+from cube.classifier.dr_heuristics import trigger_label
 from cube.classifier.features import Axis, co_count, is_eo_solved, slice_misplaced_count
 from cube.engine.moves import Face, Move, Turn
 from cube.engine.notation import parse_alg
@@ -194,6 +190,12 @@ def dr_trigger_options(
                 pre_state = state.apply_alg(list(path)) if path else state
                 pre_c = co_count(pre_state, ax)
                 pre_e = slice_misplaced_count(pre_state, ax)
+                # v34: oracle fields (jzp_eligible, top_pairs_on_inverse,
+                # expected_total_to_solved) removed. The LLM must evaluate
+                # each candidate itself via try_alg + inspect_state, using
+                # memorized substate priors. pre_trigger_signature stays —
+                # it's a visual label (XCYE counts) the cuber reads off
+                # the state directly, not an engine-computed score.
                 found[label] = {
                     "trigger_family": label,
                     "canonical_alg": alg_str,
@@ -202,8 +204,6 @@ def dr_trigger_options(
                     "trigger_length": len(moves),
                     "total_to_dr": len(path) + len(moves),
                     "pre_trigger_signature": trigger_label(pre_c, pre_e),
-                    "jzp_eligible": is_jzp_eligible(pre_state),
-                    "top_pairs_on_inverse": count_top_pairs(pre_state),
                 }
 
     # v31b: BFS with global dedup, depth cap, state cap, family early-stop.
@@ -245,12 +245,15 @@ def dr_trigger_options(
         "max_setup_searched": max_setup,
         "states_explored": states_visited[0],
         "note": (
-            f"DFS depth ≤{max_setup} (hard-capped — human visualization scope). "
+            f"BFS depth ≤{max_setup} (hard-capped — human visualization scope). "
             f"Explored {states_visited[0]} unique states, stopped after "
             f"{len(options)} trigger families found (early-bail at "
-            f"{EARLY_STOP_N_FAMILIES}). Options in DFS-discovery order — NOT a "
-            f"ranked oracle. If 0 options: commit a setup move you think looks "
-            f"promising via apply_moves, then re-call from the new state. "
-            f"Read jzp_eligible and pre_trigger_signature for substate quality."
+            f"{EARLY_STOP_N_FAMILIES}). Options in BFS-discovery order — NOT a "
+            f"ranked oracle. There is no expected_total_to_solved field — "
+            f"you must estimate post-DR cost yourself from the substate "
+            f"signature (e.g. 3C2E typically 6-8mv post-DR, 4C4E 12-14mv). "
+            f"To check a candidate, try_alg(setup+trigger) then "
+            f"inspect_state to read the residual. If 0 options: commit a "
+            f"setup move you think looks promising and re-call."
         ),
     }

@@ -1177,16 +1177,18 @@ def _tool_schemas() -> list[dict]:
             "name": "dr_trigger_options",
             "description": (
                 "List named DR-trigger options from the current EO-solved state "
-                "on ANY axis (UD/FB/RL — v15 supports all three). Returns a "
-                "ranked menu: each entry is a NAMED trigger family (DR-4C4E 'R', "
-                "DR-3C2E 'R U R'', DR-4C2E 'R U2 R'', DR-7C8E 'R U L', etc.) "
-                "with its setup_moves, total_to_dr, expected_total_to_solved "
-                "(DR + empirical HTR-finish), jzp_eligible flag, and "
-                "top_pairs_on_inverse count. Per-axis trigger letters: "
-                "UD uses R+U, FB uses U+F, RL uses F+L (cube-symmetry equivalents). "
-                "Pick by expected_total_to_solved (already sorted lowest-first). "
-                "Use this INSTEAD of dr_recognize when surveying any axis — it "
-                "surfaces the decision a champion makes. Cost: 8s simulated."
+                "on ANY axis (UD/FB/RL). Each entry is a NAMED trigger family "
+                "(DR-4C4E 'R', DR-3C2E 'R U R'', DR-4C2E 'R U2 R'', DR-7C8E "
+                "'R U L', etc.) with `setup_moves`, `setup_length`, "
+                "`trigger_length`, `total_to_dr`, and `pre_trigger_signature` "
+                "(the XCYE substate label readable off the cube). "
+                "v34: NO ORACLE FIELDS — no expected_total_to_solved, no "
+                "jzp_eligible, no top_pairs_on_inverse, no ranking. Options "
+                "are returned in BFS-discovery order. To compare candidates, "
+                "try_alg the (setup + trigger), inspect_state the residual, "
+                "and estimate post-DR cost from your memorized substate priors. "
+                "Per-axis trigger letters: UD uses R+U, FB uses U+F, RL uses "
+                "F+L. Cost: 5s + 0.003s per state explored."
             ),
             "input_schema": {
                 "type": "object",
@@ -1367,7 +1369,29 @@ You are an expert Rubik's Cube FMC solver in a SIMULATED COMPETITION.
   first time you see a subset you 'learn' it ({cost_subset_miss}s); future
   uses are nearly free ({cost_subset_hit}s). So get to DR, identify the
   subset with htr_subset, then lookup_subset_finish.
-- Call budget_status whenever you want to see how much time you have left.
+- Call budget_status whenever you want a full breakdown.
+
+# v34: TIME AWARENESS (pace yourself like a real competitor)
+
+Every tool result you receive now includes a `_meta` block with these
+fields:
+  - `sim_remaining_s`        — of 3600s WCA budget
+  - `sim_fraction_left`      — 0.0 to 1.0
+  - `wall_remaining_s`       — real clock for the model API
+  - `tool_calls_remaining`   — of the per-attempt cap
+  - `urgency`                — one of: ample, moderate, low, critical
+
+`urgency` is computed from sim_fraction_left:
+  - ample    (>60% left)  → explore broadly, scout alternates, NISS freely
+  - moderate (30-60%)     → commit to your best branch, no more scouting
+  - low      (10-30%)     → no new branches; finish the current pipeline
+  - critical (<10%)       → ship whatever solves, even if 35+ moves
+
+Read `_meta` on every tool result. Verbalize it when it changes your
+plan: "I'm at sim_remaining=600s with no DR yet — switching to ship mode,
+taking the 4C4E even though 3C2E might be cleaner, no time to scout."
+A competitor who burns 50 minutes scouting and runs out of time scores
+DNF. A competitor who ships a 32-move solve at minute 55 scores 32.
 
 # FMC technique reference (use this vocabulary in your narration)
 
@@ -1507,14 +1531,12 @@ For each axis, inspect_state reports a `dr_closeness_per_axis` block:
   the DR-XCYE label that champions recite. (4, 4) = DR-4C4E (R trigger),
   (4, 2) = DR-4C2E (R U2 R'), (3, 2) = DR-3C2E (R U R' / R U' R'),
   (7, 8) = DR-7C8E (R U L), etc.
-- `jzp_eligible` (UD only): boolean — a JZP state has dramatically shorter
-  DR; even normally-bad cases like 2C6E/4C6E become viable. JZP requires:
-  no U/D corner stickers on R/L, no E-slice edges in M-slice, even
-  unoriented corners. If JZP-eligible, lean toward this axis.
-- `top_pairs_on_inverse` (UD only): Wen's pairs-tracing count. 2+ pairs
-  preserved on inverse = strong NISS-switch signal.
-- `arm_other_axis`: distance from JZP on the OTHER axis after NISS.
-  Lower numbers predict better post-switch DR.
+
+v34 NOTE: oracle-flavored DR signals (`jzp_eligible`, `top_pairs_on_inverse`,
+`expected_total_to_solved`) have been REMOVED from tool outputs. You evaluate
+trigger candidates the way a human does — try_alg the (setup + trigger),
+inspect_state, look at the residual, estimate finish length from the
+substate priors below. Nothing computes the answer for you.
 
 For HTR (post-DR), `htr_closeness`:
 - `qt_corners` (0-5): primary HTR-distance signal. 0qt = already at HTR
@@ -1525,9 +1547,9 @@ For HTR (post-DR), `htr_closeness`:
 
 After your initial EO scan, ALWAYS also check the inverse frame for each
 axis you might use. Use niss_flip + eo_pattern_lookup on the inverse to
-compare. If `top_pairs_on_inverse ≥ 2` OR EO is ≥1 move shorter on
-inverse, the inverse frame is the better solving direction. NISS is
-cheap (~5s); always check it.
+compare. If EO is ≥1 move shorter on inverse, OR the inverse-side DR
+substate looks materially cleaner when you try_alg into it, the inverse
+frame is the better solving direction. NISS is cheap (~5s); always check it.
 
 # Human Tools (v11 — strict constraints)
 You are NOT a brute-force search engine. You have a HUMAN solver's tools:
@@ -1574,16 +1596,16 @@ inferior branches.
 
 ### Exemplar B — Picking the longer DR for a cleaner substate
 > Post-EO on the inverse-FB axis. dr_trigger_options(axis='FB') returns
-> three candidates:
-> - DR-4C4E (U): 1mv setup, expected_total 11. Tempting but the
->   substate is the worst case.
-> - DR-3C2E (U F U'): 3mv setup, expected_total 9 — 2 moves CHEAPER
->   net despite 2 extra DR-setup moves.
-> - DR-2C4E (U L2 U): 3mv setup, expected_total 10.
-> Taking DR-3C2E. Length of DR is a red herring; what matters is
-> dr_moves + htr_moves + finish_moves, and the 3C2E substate is worth
-> ~3 moves of credit against any longer-DR comparison. A 4C2E DR
-> substate at zero-setup-to-HTR is similarly worth that credit.
+> three candidates (BFS-discovery order, no oracle ranking):
+> - DR-4C4E (U): 1mv setup. Tempting on length but substate is the
+>   worst case — priors say 12-14mv post-DR.
+> - DR-3C2E (U F U'): 3mv setup. 3C2E priors are 6-8mv post-DR.
+> - DR-2C4E (U L2 U): 3mv setup. 2C4E priors are 10-12mv post-DR.
+> I try_alg each (setup+trigger), inspect_state the residual. The 3C2E
+> residual looks textbook clean — 3 misoriented corners visible across
+> the U layer, 2 slice edges in their slots. Total estimate ~3+8=11
+> vs 4C4E ~1+13=14. Taking DR-3C2E. Length of DR is a red herring;
+> what matters is dr_moves + post_dr.
 
 ### Exemplar C — Branch journal with explicit rejection rationale
 > Logging branches as I scout.
@@ -1611,9 +1633,10 @@ state out loud the candidates you considered and WHY you rejected the
 others, e.g.:
 
   "EO axes considered: UD=2bad/1mv, FB=4bad/3mv, RL=8bad/4mv → UD wins."
-  "DR triggers on UD: 4C4E (1mv, expected_total=11), 3C2E (4mv, JZP,
-   expected_total=9) → take 3C2E, it's 2 moves cheaper TOTAL despite
-   3 extra DR setup moves."
+  "DR triggers on UD: 4C4E (1mv, residual priors 12-14mv = ~14 total),
+   3C2E (4mv, residual priors 6-8mv = ~11 total) → take 3C2E, 3 moves
+   cheaper despite the longer DR setup. I estimated post-DR from the
+   substate priors table; no oracle field tells me the answer."
 
 This is BOTH the deliverable (the transcript reads like a champion's
 walkthrough) AND a forcing function — verbalizing alternatives prevents
@@ -1693,21 +1716,26 @@ solves in v11-v13.
    = 14mv. **The 3C2E saves 4 moves** even though its DR is 3 longer.
    This is the single biggest move-count lever after EO/axis choice.
 
-   **JZP WEIGHTING (v28 — strong signal)**: `jzp_eligible: true` HALVES
-   the post-DR cost. A JZP-eligible 5-move 3C2E (5mv to DR + 3-5mv post)
-   ≈ 8-10mv total beats a non-JZP 1-move 4C4E (1mv + 12-14mv) ≈ 13-15mv
-   total — JZP is worth ~5 moves vs the shortest-DR trap. Treat any
-   `jzp_eligible: true` row as a STRONG preference, even if its DR length
-   is 4-5 moves longer than alternatives.
+   **JZP RECOGNITION (v34 — derive it yourself)**: A JZP-eligible state
+   has dramatically shorter DR. JZP conditions, readable from
+   inspect_state: no U/D corner stickers on R/L (read CO + corner perm),
+   no E-slice edges in M-slice (read slice marker), even number of
+   unoriented corners. When you spot a JZP state, lean toward it even
+   if the DR setup is 3-5 moves longer than the obvious shortest-DR
+   alternative — the post-DR finish on a JZP state can be half the
+   length. There is no tool flag for this anymore; identify it by
+   reading the state.
 
-   a) Call `dr_trigger_options(axis=X)` for each candidate axis. Read
-      EVERY row — there's no oracle ranking, only `trigger_family`,
-      `total_to_dr`, `jzp_eligible`, `pre_trigger_signature`,
-      `top_pairs_on_inverse`. Estimate the post-DR cost yourself using
-      the table above. NARRATE your pick:
-      > "Comparing on UD: 4C4E in 1mv (13mv typical post-DR = 14 total)
-      > vs 3C2E in 4mv (7mv typical post-DR = 11 total). 3C2E saves 3.
-      > Picking the 3C2E."
+   a) Call `dr_trigger_options(axis=X)` for each candidate axis. The
+      tool returns `trigger_family`, `total_to_dr`, `setup_moves`,
+      `pre_trigger_signature` (the XCYE substate label). No oracle
+      score, no ranking. To compare candidates, try_alg the (setup +
+      trigger) for each, inspect_state on the residual, estimate
+      finish length from the substate priors table, then pick.
+      NARRATE your pick:
+      > "Comparing on UD: 4C4E in 1mv (residual 4C4E → 12-14mv typical
+      > = ~14 total) vs 3C2E in 4mv (residual 3C2E → 6-8mv typical =
+      > ~11 total). Picking 3C2E."
    b) Per-axis trigger letters in the named catalog: UD uses R+U,
       FB uses U+F, RL uses F+L (cube-symmetry equivalents).
    c) v33: if `dr_trigger_options` returns 0 options at depth 5, try
@@ -2128,6 +2156,26 @@ def solve(
                         result = handler(tu.input)
                     except Exception as e:
                         result = {"error": f"{type(e).__name__}: {e}"}
+                # v34: inject time-awareness meta into every tool result so
+                # the LLM can pace itself like a real competitor.
+                sim_left = budget.sim_remaining()
+                frac = sim_left / budget.sim_budget if budget.sim_budget else 0.0
+                if frac > 0.60:
+                    urgency = "ample"
+                elif frac > 0.30:
+                    urgency = "moderate"
+                elif frac > 0.10:
+                    urgency = "low"
+                else:
+                    urgency = "critical"
+                if isinstance(result, dict):
+                    result["_meta"] = {
+                        "sim_remaining_s": round(sim_left, 1),
+                        "sim_fraction_left": round(frac, 3),
+                        "wall_remaining_s": round(budget.wall_remaining(), 1),
+                        "tool_calls_remaining": run_state["tool_calls_remaining"],
+                        "urgency": urgency,
+                    }
                 if verbose:
                     print(f"[result] {json.dumps(result)[:300]}")
                 tool_results.append({

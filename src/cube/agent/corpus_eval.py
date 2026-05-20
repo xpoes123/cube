@@ -16,12 +16,57 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
 from cube.agent import build_index, human_narrative, render_narrative, scramble_gen, simulated_fmc
+
+
+def _git_push_scramble(scramble_id: str, summary: dict, out_dir: Path) -> None:
+    """v34: commit + push after each scramble so the user can follow live.
+
+    Soft-failing: any git error just prints a warning. Skipped when not
+    in a git repo or when no remote is configured.
+    """
+    repo_root = Path(__file__).resolve().parents[3]
+    if not (repo_root / ".git").exists():
+        return
+    moves_str = "FAIL" if not summary.get("solves") else f"{summary.get('total_moves')}mv"
+    tag = out_dir.name
+    msg_lines = [
+        f"{tag} live: {scramble_id} → {moves_str}",
+        "",
+        f"sim_spent: {summary.get('sim_spent', 0):.0f}s",
+        f"tool_calls: {summary.get('tool_calls', 0)}",
+        f"halt_reason: {summary.get('halt_reason') or 'completed'}",
+    ]
+    msg = "\n".join(msg_lines)
+
+    def _run(args: list[str]) -> tuple[int, str]:
+        proc = subprocess.run(
+            args, cwd=repo_root,
+            capture_output=True, text=True, check=False,
+        )
+        return proc.returncode, (proc.stdout + proc.stderr).strip()
+
+    rc, _ = _run(["git", "add", str(out_dir.relative_to(repo_root))])
+    if rc != 0:
+        return
+    rc, out = _run(["git", "diff", "--cached", "--quiet"])
+    if rc == 0:
+        return  # nothing staged
+    rc, out = _run(["git", "commit", "-m", msg])
+    if rc != 0:
+        print(f"  warn: git commit failed: {out[:200]}", flush=True)
+        return
+    rc, out = _run(["git", "push"])
+    if rc != 0:
+        print(f"  warn: git push failed: {out[:200]}", flush=True)
+        return
+    print(f"  [pushed] {scramble_id} → {moves_str}", flush=True)
 
 # 4 hand-picked scrambles from benchmarks/test_scrambles.md.
 DEFAULT_CORPUS = [
@@ -69,17 +114,32 @@ def load_333fm_corpus(path: Path) -> tuple[list[tuple[str, str]], dict[str, dict
 
 
 def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
-            wall_limit_s: float, max_tool_calls: int, n_best: int = 1) -> dict:
-    """v19: --n-best N runs each scramble N times and returns the best solve.
+            wall_limit_s: float, max_tool_calls: int, n_best: int = 1,
+            scramble_sim_budget: float = 3600.0,
+            min_attempt_budget_s: float = 120.0) -> dict:
+    """v34: --n-best N attempts SHARE the WCA 1-hour budget.
 
-    Deterministic way to beat the 3-5 move per-scramble variance: we get
-    the LLM's best of N attempts instead of a single noisy run. Cost
-    scales linearly with N; for N=2 a 5-scramble eval is ~$2.
+    Prior versions gave each attempt a fresh 3600s, so n_best=8 meant
+    8 hours of simulated thinking per scramble — not WCA-realistic.
+    Now: every attempt deducts from a single `scramble_sim_budget`
+    pool (default 3600s). The next attempt starts with whatever's left.
+    We stop launching new attempts when remaining < min_attempt_budget_s.
     """
     if n_best > 1:
         best: dict | None = None
         prior_attempts: list[dict] = []
+        cumulative_sim_spent = 0.0
         for attempt in range(n_best):
+            remaining_budget = scramble_sim_budget - cumulative_sim_spent
+            if remaining_budget < min_attempt_budget_s:
+                print(
+                    f"\n  [budget exhausted] {cumulative_sim_spent:.0f}s "
+                    f"of {scramble_sim_budget:.0f}s used after {attempt} "
+                    f"attempts; remaining {remaining_budget:.0f}s < "
+                    f"{min_attempt_budget_s:.0f}s — stopping early.",
+                    flush=True,
+                )
+                break
             single = _run_single(
                 f"{scramble_id}__attempt{attempt+1}",
                 scramble,
@@ -87,16 +147,15 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
                 wall_limit_s=wall_limit_s,
                 max_tool_calls=max_tool_calls,
                 prior_attempts=prior_attempts if prior_attempts else None,
+                sim_budget=remaining_budget,
             )
-            # v27b: brief memory for the next attempt — keep it cheap (just
-            # the solution string and move count, no transcript).
+            cumulative_sim_spent += float(single.get("sim_spent") or 0.0)
             prior_attempts.append({
                 "solves": single["solves"],
                 "total_moves": single.get("total_moves"),
                 "final_solution": (single.get("solution") or "").split() if isinstance(single.get("solution"), str) else single.get("solution") or [],
                 "halt_reason": single.get("halt_reason"),
             })
-            # Rank: prefer solves; among solves prefer shorter; among non-solves prefer "less broken" (won't matter much)
             if best is None:
                 best = single
             elif single["solves"] and not best["solves"]:
@@ -104,22 +163,30 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
             elif single["solves"] and best["solves"] and single["total_moves"] < best["total_moves"]:
                 best = single
         assert best is not None
-        # Tag the n_best context in the summary
-        best["id"] = scramble_id  # collapse the attempt suffix back so SUMMARY rows are stable
+        best["id"] = scramble_id
         best["n_best_attempts"] = n_best
+        best["scramble_sim_spent_total"] = round(cumulative_sim_spent, 1)
+        best["scramble_sim_budget"] = scramble_sim_budget
         status_str = (
             f"SOLVED in {best['total_moves']}m" if best["solves"] else "all attempts FAILED"
         )
-        print(f"\n  -> [n_best={n_best}] BEST: {status_str}", flush=True)
+        print(
+            f"\n  -> [n_best={n_best}, shared {scramble_sim_budget:.0f}s] "
+            f"BEST: {status_str}  (used {cumulative_sim_spent:.0f}s across "
+            f"{len(prior_attempts)} attempts)",
+            flush=True,
+        )
         return best
     return _run_single(scramble_id, scramble, model=model, out_dir=out_dir,
-                       wall_limit_s=wall_limit_s, max_tool_calls=max_tool_calls)
+                       wall_limit_s=wall_limit_s, max_tool_calls=max_tool_calls,
+                       sim_budget=scramble_sim_budget)
 
 
 def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
                 wall_limit_s: float, max_tool_calls: int,
-                prior_attempts: list[dict] | None = None) -> dict:
-    print(f"\n{'=' * 60}\n  {scramble_id}: {scramble}\n{'=' * 60}", flush=True)
+                prior_attempts: list[dict] | None = None,
+                sim_budget: float = 3600.0) -> dict:
+    print(f"\n{'=' * 60}\n  {scramble_id}: {scramble}  (sim_budget={sim_budget:.0f}s)\n{'=' * 60}", flush=True)
     moves = scramble.split()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     transcript_path = out_dir / f"{scramble_id}_{ts}.json"
@@ -132,7 +199,7 @@ def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
         thinking_budget=3000,
         transcript_path=transcript_path,
         wall_limit_s=wall_limit_s,
-        sim_budget=3600.0,
+        sim_budget=sim_budget,
         prior_attempts=prior_attempts,
     )
     elapsed = time.time() - t0
@@ -305,6 +372,16 @@ def main(argv: list[str] | None = None) -> int:
                 "halt_reason": f"crash: {type(e).__name__}", "solution": [],
                 "transcript_path": "", "narrative_path": "",
             })
+        # Per-scramble live update: write incremental SUMMARY.md, then
+        # commit + push so the user can watch progress in the repo.
+        try:
+            write_summary(
+                args.out_dir, summaries, args.model,
+                human_meta=human_meta, version_notes=args.version_notes,
+            )
+            _git_push_scramble(scramble_id, summaries[-1], args.out_dir)
+        except Exception as e:
+            print(f"  warn: live push failed for {scramble_id}: {type(e).__name__}: {e}", flush=True)
 
     summary_path = write_summary(
         args.out_dir, summaries, args.model,
