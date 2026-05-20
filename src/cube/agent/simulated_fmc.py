@@ -272,7 +272,11 @@ def _build_handlers(
         run_state = {"tool_calls_remaining": 10_000, "rs_calls_used": 0}
     # v35: session-local bookmarks. Each entry:
     #   { slot, history, on_inverse, description }
-    bookmarks: dict[str, dict] = {}
+    # Stored in run_state so callers can read/seed it from outside the
+    # closure. Always present (never None) so handler code can index it.
+    if "bookmarks" not in run_state:
+        run_state["bookmarks"] = {}
+    bookmarks: dict[str, dict] = run_state["bookmarks"]
 
     def _h_quick_check(args):
         """v17: FREE state classifier. Returns booleans only — is_solved,
@@ -2053,13 +2057,27 @@ def solve(
     dr_trigger_setup_width: int = _SIM_DR_TRIGGER_SETUP_WIDTH,
     dr_trigger_setup_depth: int = _SIM_DR_TRIGGER_SETUP_DEPTH,
     prior_attempts: list[dict] | None = None,
+    prior_bookmarks: dict[str, dict] | None = None,
+    prior_narrative_excerpts: list[str] | None = None,
 ) -> dict:
     client = anthropic.Anthropic()
     slots: dict[str, Slot] = {"main": Slot(name="main")}
     budget = BudgetTracker(sim_budget=sim_budget, wall_limit_s=wall_limit_s)
+    # v35: pre-populate bookmarks from prior attempts via run_state so
+    # the handler closure picks them up automatically.
+    seeded_bookmarks: dict[str, dict] = {}
+    if prior_bookmarks:
+        for name, b in prior_bookmarks.items():
+            seeded_bookmarks[name] = {
+                "slot": b.get("slot", "main"),
+                "history": list(b.get("history", [])),
+                "on_inverse": bool(b.get("on_inverse", False)),
+                "description": b.get("description", ""),
+            }
     run_state: dict = {
         "tool_calls_remaining": max_tool_calls,
         "rs_calls_used": 0,
+        "bookmarks": seeded_bookmarks,
     }
     handlers = _build_handlers(
         scramble, slots, budget,
@@ -2095,32 +2113,53 @@ def solve(
     # finish. The n_best=4 wrapper is what explores diversity — the
     # per-attempt LLM should NOT play the explorer role.
     if prior_attempts:
-        lines = ["", "## Context: your prior attempts on this exact scramble", ""]
+        lines = ["", "## Context: your prior drafts on this exact scramble", ""]
         best_so_far = None
         for i, prev in enumerate(prior_attempts, 1):
             if prev.get("solves"):
                 mv = prev.get("total_moves", "?")
                 sol = " ".join(prev.get("final_solution", []) or [])
-                lines.append(f"- Attempt {i}: {mv} moves — `{sol}`")
+                lines.append(f"- Draft {i}: {mv} moves — `{sol}`")
                 if best_so_far is None or (isinstance(mv, int) and mv < best_so_far):
                     best_so_far = mv if isinstance(mv, int) else best_so_far
             else:
-                lines.append(f"- Attempt {i}: FAILED ({prev.get('halt_reason','unknown')})")
+                lines.append(f"- Draft {i}: FAILED ({prev.get('halt_reason','unknown')})")
         lines.append("")
         if best_so_far is not None:
-            lines.append(f"Best so far: **{best_so_far} moves**.")
+            lines.append(f"Best draft so far: **{best_so_far} moves**.")
             lines.append("")
+        # v35: include bookmarked forks from prior drafts so this draft
+        # can restore_fork into them.
+        if prior_bookmarks:
+            lines.append("### Bookmarks available (restore_fork by name)")
+            for name, b in prior_bookmarks.items():
+                lines.append(
+                    f"- `{name}` — slot='{b.get('slot', 'main')}', "
+                    f"{len(b.get('history', []))}mv committed, "
+                    f"on_inverse={b.get('on_inverse', False)}: "
+                    f"{b.get('description', '(no description)')}"
+                )
+            lines.append("")
+        # v35: pass condensed prior-draft narratives so this draft knows
+        # WHAT was tried, not just the move count.
+        if prior_narrative_excerpts:
+            for i, excerpt in enumerate(prior_narrative_excerpts, 1):
+                lines.append(f"### Draft {i} — what I tried (condensed narrative)")
+                lines.append("```")
+                lines.append(excerpt[:4000])
+                lines.append("```")
+                lines.append("")
         lines.append(
-            "**COMMIT HARD this attempt.** Pick a line — same axis as the best "
-            "prior attempt if it looked promising, or a sister branch if you "
-            "have a clear reason — and drive it to a clean finish. Do NOT "
+            "**COMMIT HARD this draft.** Pick a line — same axis as the best "
+            "prior draft if it looked promising, a sister branch if you "
+            "have a clear reason, or restore_fork into a bookmark left by "
+            "an earlier draft. Drive it to a clean finish. Do NOT "
             "over-ideate between branches mid-solve; do NOT abandon a path "
-            "halfway through to compare against another. The outer wrapper "
-            "runs this scramble multiple times for diversity — your job on "
-            "THIS attempt is to find ONE complete, clean solution. A failed "
-            "or incomplete solve is worse than a 30-move complete one. If "
-            "the prior attempts' lines all reached similar move counts, "
-            "trust that EO/DR axis and push to optimize the FINISH this time."
+            "halfway through. The outer wrapper handles diversity — your "
+            "job THIS draft is to find ONE complete, clean solution. A "
+            "failed or incomplete solve is worse than a 30-move complete "
+            "one. If prior drafts converged on similar moves, trust that "
+            "EO/DR axis and push to optimize the FINISH this time."
         )
         user_msg += "\n" + "\n".join(lines)
 
@@ -2178,6 +2217,9 @@ def solve(
             "wall_elapsed_s": round(time.time() - budget.real_start, 1),
             "budget_events": budget.events,
             "slots_final": _slot_snapshot(),
+            # v35: surface bookmarks so the caller can carry them into
+            # the next attempt's prior_bookmarks.
+            "bookmarks": dict(run_state.get("bookmarks", {})),
             "transcript": transcript,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,

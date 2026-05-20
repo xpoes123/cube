@@ -134,6 +134,8 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
     if n_best > 1:
         best: dict | None = None
         prior_attempts: list[dict] = []
+        accumulated_bookmarks: dict[str, dict] = {}
+        prior_narrative_excerpts: list[str] = []
         cumulative_sim_spent = 0.0
         for attempt in range(n_best):
             remaining_budget = scramble_sim_budget - cumulative_sim_spent
@@ -153,9 +155,24 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
                 wall_limit_s=wall_limit_s,
                 max_tool_calls=max_tool_calls,
                 prior_attempts=prior_attempts if prior_attempts else None,
+                prior_bookmarks=accumulated_bookmarks if accumulated_bookmarks else None,
+                prior_narrative_excerpts=prior_narrative_excerpts if prior_narrative_excerpts else None,
                 sim_budget=remaining_budget,
             )
             cumulative_sim_spent += float(single.get("sim_spent") or 0.0)
+            # Carry bookmarks forward to the next draft.
+            for name, b in (single.get("bookmarks") or {}).items():
+                accumulated_bookmarks[name] = b
+            # Pull a condensed narrative excerpt from the just-finished
+            # draft's .human.md (preferred, more readable) or fall back
+            # to a tool-call summary.
+            human_path = single.get("human_narrative_path")
+            if human_path:
+                try:
+                    excerpt = Path(human_path).read_text()
+                    prior_narrative_excerpts.append(excerpt)
+                except OSError:
+                    pass
             prior_attempts.append({
                 "solves": single["solves"],
                 "total_moves": single.get("total_moves"),
@@ -191,6 +208,8 @@ def run_one(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
 def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
                 wall_limit_s: float, max_tool_calls: int,
                 prior_attempts: list[dict] | None = None,
+                prior_bookmarks: dict[str, dict] | None = None,
+                prior_narrative_excerpts: list[str] | None = None,
                 sim_budget: float = 3600.0) -> dict:
     print(f"\n{'=' * 60}\n  {scramble_id}: {scramble}  (sim_budget={sim_budget:.0f}s)\n{'=' * 60}", flush=True)
     moves = scramble.split()
@@ -207,6 +226,8 @@ def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
         wall_limit_s=wall_limit_s,
         sim_budget=sim_budget,
         prior_attempts=prior_attempts,
+        prior_bookmarks=prior_bookmarks,
+        prior_narrative_excerpts=prior_narrative_excerpts,
     )
     elapsed = time.time() - t0
 
@@ -237,6 +258,9 @@ def _run_single(scramble_id: str, scramble: str, *, model: str, out_dir: Path,
         "solution": result["final_solution"],
         "transcript_path": str(transcript_path.relative_to(out_dir.parent.parent)),
         "narrative_path": str(narrative_path.relative_to(out_dir.parent.parent)),
+        # v35: carry-forward fields for cross-attempt handoff.
+        "bookmarks": result.get("bookmarks") or {},
+        "human_narrative_path": str(human_path) if human_path.exists() else None,
     }
     print(f"\n  -> {summary['solves'] and f'SOLVED in {summary['total_moves']}m' or 'FAILED'} "
           f"({summary['tool_calls']} tool calls, {summary['sim_spent']:.0f}s sim, {elapsed:.0f}s wall)", flush=True)
@@ -346,6 +370,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="One-paragraph 'what changed in this version' for the SUMMARY.md header.")
     parser.add_argument("--synth-model", default=synthesize_scramble.DEFAULT_MODEL,
                         help="Model used for the per-scramble synthesis blog post (default: Opus 4.7).")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Number of scrambles to run concurrently (v35). "
+                             "1 = sequential (default, current behavior). N>1 = "
+                             "use ProcessPoolExecutor with N workers. Each "
+                             "worker runs n_best attempts on one scramble.")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -361,44 +390,101 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit is not None:
         corpus = corpus[:args.limit]
     summaries: list[dict] = []
-    for scramble_id, scramble in corpus:
-        try:
-            summaries.append(run_one(
-                scramble_id, scramble,
-                model=args.model, out_dir=args.out_dir,
-                wall_limit_s=args.wall_limit_s,
-                max_tool_calls=args.max_tool_calls,
-                n_best=args.n_best,
-            ))
-        except Exception as e:
-            print(f"  !! {scramble_id} crashed: {type(e).__name__}: {e}", flush=True)
-            summaries.append({
-                "id": scramble_id, "scramble": scramble,
-                "solves": False, "total_moves": 0, "tool_calls": 0,
-                "sim_spent": 0, "wall_s": 0,
-                "input_tokens": 0, "output_tokens": 0,
-                "halt_reason": f"crash: {type(e).__name__}", "solution": [],
-                "transcript_path": "", "narrative_path": "",
-            })
-        # Per-scramble live update: synthesize the blog post, write
-        # incremental SUMMARY.md, commit + push so the user can watch
-        # progress in the repo.
-        try:
-            synthesize_scramble.synthesize(
-                scramble_id, args.out_dir,
-                corpus_path=args.corpus_333fm,
-                model=args.synth_model,
-            )
-        except Exception as e:
-            print(f"  warn: synthesis failed for {scramble_id}: {type(e).__name__}: {e}", flush=True)
-        try:
-            write_summary(
-                args.out_dir, summaries, args.model,
-                human_meta=human_meta, version_notes=args.version_notes,
-            )
-            _git_push_scramble(scramble_id, summaries[-1], args.out_dir)
-        except Exception as e:
-            print(f"  warn: live push failed for {scramble_id}: {type(e).__name__}: {e}", flush=True)
+    if args.parallel > 1:
+        # v35: parallel scramble execution. Each scramble runs in its
+        # own worker process. Workers don't share the HTR subset cache
+        # — closer to WCA realism (each competitor sees each scramble
+        # cold). API rate limits aren't an issue at 5-10 concurrent.
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        print(f"\n[parallel] running {len(corpus)} scrambles across "
+              f"{args.parallel} workers", flush=True)
+        # Preserve corpus order in the final summaries list, but commit
+        # + push as each future completes.
+        ordered_results: dict[str, dict] = {}
+        with ProcessPoolExecutor(max_workers=args.parallel) as ex:
+            future_to_id = {
+                ex.submit(
+                    run_one,
+                    scramble_id, scramble,
+                    model=args.model, out_dir=args.out_dir,
+                    wall_limit_s=args.wall_limit_s,
+                    max_tool_calls=args.max_tool_calls,
+                    n_best=args.n_best,
+                ): scramble_id
+                for scramble_id, scramble in corpus
+            }
+            for fut in as_completed(future_to_id):
+                sid = future_to_id[fut]
+                try:
+                    result = fut.result()
+                except Exception as e:
+                    print(f"  !! {sid} crashed: {type(e).__name__}: {e}", flush=True)
+                    sc = dict(corpus).get(sid, "")
+                    result = {
+                        "id": sid, "scramble": sc,
+                        "solves": False, "total_moves": 0, "tool_calls": 0,
+                        "sim_spent": 0, "wall_s": 0,
+                        "input_tokens": 0, "output_tokens": 0,
+                        "halt_reason": f"crash: {type(e).__name__}", "solution": [],
+                        "transcript_path": "", "narrative_path": "",
+                    }
+                ordered_results[sid] = result
+                try:
+                    synthesize_scramble.synthesize(
+                        sid, args.out_dir,
+                        corpus_path=args.corpus_333fm,
+                        model=args.synth_model,
+                    )
+                except Exception as e:
+                    print(f"  warn: synthesis failed for {sid}: {type(e).__name__}: {e}", flush=True)
+                # Incremental write of SUMMARY (in corpus order, partial)
+                partial = [ordered_results[s_id] for s_id, _ in corpus if s_id in ordered_results]
+                try:
+                    write_summary(
+                        args.out_dir, partial, args.model,
+                        human_meta=human_meta, version_notes=args.version_notes,
+                    )
+                    _git_push_scramble(sid, ordered_results[sid], args.out_dir)
+                except Exception as e:
+                    print(f"  warn: live push failed for {sid}: {type(e).__name__}: {e}", flush=True)
+        summaries = [ordered_results[sid] for sid, _ in corpus if sid in ordered_results]
+    else:
+        for scramble_id, scramble in corpus:
+            try:
+                summaries.append(run_one(
+                    scramble_id, scramble,
+                    model=args.model, out_dir=args.out_dir,
+                    wall_limit_s=args.wall_limit_s,
+                    max_tool_calls=args.max_tool_calls,
+                    n_best=args.n_best,
+                ))
+            except Exception as e:
+                print(f"  !! {scramble_id} crashed: {type(e).__name__}: {e}", flush=True)
+                summaries.append({
+                    "id": scramble_id, "scramble": scramble,
+                    "solves": False, "total_moves": 0, "tool_calls": 0,
+                    "sim_spent": 0, "wall_s": 0,
+                    "input_tokens": 0, "output_tokens": 0,
+                    "halt_reason": f"crash: {type(e).__name__}", "solution": [],
+                    "transcript_path": "", "narrative_path": "",
+                })
+            # Per-scramble live update: synthesize blog post + push.
+            try:
+                synthesize_scramble.synthesize(
+                    scramble_id, args.out_dir,
+                    corpus_path=args.corpus_333fm,
+                    model=args.synth_model,
+                )
+            except Exception as e:
+                print(f"  warn: synthesis failed for {scramble_id}: {type(e).__name__}: {e}", flush=True)
+            try:
+                write_summary(
+                    args.out_dir, summaries, args.model,
+                    human_meta=human_meta, version_notes=args.version_notes,
+                )
+                _git_push_scramble(scramble_id, summaries[-1], args.out_dir)
+            except Exception as e:
+                print(f"  warn: live push failed for {scramble_id}: {type(e).__name__}: {e}", flush=True)
 
     summary_path = write_summary(
         args.out_dir, summaries, args.model,

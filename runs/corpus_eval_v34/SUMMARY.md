@@ -1,8 +1,8 @@
 # Corpus eval — `v34`
 
 - **Model**: `claude-sonnet-4-5-20250929`
-- **Run**: 2026-05-20T02:37:28
-- **Scrambles**: 4
+- **Run**: 2026-05-20T02:50:21
+- **Scrambles**: 5
 
 ## What changed in this version
 
@@ -14,15 +14,17 @@ v34: killed the DR oracle (no expected_total_to_solved/jzp_eligible/top_pairs_on
 | fm_PSSSideDayGdansk2026_s2 | ✓ | 34 | 20 | 14 | Marcin Chmielewski | 58 | 1540s | 249s | $0.27 |
 | fm_PSSSideDayGdansk2026_s3 | ✗ | — | 23 | — | Marcin Chmielewski | 80 | 969s | 230s | $0.24 |
 | fm_BackiPetrovacOpen2026_s1 | ✓ | 30 | 22 | 8 | Szabolcs Szántai | 57 | 1352s | 235s | $0.21 |
+| fm_WesternSicilyOpen2026_s1 | ✓ | 29 | 19 | 10 | Chiara Marcucci | 38 | 689s | 143s | $0.15 |
 
-**Solved**: 3/4
-**Avg sim moves (solved)**: 31.3
-**Avg human (WCA) (solved)**: 20.7
-**Avg gap (solved)**: +10.7
-**Total API cost (rough, no cache discount)**: $0.92
+**Solved**: 4/5
+**Avg sim moves (solved)**: 30.8
+**Avg human (WCA) (solved)**: 20.2
+**Avg gap (solved)**: +10.5
+**Total API cost (rough, no cache discount)**: $1.08
 
 ## Per-scramble narratives
 - [fm_PSSSideDayGdansk2026_s1](fm_PSSSideDayGdansk2026_s1__attempt4_20260520_015818.md)
 - [fm_PSSSideDayGdansk2026_s2](fm_PSSSideDayGdansk2026_s2__attempt1_20260520_020549.md)
 - [fm_PSSSideDayGdansk2026_s3](fm_PSSSideDayGdansk2026_s3__attempt1_20260520_021647.md)
 - [fm_BackiPetrovacOpen2026_s1](fm_BackiPetrovacOpen2026_s1__attempt2_20260520_023055.md)
+- [fm_WesternSicilyOpen2026_s1](fm_WesternSicilyOpen2026_s1__attempt2_20260520_024037.md)
