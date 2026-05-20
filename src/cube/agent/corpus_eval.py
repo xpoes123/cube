@@ -34,6 +34,12 @@ def _git_push_scramble(scramble_id: str, summary: dict, out_dir: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
     if not (repo_root / ".git").exists():
         return
+    # out_dir may be relative (from CLI) or absolute. Resolve, then make
+    # it relative to repo_root so `git add` works from cwd=repo_root.
+    try:
+        out_rel = str(out_dir.resolve().relative_to(repo_root))
+    except ValueError:
+        return  # out_dir is outside the repo; don't try to commit it
     moves_str = "FAIL" if not summary.get("solves") else f"{summary.get('total_moves')}mv"
     tag = out_dir.name
     msg_lines = [
@@ -52,7 +58,7 @@ def _git_push_scramble(scramble_id: str, summary: dict, out_dir: Path) -> None:
         )
         return proc.returncode, (proc.stdout + proc.stderr).strip()
 
-    rc, _ = _run(["git", "add", str(out_dir.relative_to(repo_root))])
+    rc, _ = _run(["git", "add", out_rel])
     if rc != 0:
         return
     rc, out = _run(["git", "diff", "--cached", "--quiet"])

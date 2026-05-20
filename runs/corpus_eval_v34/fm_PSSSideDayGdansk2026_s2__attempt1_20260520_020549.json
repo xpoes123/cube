@@ -1,0 +1,1389 @@
+{
+  "scramble": [
+    "R'",
+    "U'",
+    "F",
+    "R",
+    "D2",
+    "F'",
+    "D",
+    "R",
+    "L2",
+    "F",
+    "R",
+    "B2",
+    "D'",
+    "F'",
+    "L2",
+    "U2",
+    "D2",
+    "B",
+    "R2",
+    "B",
+    "L2",
+    "B",
+    "R'",
+    "U'",
+    "F"
+  ],
+  "model": "claude-sonnet-4-5-20250929",
+  "final_solution": [],
+  "solves": false,
+  "total_moves": 0,
+  "tool_calls": 13,
+  "halt_reason": null,
+  "sim_spent": 668.96,
+  "sim_budget": 3600.0,
+  "wall_elapsed_s": 62.7,
+  "budget_events": [
+    {
+      "kind": "inspect_state",
+      "cost": 5.0,
+      "sim_spent_after": 5.0,
+      "slot": "main"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 8.0,
+      "slot": "main",
+      "axis": "FB"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 11.0,
+      "slot": "main",
+      "axis": "RL"
+    },
+    {
+      "kind": "niss_flip",
+      "cost": 2.0,
+      "sim_spent_after": 13.0,
+      "slot": "main"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 16.0,
+      "slot": "main",
+      "axis": "FB"
+    },
+    {
+      "kind": "eo_pattern_lookup",
+      "cost": 3.0,
+      "sim_spent_after": 19.0,
+      "slot": "main",
+      "axis": "RL"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.2,
+      "sim_spent_after": 19.2,
+      "slot": "main",
+      "n": 2
+    },
+    {
+      "kind": "dr_trigger_options",
+      "cost": 296.74,
+      "sim_spent_after": 315.94,
+      "slot": "main",
+      "axis": "FB",
+      "states": 97247
+    },
+    {
+      "kind": "dr_recognize",
+      "cost": 4.0,
+      "sim_spent_after": 319.94,
+      "slot": "main",
+      "axis": "FB"
+    },
+    {
+      "kind": "reset_slot",
+      "cost": 25.0,
+      "sim_spent_after": 344.94,
+      "slot": "main",
+      "rescramble": true
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 345.34,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "dr_trigger_options",
+      "cost": 298.62,
+      "sim_spent_after": 643.96,
+      "slot": "main",
+      "axis": "FB",
+      "states": 97874
+    },
+    {
+      "kind": "reset_slot",
+      "cost": 25.0,
+      "sim_spent_after": 668.96,
+      "slot": "main",
+      "rescramble": true
+    }
+  ],
+  "slots_final": {
+    "main": {
+      "history": [],
+      "on_inverse": false,
+      "move_count": 0,
+      "undo_available": 0
+    }
+  },
+  "transcript": [
+    {
+      "type": "system",
+      "content": "You are an expert Rubik's Cube FMC solver in a SIMULATED COMPETITION.\n\n# Rules (match WCA FMC)\n- You have ONE HOUR total simulated time (3600 seconds budget).\n- You operate on up to 3 named cube-state slots (start with 'main').\n- Per slot you have a 4-move undo buffer. To go back further you\n  must reset_slot (costs 25s \u2014 like solving + rescrambling on paper).\n- Applying each move costs 1s simulated.\n- Looking ahead costs simulated time too: lookahead ~8s,\n  find_dr_via_trigger ~20s, policy_intuition ~3s.\n- The HTR finish is NOT a brute-force solver. It is a memorized lookup:\n  first time you see a subset you 'learn' it (15s); future\n  uses are nearly free (1s). So get to DR, identify the\n  subset with htr_subset, then lookup_subset_finish.\n- Call budget_status whenever you want a full breakdown.\n\n# v34: TIME AWARENESS (pace yourself like a real competitor)\n\nEvery tool result you receive now includes a `_meta` block with these\nfields:\n  - `sim_remaining_s`        \u2014 of 3600s WCA budget\n  - `sim_fraction_left`      \u2014 0.0 to 1.0\n  - `wall_remaining_s`       \u2014 real clock for the model API\n  - `tool_calls_remaining`   \u2014 of the per-attempt cap\n  - `urgency`                \u2014 one of: ample, moderate, low, critical\n\n`urgency` is computed from sim_fraction_left:\n  - ample    (>60% left)  \u2192 explore broadly, scout alternates, NISS freely\n  - moderate (30-60%)     \u2192 commit to your best branch, no more scouting\n  - low      (10-30%)     \u2192 no new branches; finish the current pipeline\n  - critical (<10%)       \u2192 ship whatever solves, even if 35+ moves\n\nRead `_meta` on every tool result. Verbalize it when it changes your\nplan: \"I'm at sim_remaining=600s with no DR yet \u2014 switching to ship mode,\ntaking the 4C4E even though 3C2E might be cleaner, no time to scout.\"\nA competitor who burns 50 minutes scouting and runs out of time scores\nDNF. A competitor who ships a 32-move solve at minute 55 scores 32.\n\n# FMC technique reference (use this vocabulary in your narration)\n\n### EO (Edge Orientation) \u2014 ALGORITHMIC, not search\nEO is fundamentally algorithmic. Each bad-edge configuration has known\nfix patterns; lookahead/policy are CONFIRMATION tools, not the primary\nfinder. Workflow on the cube:\n\n1. Read `bad_edges_per_axis` AND `bad_edge_slots_per_axis` from inspect_state.\n2. The flipping moves per axis are:\n   - **UD-axis EO**: F, F', B, B' (quarter turns of F/B flip UD-EO)\n   - **FB-axis EO**: L, L', R, R' (quarter turns of L/R flip FB-EO)\n   - **RL-axis EO**: U, U', D, D' (quarter turns of U/D flip RL-EO)\n   Half turns and axis-moves preserve EO.\n3. A flip move toggles the 4 edges on its face. So a single flip move\n   changes bad-edge-count by \u00b14 or \u00b12 or 0 depending on how many of that\n   face's edges were already bad.\n\n**By bad-edge count (on chosen axis)**:\n- **0**: solved on this axis. Done.\n- **2**: ONE-MOVE solutions exist when the two bad edges sit on\n  perpendicular faces that share one flipping face. E.g., on UD-axis,\n  if the 2 bad edges are both on the F face (after-state) \u2192 F fixes\n  both. Bad edges on opposite sides of the same flipping axis \u2192 2 moves\n  needed. Look at `bad_edge_slots_per_axis` and try the flipping move\n  that touches both slot names.\n- **4**: typically 1-3 moves. Strong cases:\n  - All 4 on one flipping face \u2192 1 move (F or B on UD-axis).\n  - 2 on F, 2 on B \u2192 2 moves (F + B or similar).\n  - Scattered \u2192 3-4 moves using a setup. Common: `U B U'` shape that\n    rotates 2 edges onto F before the F flip.\n- **6**: usually 2-4 moves. The `<setup> F <setup'> B` symmetry pattern\n  works when the configuration is roughly symmetric on the flipping axis.\n- **8**: 3-5 moves. Classic `<m> F <m'> B` symmetry \u2014 find a 1-2 move\n  setup `<m>` that puts 4 bad edges on F, then `F <m'> B` flips both\n  4-groups. NISS-trace the inverse: 1-move-to-8-bad often gives sub5 EO.\n- **10**: rare. Usually NISS to inverse helps.\n- **12**: all-bad. Two flips on opposite faces don't cancel cleanly;\n  typically NISS.\n\n**Procedure** (per axis):\n1. Note the bad-edge count and slot names from inspect_state.\n2. Identify which flipping moves touch which bad edges (e.g., F touches\n   slots UF, FR, DF, FL). A single flip \"fixes\" any of those that were\n   bad and \"breaks\" any that were good.\n3. If a one-move fix exists, you'll see it directly: a single flipping\n   move where ALL the moves' affected slots were currently bad.\n4. Otherwise enumerate 2-3 move setups manually using try_alg. The\n   transformer's policy_intuition gives top-k starting moves; combine\n   with the algorithmic count to pick which try_alg to test.\n5. Once you have a candidate sequence, lookahead/probe_dr_after_eo\n   confirms it (or finds a 1-move-shorter alternative).\n\n**Axis selection rule of thumb**:\n- Smallest bad-edge count is usually shortest EO BUT not always.\n- A scrambled state with 2 bad edges on UD that DON'T share a flipping\n  face needs ~3-4 moves. A state with 4 bad edges on FB all clustered\n  may need only 1 move. **Check the slot pattern, not just the count.**\n\nNISS-EO trigger: 1-move reduction to 4 bad edges \u2192 niss-trace the\ninverse for sub5 EOs. Trace good-edges (not bad) when looking at\n1-move-to-8-bad.\n\n### NISS Decision Rules\n- After EO: only switch if you have very few EOs of the shortest length. Otherwise stay.\n- After RZP: switch in 5; switch in 6 only if **JZP** or **DR-2e3c**.\n- JZP preserves across axes: if you have JZP on normal, the OTHER axis after switching also has JZP \u2014 switch even for marginal 2c6e-JZP if it becomes 4e4c.\n- ARM swaps axes on switch; use ARM stats on the opposite axis to decide.\n\n### RZP \u2192 DR\nRZP = \"completely random moves\" between EO and DR. Look for rzps of length \u22645 (\u22646 if JZP/3c2e). Standard triggers:\n- `R` \u2192 **DR-4c4e** (most common, grind this)\n- `R U2 R'` \u2192 **DR-4c2e**\n- `R U R'` or `R U' R'` \u2192 **DR-3c2e**\n- `R U2 F2 R` \u2192 DR-4c4e variant\n- Advanced: `R U L` \u2192 DR-7c8e; `R L` \u2192 DR-8c8e; `R U2 F2 U2 R` \u2192 DR-2e; `R U2 D2 L` \u2192 DR-4e\n\nDR length targets: sub-15 beginner, sub-12 intermediate, sub-11 advanced. Abandon RZP if intuition says bad \u2014 don't sink time unless rzp \u22643.\n\n**JZP requirements**: no U/D corner stickers on R/L; no E-slice edges in M-slice; even number of unoriented corners. Cases like 4c6e/2c2e/2c4e become viable (5-6 to DR).\n\n**ARM** (Axial Reduction Minus): how close the *other* axis is to JZP. Count misoriented corner stickers WITHOUT F/B color, plus misoriented E-layer edges.\n\n**Pairs tracing** (Wen): for each E-slice edge not in its slice, check the misoriented corner whose two slice-facing stickers match the edge \u2014 that's a pair on inverse. Switch on 2+ pairs.\n\n### HTR (Half-Turn Reduction)\nSolvable with only double turns. 0-5 quarter-turn corners remain after DR. HTR triggers: `R`, `R U2 R'`, `R U2 F2 R`. Process: count qt \u2192 reduce/grow to 1 or 2 qt \u2192 setup to trigger.\n\n**HTR corner subsets** (with approx DR\u2192solved finish lengths):\n- **4a1** ~12.5 \u2014 good\n- **4b2** ~12.5 \u2014 good, learn 4b2+4e cases\n- **4a2** ~13.3\n- **4c3** ~13.4\n- **2c3** ~12.9\n- **2c4** ~13.7 \u2014 hard, expect longer\n\nThe \"a/b\" letter distinguishes corner orbit shape; \"c\" generally means worse subsets.\n\n### Finish (from HTR)\nAny state is solvable in \u226414 moves from HTR. Practical: solve corners + as many edges as possible, then edge commutators on the rest. Or **Floppy Reduction** (FR): reduce to `<R2 L2 F2 B2>` along DR axis, solve the domino layers ignoring the middle slice.\n\n### Insertions & Commutators\nAfter skeleton with corners off:\n- **3c** \u2192 1 commutator (8 moves pure, often cancels)\n- **3c1t / 2c2t / 5c / 3c3c / 2t / 3t** \u2192 2 commutators\n- 4c1t / 3c2t / 4t / 5t \u2192 3+ comms, generally abandon\n\nA commutator affects exactly 3 corners; slide through the solution for cancellations.\n\n### DR-Xs (Slice EO Method)\nReplaces full EO with **slice EO**: orient only the 4 edges of ONE slice on one axis. Often a 0-1 move skip exists. NISS does NOT preserve slice EO.\n\nPipeline: slice-EO \u2192 rzp-Xs \u2192 DR-2s \u2192 DR-1s \u2192 real DR \u2192 HTR \u2192 finish.\n\n**DR-1s break-even**: 8-move DR-1s \u2248 11-move normal DR (~2.5 moves extra on average). Use when: slice EO skip or 1-mover exists AND DR-1s reachable in \u22648 moves.\n\n**DR-2s 8fe special case**: when all 8 non-slice edges flipped, go straight to HTR-2s \u2014 only ~1 move worse than normal DR. Look for `U R L` substitutions becoming `D U R L` (-2 moves).\n\n### Vocabulary\nRZP, JZP, JEO, ARM, AR-XcYe, DRM, \"trigger\" (R, RU2R', RUR'), 4c4e/3c2e/4c2e, \"4 bad edges,\" \"niss-trace,\" \"premove,\" \"pairs tracing,\" \"qt corners,\" AB3c (All But 3 corners), slice EO, DR-1s/-2s, \"leave slice,\" floppy reduction, hyperparity, HTR subset (4a1/4b2/4a2/4c3/2c3/2c4).\n\n### Time Budget (your 1-hour solve)\n- 0-10 min: enumerate EOs across axes/sides\n- 10-35 min: check EOs, find rzps, find DRs\n- 35-60 min: solve best DR through HTR + finish + insertions\n\n# The scramble (exactly 25 moves)\nR' U' F R D2 F' D R L2 F R B2 D' F' L2 U2 D2 B R2 B L2 B R' U' F\n\nJSON form (always pass this to verify_solved, never retype the scramble):\n  scramble = [\"R'\", \"U'\", \"F\", \"R\", \"D2\", \"F'\", \"D\", \"R\", \"L2\", \"F\", \"R\", \"B2\", \"D'\", \"F'\", \"L2\", \"U2\", \"D2\", \"B\", \"R2\", \"B\", \"L2\", \"B\", \"R'\", \"U'\", \"F\"]\n\n# What you SEE in inspect_state (the champion's view)\n\nFor each axis, inspect_state reports a `dr_closeness_per_axis` block:\n- `misoriented_corners` (\"C\") and `misplaced_slice_edges` (\"E\"): these are\n  the DR-XCYE label that champions recite. (4, 4) = DR-4C4E (R trigger),\n  (4, 2) = DR-4C2E (R U2 R'), (3, 2) = DR-3C2E (R U R' / R U' R'),\n  (7, 8) = DR-7C8E (R U L), etc.\n\nv34 NOTE: oracle-flavored DR signals (`jzp_eligible`, `top_pairs_on_inverse`,\n`expected_total_to_solved`) have been REMOVED from tool outputs. You evaluate\ntrigger candidates the way a human does \u2014 try_alg the (setup + trigger),\ninspect_state, look at the residual, estimate finish length from the\nsubstate priors below. Nothing computes the answer for you.\n\nFor HTR (post-DR), `htr_closeness`:\n- `qt_corners` (0-5): primary HTR-distance signal. 0qt = already at HTR\n  corners; 4qt+ = expect longer finish.\n- `solved_corner_columns` (0-4): for floppy/slice-finish reasoning.\n\n# NISS-FIRST RULE\n\nAfter your initial EO scan, ALWAYS also check the inverse frame for each\naxis you might use. Use niss_flip + eo_pattern_lookup on the inverse to\ncompare. If EO is \u22651 move shorter on inverse, OR the inverse-side DR\nsubstate looks materially cleaner when you try_alg into it, the inverse\nframe is the better solving direction. NISS is cheap (~5s); always check it.\n\n# Human Tools (v11 \u2014 strict constraints)\nYou are NOT a brute-force search engine. You have a HUMAN solver's tools:\n\n- **Vision**: inspect_state shows the cube and per-axis bad-edge counts.\n- **Trained intuition** (transformer policy): policy_intuition returns\n  top-K candidate moves. This is your \"gut feeling\" \u2014 the same kind of\n  trained pattern recognition a champion has after years of practice.\n- **Visualization** (depth 4): lookahead does policy-pruned beam search\n  to depth 4, width K. This is what a human can hold\n  in their head \u2014 3-4 moves of mental visualization, not a deep search.\n- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_recognize (3,657-pattern DR memory + brain fallback),\n  apply_htr_phase return AT MOST 4 moves per call. If\n  the optimal solution is longer, you see only the first 4 moves of\n  progress toward it. APPLY THEM, then RE-QUERY from the new state to\n  see the next chunk. This is the real human workflow: a champion sees\n  \"OK these 3 moves get me much closer\", commits, re-evaluates.\n- **What you DON'T have**: no wide BFS, no deep search, no oracle that\n  spits out the full solution. You compose by iterating.\n\nYour job is to narrate the FMC theory and reasoning as you go. The\ntranscript is the product. Show your work.\n\n# Elite-solver exemplars (v21 \u2014 read these before scouting)\n\nThree condensed reasoning patterns from elite WCA-FMC champions. They\nillustrate the *texture* of the solve narration you should imitate.\nMatch the voice: tool calls + terse rationale + explicit rejection of\ninferior branches.\n\n### Exemplar A \u2014 Multi-side EO scouting before committing\n> inspect_state shows bad_edges_per_axis = {UD: 2, FB: 4, RL: 6}. UD\n> is the cheap EO. eo_pattern_lookup(axis='UD') returns 4 moves. But\n> before I commit, let me check inverse-FB \u2014 sometimes the \"ugly\" axis\n> on inverse has a shorter EO + cleaner DR substate. niss_flip,\n> eo_pattern_lookup(axis='FB') \u2192 5 moves. dr_trigger_options on both:\n> UD-normal best is DR-4C4E in 1mv (single R, but 4c4e finishes in\n> ~9mv). Inverse-FB best is DR-3C2E in 3mv (3c2e finishes in ~5mv).\n> Joint: UD-normal 4+1 = 5mv to DR, ~9mv finish, ~14 total. Inverse-FB\n> 5+3 = 8mv to DR, ~5mv finish, ~13 total. Inverse-FB wins by ~1 move\n> AND gives a cleaner substate. Staying flipped, applying the inverse-\n> FB EO. I did NOT take the shortest EO \u2014 I joined EO+DR+finish in my\n> head before committing.\n\n### Exemplar B \u2014 Picking the longer DR for a cleaner substate\n> Post-EO on the inverse-FB axis. dr_trigger_options(axis='FB') returns\n> three candidates (BFS-discovery order, no oracle ranking):\n> - DR-4C4E (U): 1mv setup. Tempting on length but substate is the\n>   worst case \u2014 priors say 12-14mv post-DR.\n> - DR-3C2E (U F U'): 3mv setup. 3C2E priors are 6-8mv post-DR.\n> - DR-2C4E (U L2 U): 3mv setup. 2C4E priors are 10-12mv post-DR.\n> I try_alg each (setup+trigger), inspect_state the residual. The 3C2E\n> residual looks textbook clean \u2014 3 misoriented corners visible across\n> the U layer, 2 slice edges in their slots. Total estimate ~3+8=11\n> vs 4C4E ~1+13=14. Taking DR-3C2E. Length of DR is a red herring;\n> what matters is dr_moves + post_dr.\n\n### Exemplar C \u2014 Branch journal with explicit rejection rationale\n> Logging branches as I scout.\n> **Branch 1 \u2014 UD axis DR (Branch I'm bookmarking):** dr_trigger_options\n> finds a 4-move setup to RZP, then a 3-move trigger gives DR in 11\n> total. Substate: 1 quarter-turn corner. HTR estimate 5 moves. Finish\n> leaves 2e2e (potential 1-move insertion via replace_and_shorten).\n> Projected total: 20-21. **Bookmarking.**\n> **Branch 2 \u2014 RL axis DR (scouted from same EO):** holding Branch 1\n> aside. dr_trigger_options(axis='RL') returns nothing under 7 moves \u2014\n> corner orientation is wrong-parity for this axis. **Reject:** 7+ move\n> DR with a bad substate dominates Branch 1.\n> **Branch 3 \u2014 FB axis DR:** would require redoing EO from scratch.\n> **Reject** without scouting; the cost of re-EO is not recoverable.\n> Committing to Branch 1. **Lesson:** when a branch is rejected, write\n> *why* (parity, length, substate quality), not just \"it lost.\" This\n> is the elite-FMC compare-before-commit pattern.\n\n# Branch journal (v14b, elite-solver behavior)\n\nElite solvers literally log their rejected branches: \"tried 4b2 on FB,\nsaw 4c4e in 7 \u2014 took the 2c3 on UD in 5 instead.\" This is **comparison\nbefore commitment**. Before committing to an EO axis or a DR trigger,\nstate out loud the candidates you considered and WHY you rejected the\nothers, e.g.:\n\n  \"EO axes considered: UD=2bad/1mv, FB=4bad/3mv, RL=8bad/4mv \u2192 UD wins.\"\n  \"DR triggers on UD: 4C4E (1mv, residual priors 12-14mv = ~14 total),\n   3C2E (4mv, residual priors 6-8mv = ~11 total) \u2192 take 3C2E, 3 moves\n   cheaper despite the longer DR setup. I estimated post-DR from the\n   substate priors table; no oracle field tells me the answer.\"\n\nThis is BOTH the deliverable (the transcript reads like a champion's\nwalkthrough) AND a forcing function \u2014 verbalizing alternatives prevents\nthe default \"take the shortest DR\" trap that produced our 28-30 move\nsolves in v11-v13.\n\n# Pipeline (the realistic-human version)\n\n1. **Inspect + manual axis scouting** (v27 \u2014 no scout tool):\n   a) inspect_state(main). Read `bad_edges_per_axis` \u2014 typically one\n      axis has the fewest bad edges and that's your easiest EO. But\n      cheap EO doesn't always win; you'll compare candidates.\n\n      **NISS INVARIANT** (v31): `bad_edges_per_axis` is IDENTICAL on\n      normal and inverse \u2014 proven for every WCA scramble. The edges\n      that are bad don't change under inversion; only the SOLUTION\n      to fix them differs (because the cumulative state is different).\n      Do NOT call inspect_state again after niss_flip \u2014 you already\n      know the bad-edge counts. Save the tool call.\n   b) **Scout EO on the normal side** for the 1-2 most promising\n      axes: eo_pattern_lookup(axis=X). Returns the EO move list (or\n      partial if >4 moves). Note the length per candidate axis.\n   c) **Scout EO on the inverse side too** when the normal side\n      doesn't have an obviously short EO. niss_flip switches the\n      slot's perspective (you're now on the inverse state); call\n      eo_pattern_lookup again on the same axis \u2014 the SOLUTION will\n      differ (different moves to reach EO) even though the bad-edge\n      count is the same. Median elite WCA solves do 8 NISS\n      transitions and 50% START on inverse.\n   d) **For each (side, axis) candidate with a viable EO**, also\n      probe DR cost: commit the EO via apply_moves, then call\n      dr_trigger_options(axis=X) from the new state. The decision\n      is JOINT: EO_len + DR_total. A 4-move EO with an 8-move DR\n      (12mv to DR) beats a 2-move EO with a 12-move DR. You read\n      the candidates and judge \u2014 there is no pre-packaged\n      comparison table anymore.\n   e) Pick a (side, axis) and commit. If you committed to inverse,\n      stay flipped; if you bounced back to normal, niss_flip once\n      more so the slot's perspective matches your plan.\n   f) Verbalize rejected candidates (\"UD-normal EO=4, FB-inverse\n      EO=3 but DR there is awful, sticking with UD-normal\").\n\n2. **Commit EO incrementally**:\n   - If the lookup returned the full sequence (\u22644 moves): apply_moves\n     the whole thing in one call. Narrate the move purpose.\n   - If partial: apply_moves the visible chunk, narrate \"this gets me\n     closer to EO on FB\", then re-query eo_pattern_lookup(axis=X) on\n     the new state. Repeat until found=1 with no partial flag.\n\n3. **DR feasibility check (before each EO axis decision is final)**:\n   v32: apply the EO candidate first, then call dr_trigger_options\n   on the new state. Use the trigger family + setup length to judge\n   the joint EO+DR cost. There's no pre-EO probe tool anymore \u2014 you\n   commit moves to see DR options (more human-shape; the cost is\n   tracked by apply_moves at 10 TPS).\n\n4. **DR compose** (dr_trigger_options is your ONLY DR tool \u2014 all 3 axes):\n\n   **DR-LENGTH HARD RULE (v14b, from 333.fm corpus research)**: elite\n   solves get DR in \u22646 moves with 85.7% probability. **DR \u226510 moves NEVER\n   appears in sub-22 solves.** If your shortest DR option exceeds 10mv,\n   that's a SIGNAL the axis is wrong \u2014 probe another (NISS-flip first).\n\n   **DR-SUBSTATE PRIORS TABLE** (v28 \u2014 memorized like any elite cuber):\n   The DR length is half the story; the resulting substate's typical\n   POST-DR cost (HTR reduction + finish combined) is the other half.\n\n   | Trigger family | DR len | Typical post-DR | JZP-eligible post-DR |\n   |---|---:|---:|---:|\n   | DR-3C2E (`R U R'`, `R U' R'`) | 3mv  | **6-8 mv**  | **3-5 mv** |\n   | DR-4C2E (`R U2 R'`)           | 3mv  | 9-11 mv     | 5-7 mv     |\n   | DR-2C4E (`R F2 R'`-family)    | 3mv  | 10-12 mv    | 5-7 mv     |\n   | DR-4C4E (`R`)                 | 1mv  | 12-14 mv    | 7-9 mv     |\n\n   **Implication**: a 4-move 3C2E (1+3=4mv setup) reaching a 6mv finish\n   = 10mv from EO end to solved. A 1-move 4C4E reaches a 13mv finish\n   = 14mv. **The 3C2E saves 4 moves** even though its DR is 3 longer.\n   This is the single biggest move-count lever after EO/axis choice.\n\n   **JZP RECOGNITION (v34 \u2014 derive it yourself)**: A JZP-eligible state\n   has dramatically shorter DR. JZP conditions, readable from\n   inspect_state: no U/D corner stickers on R/L (read CO + corner perm),\n   no E-slice edges in M-slice (read slice marker), even number of\n   unoriented corners. When you spot a JZP state, lean toward it even\n   if the DR setup is 3-5 moves longer than the obvious shortest-DR\n   alternative \u2014 the post-DR finish on a JZP state can be half the\n   length. There is no tool flag for this anymore; identify it by\n   reading the state.\n\n   a) Call `dr_trigger_options(axis=X)` for each candidate axis. The\n      tool returns `trigger_family`, `total_to_dr`, `setup_moves`,\n      `pre_trigger_signature` (the XCYE substate label). No oracle\n      score, no ranking. To compare candidates, try_alg the (setup +\n      trigger) for each, inspect_state on the residual, estimate\n      finish length from the substate priors table, then pick.\n      NARRATE your pick:\n      > \"Comparing on UD: 4C4E in 1mv (residual 4C4E \u2192 12-14mv typical\n      > = ~14 total) vs 3C2E in 4mv (residual 3C2E \u2192 6-8mv typical =\n      > ~11 total). Picking 3C2E.\"\n   b) Per-axis trigger letters in the named catalog: UD uses R+U,\n      FB uses U+F, RL uses F+L (cube-symmetry equivalents).\n   c) v33: if `dr_trigger_options` returns 0 options at depth 5, try\n      `dr_recognize(axis=X)` next. It looks up your current DR state\n      in a 3,657-pattern memory (DR states \u22644 moves from solved):\n      - `source: memory` \u2192 here are the moves to DR, apply them.\n      - `source: brain` \u2192 state isn't in memory; brain suggests the\n        top-K next moves. Pick the most plausible (often R, U, F, or\n        their inverses), apply ONE move via apply_moves, then re-call\n        dr_recognize from the new state. Iterate. This is the human\n        flow: when you don't instantly recognize a case, you use\n        trained intuition for a single move, then look again.\n\n5. **POST-DR DECISION** (v14b \u2014 research-driven priority):\n\n   **PRIMARY PATH (Option A \u2014 Standard HTR finish)**: 333.fm corpus shows\n   elite solvers DO NOT use insertions. Elite insertion rate is 0.7%; long\n   (30+) solves use them 15.8%. Insertions are a recovery tool, not the\n   path to sub-25. **Default to the clean DR\u2192HTR\u2192finish pipeline.** Use\n   the inter-phase analyze_residual checks (step 6) as opportunistic\n   shortcuts, NOT primary tooling.\n\n   **FALLBACK (Option B \u2014 derive_corner_3cycle)**: ONLY if analyze_residual\n   returns `is_pure_corner_3cycle: true` between HTR-finish chunks \u2014 then\n   the 8-move comm is genuinely shorter than the remaining finish. Don't\n   force this; don't go searching for skeletons.\n\n   **REFINEMENT (Option D \u2014 replace_and_shorten)**: 1-call cap; the tool\n   enforces it. Use ONLY if your initial solve is \u226527 moves AND you have\n   \u226530 tool calls remaining. The tool will refuse otherwise.\n\n   **DEPRIORITIZED**: don't go looking for slice insertions or 3-cycle\n   skeletons proactively. Per the 333.fm research, the path to sub-25\n   is DR-quality, not insertion-skill.\n\n5b. **REFINEMENT (MANDATORY when gates pass)**: after you have a\n   verified solve, if total_moves \u2265 27 AND tool calls remaining \u2265 30\n   AND you haven't already called replace_and_shorten this run, you\n   **MUST** call replace_and_shorten ONCE on a large tail span\n   (e.g., start=4, end=N where N is your total move count). The tool\n   enforces the gates and will refuse otherwise \u2014 DO NOT try to call\n   it more than once. If it returns `solves_scramble: true` AND\n   `delta < 0`, accept the substitute as your new history (replace\n   history starting from `start` with `substitute_moves`). v13\n   evidence: this saved 3-5 moves on PSSS_s1 (30 \u2192 25). If r&s\n   would fall outside the gates, submit your current solve.\n\n   After r&s succeeds, you may submit immediately \u2014 don't try to\n   chain a second r&s; the tool enforces a 1-call cap.\n\n6. **HTR classify + phase compose** (running Option A) \u2014 with **free\n   inter-phase state checks** (v17: quick_check replaces analyze_residual\n   for the common case):\n   a) htr_classify(axis=X). Narrate the subset by name: \"this is a\n      4-swap axial subset with cycle structure (2,2,2,2).\"\n   b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the\n      reduction is longer than 4 moves; apply the visible chunk,\n      narrate (\"4 moves of corner orbit reduction\"), then **CALL\n      quick_check BEFORE re-querying apply_htr_phase**. quick_check is\n      FREE (0s) and returns is_solved/is_htr_ud/etc. If is_solved=true\n      \u2192 submit; if is_htr_ud=false \u2192 continue HTR-reduction. Only call\n      analyze_residual when you specifically suspect a pure 3-cycle\n      residual (rare; quick_check tells you when this is plausible).\n   c) Same for apply_htr_phase(phase='finish'): quick_check between\n      chunks. If is_solved emerges before the finish ends, ship it.\n\n   Why: a \"clean\" subset finish often produces a 3c residual one or two\n   chunks before fully solved \u2014 landing there earlier and inserting the\n   commutator saves 2-4 moves vs running the full finish. This is the\n   real human FMC pattern: see the residual, derive the comm, submit.\n\n6. **cancel + verify_solved**. Narrate the cancellations you spot.\n\n# Reasoning style \u2014 the deliverable\n\nBefore EACH tool call, narrate in 2-4 sentences:\n- What you SEE (state of cube, what's left, what theory applies).\n- What you EXPECT to happen (which moves should help and why).\n- WHY this tool is the right next step.\n\nThe whole transcript is the video. Verbalize FMC vocabulary: \"bad\nedges on UF and DB share the F flipping face\", \"RZP setup of 2 moves\ninto the R-U2-R' DR-4c4e trigger\", \"this is a 4-swap axial subset \u2014\n3-cycle finish with one extra pair\". This is the texture viewers want.\n\n# Strategy notes\n\n**SHIP RULE (read this twice)**: the primary goal is producing a\nSOLVED solution within budget. Any verified solve under 50 moves\nbeats a timeout. Once you have a working complete solution\n(EO + DR + finish, verified by verify_solved), CALL FINAL_SOLUTION\nand STOP. Do NOT keep searching for shorter alternatives unless you\nhave a very specific reason (e.g. you can see your current solution\nhas 4+ obviously cancellable moves and a quick try_alg would confirm).\nThe FMC theory targets (\"sub-15 DR is advanced\", etc.) are aspirational\nfor STRONG HUMANS over many practice solves \u2014 not requirements for\nthis attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.\n\n- **Test before commit**: a 4-move EO probed with find_dr_via_trigger is\n  cheaper than a 2-move EO followed by 30 tool calls of manual DR\n  exploration that goes nowhere. Always test ALL viable EO axes' DR\n  options first.\n- **apply_moves has NO upper cap** \u2014 you can apply as many moves as you\n  want. Only undo_moves is capped at 4 per call. If you commit\n  10 moves you can't undo all 10; use reset_slot if you need to.\n- **try_alg is your cheap probe** (2s sim). Use it constantly to look\n  at after-states without committing. It does NOT modify the slot.\n- Slots are precious. Don't proliferate. Default: do everything in 'main'.\n- Backtracking tools (`reset_slot`, `undo_moves`, `new_slot`) exist but\n  use them sparingly. Empirically (v23b corpus eval), prompting the\n  agent to use backtracking proactively REGRESSED move count by 1.2\n  moves \u2014 same pattern as v14b's branch-journal thrash. Stick with\n  the committed branch unless something is *clearly* wrong.\n- NISS is cheap (~2s) and powerful \u2014 use it when stuck.\n- **Before submitting**: call cancel(moves=your_full_solution) to collapse\n  any adjacent same-face moves (e.g. `U U2` \u2192 `U'`). It's cheap and often\n  saves 1-3 moves.\n- **Submission (v17)**: ALWAYS call `compose_niss_solution(slot='main')`\n  BEFORE emitting FINAL_SOLUTION. It assembles the canonical normal-frame\n  solution from your slot history, runs cancel(), and verifies the solve.\n  If it returns solves=True, output the returned `solution` field as the\n  FINAL_SOLUTION list \u2014 do NOT hand-construct it from invert() calls\n  (WesternSicily v16 wasted 25 tool calls + 1 extra move because the\n  agent tried to invert mentally and got it wrong 3 times).\n    FINAL_SOLUTION: [\"R\", \"U'\", ...]\n- The inverse-of-scramble is the trivial floor and does NOT count.\n\n# Reasoning style\nBefore each tool call, narrate in 1-2 sentences: what you observed, what\nhypothesis you're testing, why you picked this tool. This transcript is the\ndeliverable \u2014 your visible reasoning is the product.\n"
+    },
+    {
+      "type": "user",
+      "content": "Solve this scramble within your one-hour budget. Start with inspect_state(slot='main')."
+    },
+    {
+      "type": "assistant",
+      "turn": 1,
+      "wall_s_elapsed": 5.05,
+      "turn_wall_s": 5.05,
+      "input_tokens": 374,
+      "output_tokens": 180,
+      "cache_read_tokens": 0,
+      "cache_create_tokens": 13365,
+      "content": [
+        {
+          "signature": "EqwDCmQIDRgCKkAgcn2QmdQel922aLIUTSgensm/HVyE+p1YOrNcJkPB494OvDUBoXM+q+DtoKZ8LEUqbZYVafKNMlwJIFcgb3E5MhpjbGF1ZGUtc29ubmV0LTQtNS0yMDI1MDkyOTgAEgwKtO97sutpZ/W9rrcaDEE19SzOX6YvYJQptSIw7oB+nxGCVCLlXEgZywlFoj9W8eNpQJs9q0hat+oeHyXQVUvoM8SlpQIqnmeOEKKWKvUBsPI3ml/+SpxTkItL5UnSMO7E9U/Hj8IspIA/ZamNl2sT5x7f3VXVxHwmHWMhingTlHejiSnzEeHom4eFaZOMftE4PkUkzeBc+upooApscwnZOdRxjsf2qamNjStuU3PwFIzP4cCzSEvpCSTdL+iOE7nt3OQyO7iZyU0HkjEEP4oXordsCvyBGzYYEiuiNbqy2iSNtrdqfAdOkYb1Zd46VwjQJPURJbvZ5TopqZKn1GuCaWFcLsW2Ze1y51NA/D+UoDYGE4IAdbMtuaz0kx07DBgLD7/8MFb/Cr2Unot8mMDNb9DnFz/2u4yubQ1zkPvu5OurI3wYAQ==",
+          "thinking": "The user wants me to solve the scramble. I need to start with inspect_state to see what we're working with. The scramble is:\n\nR' U' F R D2 F' D R L2 F R B2 D' F' L2 U2 D2 B R2 B L2 B R' U' F\n\nLet me begin by inspecting the state.",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "I'll solve this FMC scramble step-by-step, starting with inspection to assess the initial state and plan my approach.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01ScdqxghQdVRV4f8wcgAjt3",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "inspect_state",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 1,
+      "tool_index": 1,
+      "name": "inspect_state",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "bad_edges_per_axis": {
+          "UD": 6,
+          "FB": 4,
+          "RL": 4
+        },
+        "bad_edge_slots_per_axis": {
+          "UD": [
+            "UF",
+            "UL",
+            "DR",
+            "FR",
+            "FL",
+            "BR"
+          ],
+          "FB": [
+            "DR",
+            "DL",
+            "FR",
+            "BL"
+          ],
+          "RL": [
+            "UL",
+            "DR",
+            "DF",
+            "FR"
+          ]
+        },
+        "bad_edges_by_flipping_face": {
+          "UD": {
+            "F": [
+              "UF",
+              "FR",
+              "FL"
+            ],
+            "B": [
+              "BR"
+            ]
+          },
+          "FB": {
+            "L": [
+              "DL",
+              "BL"
+            ],
+            "R": [
+              "DR",
+              "FR"
+            ]
+          },
+          "RL": {
+            "U": [
+              "UL"
+            ],
+            "D": [
+              "DR",
+              "DF"
+            ]
+          }
+        },
+        "bad_corners_per_axis": {
+          "UD": 7,
+          "FB": 7,
+          "RL": 6
+        },
+        "eo_solved_axes": [],
+        "dr_solved_axes": [],
+        "dr_closeness_per_axis": {
+          "UD": {
+            "axis": "UD",
+            "misoriented_corners": 7,
+            "misplaced_slice_edges": 3,
+            "trigger_label": "DR-7C3E",
+            "jzp_eligible": false,
+            "top_pairs_on_inverse": 3,
+            "arm_other_axis": {
+              "C": 7,
+              "E": 2
+            }
+          },
+          "FB": {
+            "axis": "FB",
+            "misoriented_corners": 7,
+            "misplaced_slice_edges": 2,
+            "trigger_label": "DR-7C2E",
+            "arm_other_axis": {
+              "C": 7,
+              "E": 3
+            }
+          },
+          "RL": {
+            "axis": "RL",
+            "misoriented_corners": 6,
+            "misplaced_slice_edges": 2,
+            "trigger_label": "DR-6C2E",
+            "arm_other_axis": {
+              "C": 7,
+              "E": 2
+            }
+          }
+        },
+        "htr_closeness": null,
+        "solved_corners_count": 0,
+        "solved_edges_count": 1,
+        "in_strict_htr": false,
+        "in_canonical_htr_ud": false,
+        "is_solved": false,
+        "move_count": 0,
+        "slot": "main",
+        "on_inverse": false,
+        "undo_floor": 0,
+        "undo_available": 0,
+        "history_visible": [],
+        "history_truncated": 0,
+        "_meta": {
+          "sim_remaining_s": 3595.0,
+          "sim_fraction_left": 0.999,
+          "wall_remaining_s": 895.0,
+          "tool_calls_remaining": 79,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 5.0,
+      "wall_s_elapsed": 5.05,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 2,
+      "wall_s_elapsed": 13.04,
+      "turn_wall_s": 7.99,
+      "input_tokens": 1192,
+      "output_tokens": 313,
+      "cache_read_tokens": 13365,
+      "cache_create_tokens": 0,
+      "content": [
+        {
+          "citations": null,
+          "text": "Good, I'm starting with **3595s** of sim time remaining. Let me analyze what I see:\n\n**Initial inspection:**\n- **Bad edges per axis**: UD=6, FB=4, RL=4\n- **Candidate axes**: FB and RL both have 4 bad edges, which is typically 1-3 moves for EO\n- **UD has 6 bad edges** \u2014 typically 2-4 moves, but more scattered\n\nThe FB and RL axes are most promising for EO. According to FMC theory, 4 bad edges can often be fixed in 1 move if all 4 are on the same flipping face, or 2-3 moves if scattered.\n\nLet me scout EO on the **normal frame first** for FB and RL axes:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_013uxmV2tBD8iMkEUQx9BeVY",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "FB"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01Ekn73iQtXcoC1wuquzYr6D",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 2,
+      "tool_index": 2,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "FB"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "B2",
+              "L2",
+              "U2",
+              "R'"
+            ],
+            "length": 4
+          }
+        ],
+        "pattern_size": 4,
+        "cached": true,
+        "note": "Recognized pattern (4 bad edges) \u2014 playing memorized 4-move EO.",
+        "_meta": {
+          "sim_remaining_s": 3592.0,
+          "sim_fraction_left": 0.998,
+          "wall_remaining_s": 887.0,
+          "tool_calls_remaining": 78,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 8.0,
+      "wall_s_elapsed": 13.04,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 2,
+      "tool_index": 3,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "RL"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "R2",
+              "B",
+              "F2",
+              "U'"
+            ],
+            "length": 4
+          }
+        ],
+        "pattern_size": 4,
+        "cached": true,
+        "note": "Recognized pattern (4 bad edges) \u2014 playing memorized 4-move EO.",
+        "_meta": {
+          "sim_remaining_s": 3589.0,
+          "sim_fraction_left": 0.997,
+          "wall_remaining_s": 887.0,
+          "tool_calls_remaining": 77,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 11.0,
+      "wall_s_elapsed": 13.04,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 3,
+      "wall_s_elapsed": 17.53,
+      "turn_wall_s": 4.5,
+      "input_tokens": 1478,
+      "output_tokens": 145,
+      "cache_read_tokens": 13365,
+      "cache_create_tokens": 365,
+      "content": [
+        {
+          "citations": null,
+          "text": "Both axes give **4-move EOs** on the normal side:\n- FB: `B2 L2 U2 R'`\n- RL: `R2 B F2 U'`\n\nNow I should check the **inverse frame** to see if either axis has a shorter EO there. NISS is cheap and median elite solves start on inverse 50% of the time.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01VppbnT5HfnfruMxZ9ZjRxs",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "niss_flip",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 3,
+      "tool_index": 4,
+      "name": "niss_flip",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "original_scramble": [
+          "R'",
+          "U'",
+          "F",
+          "R",
+          "D2",
+          "F'",
+          "D",
+          "R",
+          "L2",
+          "F",
+          "R",
+          "B2",
+          "D'",
+          "F'",
+          "L2",
+          "U2",
+          "D2",
+          "B",
+          "R2",
+          "B",
+          "L2",
+          "B",
+          "R'",
+          "U'",
+          "F"
+        ],
+        "original_history": [
+          "U2",
+          "R'"
+        ],
+        "inverse_scramble": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "inverse_cumulative": [
+          "F'",
+          "U",
+          "R",
+          "B'",
+          "L2",
+          "B'",
+          "R2",
+          "B'",
+          "D2",
+          "U2",
+          "L2",
+          "F",
+          "D",
+          "B2",
+          "R'",
+          "F'",
+          "L2",
+          "R'",
+          "D'",
+          "F",
+          "D2",
+          "R'",
+          "F'",
+          "U",
+          "R"
+        ],
+        "note": "To continue search on the inverse side, treat `inverse_cumulative` as the new effective scramble applied to SOLVED, and run search from there. Moves you find on this side are 'inverse-side' moves; the final solution is `normal_moves + invert(inverse_moves)` applied to the original scramble.",
+        "slot": "main",
+        "now_on_inverse": true,
+        "_meta": {
+          "sim_remaining_s": 3587.0,
+          "sim_fraction_left": 0.996,
+          "wall_remaining_s": 882.5,
+          "tool_calls_remaining": 76,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 13.0,
+      "wall_s_elapsed": 17.53,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 4,
+      "wall_s_elapsed": 20.4,
+      "turn_wall_s": 2.87,
+      "input_tokens": 1261,
+      "output_tokens": 154,
+      "cache_read_tokens": 13911,
+      "cache_create_tokens": 642,
+      "content": [
+        {
+          "citations": null,
+          "text": "Now on inverse. Let me scout EO on **inverse-FB** and **inverse-RL**:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01BVgVSzq7veW9N5HaUPLZRd",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "FB"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        },
+        {
+          "id": "toolu_01UzBGNYc4em4uEf6YLZTUCd",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL"
+          },
+          "name": "eo_pattern_lookup",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 4,
+      "tool_index": 5,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "FB"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "U2",
+              "R'"
+            ],
+            "length": 2
+          }
+        ],
+        "pattern_size": 4,
+        "cached": true,
+        "note": "Recognized pattern (4 bad edges) \u2014 playing memorized 2-move EO.",
+        "_meta": {
+          "sim_remaining_s": 3584.0,
+          "sim_fraction_left": 0.996,
+          "wall_remaining_s": 879.6,
+          "tool_calls_remaining": 75,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 16.0,
+      "wall_s_elapsed": 20.4,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "tool_call",
+      "turn": 4,
+      "tool_index": 6,
+      "name": "eo_pattern_lookup",
+      "input": {
+        "slot": "main",
+        "axis": "RL"
+      },
+      "result": {
+        "found": 1,
+        "options": [
+          {
+            "moves": [
+              "D",
+              "U'",
+              "B'",
+              "D'"
+            ],
+            "length": 4,
+            "partial": true
+          }
+        ],
+        "pattern_size": 4,
+        "cached": true,
+        "note": "Full optimal EO is 5 moves \u2014 beyond your 4-move visualization. You see the next 4 moves toward EO. Apply them, then re-query from the new state for the next chunk.",
+        "full_optimal_length": 5,
+        "_meta": {
+          "sim_remaining_s": 3581.0,
+          "sim_fraction_left": 0.995,
+          "wall_remaining_s": 879.6,
+          "tool_calls_remaining": 74,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 19.0,
+      "wall_s_elapsed": 20.4,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 5,
+      "wall_s_elapsed": 26.42,
+      "turn_wall_s": 6.02,
+      "input_tokens": 1136,
+      "output_tokens": 183,
+      "cache_read_tokens": 14806,
+      "cache_create_tokens": 397,
+      "content": [
+        {
+          "citations": null,
+          "text": "Excellent! **Inverse-FB has a 2-move EO**: `U2 R'`\n\nThis is significantly better than the 4-move normal-side EOs. Now I need to compare the **joint EO+DR cost** for inverse-FB vs normal-FB/RL:\n\n**Decision point**: Before I commit to inverse-FB, I should probe what DR options look like after that 2-move EO. Let me apply it temporarily and check:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01MmHa1ZqTNGhzfbkj3iqDvE",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "R'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 5,
+      "tool_index": 7,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "R'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "U2",
+          "R'"
+        ],
+        "move_count": 2,
+        "undo_available": 2,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3580.8,
+          "sim_fraction_left": 0.995,
+          "wall_remaining_s": 873.6,
+          "tool_calls_remaining": 73,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 19.2,
+      "wall_s_elapsed": 26.42,
+      "slots_after": {
+        "main": {
+          "history": [
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 2,
+          "undo_available": 2
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 6,
+      "wall_s_elapsed": 30.61,
+      "turn_wall_s": 4.18,
+      "input_tokens": 825,
+      "output_tokens": 116,
+      "cache_read_tokens": 15346,
+      "cache_create_tokens": 465,
+      "content": [
+        {
+          "citations": null,
+          "text": "Good, EO committed (on inverse, FB axis). Now let me check DR trigger options on inverse-FB:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_014k1YdtPxyL9ZKmH5aCDwvX",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "FB",
+            "max_setup": 5
+          },
+          "name": "dr_trigger_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 6,
+      "tool_index": 8,
+      "name": "dr_trigger_options",
+      "input": {
+        "slot": "main",
+        "axis": "FB",
+        "max_setup": 5
+      },
+      "result": {
+        "axis": "FB",
+        "options": [],
+        "max_setup_searched": 5,
+        "states_explored": 97247,
+        "note": "BFS depth \u22645 (hard-capped \u2014 human visualization scope). Explored 97247 unique states, stopped after 0 trigger families found (early-bail at 3). Options in BFS-discovery order \u2014 NOT a ranked oracle. There is no expected_total_to_solved field \u2014 you must estimate post-DR cost yourself from the substate signature (e.g. 3C2E typically 6-8mv post-DR, 4C4E 12-14mv). To check a candidate, try_alg(setup+trigger) then inspect_state to read the residual. If 0 options: commit a setup move you think looks promising and re-call.",
+        "search_method": {
+          "kind": "BFS-over-EO-preserving-moves",
+          "axis": "FB",
+          "max_setup_depth": 5,
+          "trigger_catalog_size": 10,
+          "trigger_families_checked": [
+            "DR-4C4E (R)",
+            "DR-4C4E (R')",
+            "DR-3C2E (R U R')",
+            "DR-3C2E (R U' R')",
+            "DR-4C2E (R U2 R')",
+            "DR-4C4E (R U2 F2 R)"
+          ],
+          "note": "BFS over EO-preserving moves (~14/axis) up to depth 5; each visited state is checked against 10 named DR trigger algorithms. Returned options are the shortest setup found for each trigger family (some families may not appear if no setup \u22645 reaches them). NOT a wide BFS over all DRs; bounded to the named trigger catalog elite cubers memorize."
+        },
+        "_meta": {
+          "sim_remaining_s": 3284.1,
+          "sim_fraction_left": 0.912,
+          "wall_remaining_s": 866.6,
+          "tool_calls_remaining": 72,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 315.94,
+      "wall_s_elapsed": 33.37,
+      "slots_after": {
+        "main": {
+          "history": [
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 2,
+          "undo_available": 2
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 7,
+      "wall_s_elapsed": 38.04,
+      "turn_wall_s": 4.66,
+      "input_tokens": 914,
+      "output_tokens": 130,
+      "cache_read_tokens": 15905,
+      "cache_create_tokens": 430,
+      "content": [
+        {
+          "citations": null,
+          "text": "**No DR triggers found within 5 moves** on inverse-FB. This is a bad sign. The tool explored 97k states and found nothing. Let me try the fallback: `dr_recognize` which uses a 3,657-pattern memory and brain suggestions:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_015tNWcKWh4uDETdazkEcPBd",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "FB"
+          },
+          "name": "dr_recognize",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 7,
+      "tool_index": 9,
+      "name": "dr_recognize",
+      "input": {
+        "slot": "main",
+        "axis": "FB"
+      },
+      "result": {
+        "source": "brain",
+        "found": 0,
+        "axis": "FB",
+        "brain_top_moves": [
+          {
+            "move": "R2",
+            "prob": 0.654
+          },
+          {
+            "move": "F2",
+            "prob": 0.231
+          },
+          {
+            "move": "B2",
+            "prob": 0.088
+          },
+          {
+            "move": "R'",
+            "prob": 0.021
+          }
+        ],
+        "note": "DR pattern not in your 3,657-pattern memory (this state is >4 moves from solved-DR). Brain's top-K suggestions above \u2014 pick the most plausible single move, apply it, and re-query. This is the human flow when you don't instantly recognize the case: try a move you trained intuition says is likely, then look again.",
+        "_meta": {
+          "sim_remaining_s": 3280.1,
+          "sim_fraction_left": 0.911,
+          "wall_remaining_s": 862.0,
+          "tool_calls_remaining": 71,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 319.94,
+      "wall_s_elapsed": 38.04,
+      "slots_after": {
+        "main": {
+          "history": [
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 2,
+          "undo_available": 2
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 8,
+      "wall_s_elapsed": 50.27,
+      "turn_wall_s": 12.23,
+      "input_tokens": 989,
+      "output_tokens": 187,
+      "cache_read_tokens": 16516,
+      "cache_create_tokens": 118,
+      "content": [
+        {
+          "citations": null,
+          "text": "The brain suggests `R2` (65% prob) as the most plausible next move. This means inverse-FB is **not leading to a quick DR** \u2014 I'd need to iterate multiple brain-guided moves, which burns time and moves.\n\n**Strategic decision**: The 2-move EO on inverse-FB looked great, but the DR path is unclear. Let me compare against **normal-FB** (4-move EO) to see if the DR there is cleaner. I'll flip back to normal and test:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01VybpEDxoPmVFyNEJtdHe9S",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "rescramble": true
+          },
+          "name": "reset_slot",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 8,
+      "tool_index": 10,
+      "name": "reset_slot",
+      "input": {
+        "slot": "main",
+        "rescramble": true
+      },
+      "result": {
+        "slot": "main",
+        "reset": true,
+        "rescramble": true,
+        "_meta": {
+          "sim_remaining_s": 3255.1,
+          "sim_fraction_left": 0.904,
+          "wall_remaining_s": 849.7,
+          "tool_calls_remaining": 70,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 344.94,
+      "wall_s_elapsed": 50.27,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 9,
+      "wall_s_elapsed": 54.79,
+      "turn_wall_s": 4.52,
+      "input_tokens": 650,
+      "output_tokens": 115,
+      "cache_read_tokens": 16747,
+      "cache_create_tokens": 501,
+      "content": [
+        {
+          "citations": null,
+          "text": "Back to normal scramble. Let me try **normal-FB** with the 4-move EO and see what DR options emerge:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01P3ykARCLzewWLGqkQjacpx",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "B2",
+              "L2",
+              "U2",
+              "R'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 9,
+      "tool_index": 11,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "B2",
+          "L2",
+          "U2",
+          "R'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "B2",
+          "L2",
+          "U2",
+          "R'"
+        ],
+        "move_count": 4,
+        "undo_available": 4,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3254.7,
+          "sim_fraction_left": 0.904,
+          "wall_remaining_s": 845.2,
+          "tool_calls_remaining": 69,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 345.34,
+      "wall_s_elapsed": 54.79,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B2",
+            "L2",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": false,
+          "move_count": 4,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 10,
+      "wall_s_elapsed": 56.86,
+      "turn_wall_s": 2.07,
+      "input_tokens": 512,
+      "output_tokens": 91,
+      "cache_read_tokens": 17375,
+      "cache_create_tokens": 248,
+      "content": [
+        {
+          "id": "toolu_01RnQGFkJx81NmdajhNyCXHR",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "FB",
+            "max_setup": 5
+          },
+          "name": "dr_trigger_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 10,
+      "tool_index": 12,
+      "name": "dr_trigger_options",
+      "input": {
+        "slot": "main",
+        "axis": "FB",
+        "max_setup": 5
+      },
+      "result": {
+        "axis": "FB",
+        "options": [],
+        "max_setup_searched": 5,
+        "states_explored": 97874,
+        "note": "BFS depth \u22645 (hard-capped \u2014 human visualization scope). Explored 97874 unique states, stopped after 0 trigger families found (early-bail at 3). Options in BFS-discovery order \u2014 NOT a ranked oracle. There is no expected_total_to_solved field \u2014 you must estimate post-DR cost yourself from the substate signature (e.g. 3C2E typically 6-8mv post-DR, 4C4E 12-14mv). To check a candidate, try_alg(setup+trigger) then inspect_state to read the residual. If 0 options: commit a setup move you think looks promising and re-call.",
+        "search_method": {
+          "kind": "BFS-over-EO-preserving-moves",
+          "axis": "FB",
+          "max_setup_depth": 5,
+          "trigger_catalog_size": 10,
+          "trigger_families_checked": [
+            "DR-4C4E (R)",
+            "DR-4C4E (R')",
+            "DR-3C2E (R U R')",
+            "DR-3C2E (R U' R')",
+            "DR-4C2E (R U2 R')",
+            "DR-4C4E (R U2 F2 R)"
+          ],
+          "note": "BFS over EO-preserving moves (~14/axis) up to depth 5; each visited state is checked against 10 named DR trigger algorithms. Returned options are the shortest setup found for each trigger family (some families may not appear if no setup \u22645 reaches them). NOT a wide BFS over all DRs; bounded to the named trigger catalog elite cubers memorize."
+        },
+        "_meta": {
+          "sim_remaining_s": 2956.0,
+          "sim_fraction_left": 0.821,
+          "wall_remaining_s": 840.3,
+          "tool_calls_remaining": 68,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 643.96,
+      "wall_s_elapsed": 59.68,
+      "slots_after": {
+        "main": {
+          "history": [
+            "B2",
+            "L2",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": false,
+          "move_count": 4,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 11,
+      "wall_s_elapsed": 62.73,
+      "turn_wall_s": 3.05,
+      "input_tokens": 824,
+      "output_tokens": 112,
+      "cache_read_tokens": 17807,
+      "cache_create_tokens": 92,
+      "content": [
+        {
+          "citations": null,
+          "text": "**Also no DR triggers within 5 moves** on normal-FB. This axis is not working. Let me try the **RL axis** instead. Reset and test RL:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01Gap39oPpYz4qTQ37YBJFGn",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "rescramble": true
+          },
+          "name": "reset_slot",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 11,
+      "tool_index": 13,
+      "name": "reset_slot",
+      "input": {
+        "slot": "main",
+        "rescramble": true
+      },
+      "result": {
+        "slot": "main",
+        "reset": true,
+        "rescramble": true,
+        "_meta": {
+          "sim_remaining_s": 2931.0,
+          "sim_fraction_left": 0.814,
+          "wall_remaining_s": 837.3,
+          "tool_calls_remaining": 67,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 668.96,
+      "wall_s_elapsed": 62.73,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    }
+  ],
+  "input_tokens": 10155,
+  "output_tokens": 1726,
+  "cache_read_tokens": 155143,
+  "cache_create_tokens": 16623,
+  "per_turn_usage": [
+    {
+      "turn": 1,
+      "wall_s_elapsed": 5.05,
+      "turn_wall_s": 5.05,
+      "sim_spent_at_turn": 0.0,
+      "input_tokens": 374,
+      "output_tokens": 180,
+      "cache_read_tokens": 0,
+      "cache_create_tokens": 13365,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 2,
+      "wall_s_elapsed": 13.04,
+      "turn_wall_s": 7.99,
+      "sim_spent_at_turn": 5.0,
+      "input_tokens": 1192,
+      "output_tokens": 313,
+      "cache_read_tokens": 13365,
+      "cache_create_tokens": 0,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 3,
+      "wall_s_elapsed": 17.53,
+      "turn_wall_s": 4.5,
+      "sim_spent_at_turn": 11.0,
+      "input_tokens": 1478,
+      "output_tokens": 145,
+      "cache_read_tokens": 13365,
+      "cache_create_tokens": 365,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 4,
+      "wall_s_elapsed": 20.4,
+      "turn_wall_s": 2.87,
+      "sim_spent_at_turn": 13.0,
+      "input_tokens": 1261,
+      "output_tokens": 154,
+      "cache_read_tokens": 13911,
+      "cache_create_tokens": 642,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 5,
+      "wall_s_elapsed": 26.42,
+      "turn_wall_s": 6.02,
+      "sim_spent_at_turn": 19.0,
+      "input_tokens": 1136,
+      "output_tokens": 183,
+      "cache_read_tokens": 14806,
+      "cache_create_tokens": 397,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 6,
+      "wall_s_elapsed": 30.61,
+      "turn_wall_s": 4.18,
+      "sim_spent_at_turn": 19.2,
+      "input_tokens": 825,
+      "output_tokens": 116,
+      "cache_read_tokens": 15346,
+      "cache_create_tokens": 465,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 7,
+      "wall_s_elapsed": 38.04,
+      "turn_wall_s": 4.66,
+      "sim_spent_at_turn": 315.94,
+      "input_tokens": 914,
+      "output_tokens": 130,
+      "cache_read_tokens": 15905,
+      "cache_create_tokens": 430,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 8,
+      "wall_s_elapsed": 50.27,
+      "turn_wall_s": 12.23,
+      "sim_spent_at_turn": 319.94,
+      "input_tokens": 989,
+      "output_tokens": 187,
+      "cache_read_tokens": 16516,
+      "cache_create_tokens": 118,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 9,
+      "wall_s_elapsed": 54.79,
+      "turn_wall_s": 4.52,
+      "sim_spent_at_turn": 344.94,
+      "input_tokens": 650,
+      "output_tokens": 115,
+      "cache_read_tokens": 16747,
+      "cache_create_tokens": 501,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 10,
+      "wall_s_elapsed": 56.86,
+      "turn_wall_s": 2.07,
+      "sim_spent_at_turn": 345.34,
+      "input_tokens": 512,
+      "output_tokens": 91,
+      "cache_read_tokens": 17375,
+      "cache_create_tokens": 248,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 11,
+      "wall_s_elapsed": 62.73,
+      "turn_wall_s": 3.05,
+      "sim_spent_at_turn": 643.96,
+      "input_tokens": 824,
+      "output_tokens": 112,
+      "cache_read_tokens": 17807,
+      "cache_create_tokens": 92,
+      "stop_reason": "tool_use"
+    }
+  ],
+  "cost_estimate_usd": 0.1652
+}
