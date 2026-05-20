@@ -41,7 +41,7 @@ import anthropic
 from cube.classifier.htr import dr_subset_canonical, is_htr_ud
 from cube.engine.notation import parse_alg
 from cube.engine.state import SOLVED
-from cube.tools import algebra, dr_pattern_lib, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, insertion_tools, library, niss_scout as niss_scout_mod, policy, search, state
+from cube.tools import algebra, dr_pattern_lib, dr_progress as dr_progress_mod, dr_trigger_options as dr_to_mod, dr_triggers, eo_bfs, eo_pattern_lib, insertion_tools, library, niss_scout as niss_scout_mod, policy, search, state
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -270,6 +270,9 @@ def _build_handlers(
     """
     if run_state is None:
         run_state = {"tool_calls_remaining": 10_000, "rs_calls_used": 0}
+    # v35: session-local bookmarks. Each entry:
+    #   { slot, history, on_inverse, description }
+    bookmarks: dict[str, dict] = {}
 
     def _h_quick_check(args):
         """v17: FREE state classifier. Returns booleans only — is_solved,
@@ -987,6 +990,99 @@ def _build_handlers(
         # Verification is free — corresponds to the judge accepting the sheet.
         return state.verify_solved(scramble, args["solution"])
 
+    def _h_dr_progress_options(args):
+        """v35: BFS over EO-preserving moves; return top-k continuations
+        ranked by bad_corners + bad_slice_edges (state-readable counts).
+        Replaces the hit/miss cliff of dr_trigger_options — there's
+        always *some* directional signal, even when no named trigger
+        is in reach.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        sc, hist = _materialize(scramble, slot)
+        axis = args.get("axis", "UD")
+        max_depth = int(args.get("max_depth", 4))
+        k = int(args.get("k", 5))
+        out = dr_progress_mod.dr_progress_options(
+            sc, hist, axis=axis, max_depth=max_depth, k=k,
+        )
+        states = out.get("states_explored", 0)
+        # Cost scales with breadth — depth 4 ≈ 12k states ≈ 6s sim;
+        # depth 5 ≈ 100k states ≈ 30s. LLM pays more for a wider look.
+        cost = 3.0 + 0.0003 * states
+        budget.charge("dr_progress_options", cost, slot=slot.name, axis=axis,
+                      max_depth=max_depth, states=states)
+        return out
+
+    def _h_bookmark_fork(args):
+        """v35: snapshot the current slot state under `name` with a
+        free-text description. Future calls can restore_fork(name) to
+        jump back. The bookmark survives the rest of the session and
+        is serialized into cross-attempt memory.
+        """
+        slot = _resolve_slot(slots, args["slot"])
+        name = args["name"].strip()
+        if not name:
+            return {"error": "name cannot be empty"}
+        desc = args.get("description", "")
+        bookmarks[name] = {
+            "slot": slot.name,
+            "history": list(slot.history),
+            "on_inverse": slot.on_inverse,
+            "description": desc,
+        }
+        budget.charge("bookmark_fork", 2.0, slot=slot.name, name=name)
+        return {
+            "ok": True,
+            "name": name,
+            "description": desc,
+            "move_count": len(slot.history),
+            "on_inverse": slot.on_inverse,
+            "total_bookmarks": len(bookmarks),
+        }
+
+    def _h_restore_fork(args):
+        """v35: restore the named bookmark into a slot (defaults to the
+        bookmark's original slot). Overwrites the slot's current state.
+        """
+        name = args["name"].strip()
+        if name not in bookmarks:
+            return {"error": f"no bookmark named {name!r}; "
+                             f"available: {sorted(bookmarks.keys())}"}
+        b = bookmarks[name]
+        target_slot_name = args.get("slot") or b["slot"]
+        if target_slot_name not in slots:
+            return {"error": f"target slot {target_slot_name!r} does not exist"}
+        s = slots[target_slot_name]
+        s.history = list(b["history"])
+        s.on_inverse = b["on_inverse"]
+        s.committed_floor = max(0, len(s.history) - _UNDO_LIMIT)
+        budget.charge("restore_fork", 3.0, slot=target_slot_name, name=name)
+        return {
+            "ok": True,
+            "restored_to_slot": target_slot_name,
+            "name": name,
+            "move_count": len(s.history),
+            "on_inverse": s.on_inverse,
+            "description": b["description"],
+        }
+
+    def _h_list_bookmarks(args):
+        """v35: list all bookmarks (name, description, move count,
+        on_inverse). Free — like glancing at your scratch paper."""
+        return {
+            "bookmarks": [
+                {
+                    "name": n,
+                    "slot": b["slot"],
+                    "description": b["description"],
+                    "move_count": len(b["history"]),
+                    "on_inverse": b["on_inverse"],
+                }
+                for n, b in bookmarks.items()
+            ],
+            "count": len(bookmarks),
+        }
+
     def _h_budget_status(args):
         return {
             "sim_spent": round(budget.sim_spent, 2),
@@ -1018,13 +1114,14 @@ def _build_handlers(
         "try_alg": _h_try_alg,
         "lookahead": _h_lookahead,
         "eo_pattern_lookup": _h_eo_pattern_lookup,
-        # v27: niss_scout removed — agent must do manual axis exploration via
-        # inspect_state + per-axis eo_pattern_lookup + dr_trigger_options.
-        "dr_trigger_options": _h_dr_trigger_options,
-        # v33: dr_recognize back, but now reads from a 3,657-entry JSON
-        # memory (DR states ≤4 moves from solved) + brain fallback for
-        # states outside the memory. probe_dr_pattern stays removed.
-        "dr_recognize": _h_dr_recognize,
+        # v35: dr_progress_options replaces dr_trigger_options and
+        # dr_recognize. BFS over EO-preserving moves; returns top-k
+        # continuations ranked by state-readable bad-piece counts,
+        # flagging any that hit a named trigger.
+        "dr_progress_options": _h_dr_progress_options,
+        "bookmark_fork": _h_bookmark_fork,
+        "restore_fork": _h_restore_fork,
+        "list_bookmarks": _h_list_bookmarks,
         "analyze_residual": _h_analyze_residual,
         "derive_corner_3cycle": _h_derive_corner_3cycle,
         "replace_and_shorten": _h_replace_and_shorten,
@@ -1174,60 +1271,88 @@ def _tool_schemas() -> list[dict]:
             },
         },
         {
-            "name": "dr_trigger_options",
+            "name": "dr_progress_options",
             "description": (
-                "List named DR-trigger options from the current EO-solved state "
-                "on ANY axis (UD/FB/RL). Each entry is a NAMED trigger family "
-                "(DR-4C4E 'R', DR-3C2E 'R U R'', DR-4C2E 'R U2 R'', DR-7C8E "
-                "'R U L', etc.) with `setup_moves`, `setup_length`, "
-                "`trigger_length`, `total_to_dr`, and `pre_trigger_signature` "
-                "(the XCYE substate label readable off the cube). "
-                "v34: NO ORACLE FIELDS — no expected_total_to_solved, no "
-                "jzp_eligible, no top_pairs_on_inverse, no ranking. Options "
-                "are returned in BFS-discovery order. To compare candidates, "
-                "try_alg the (setup + trigger), inspect_state the residual, "
-                "and estimate post-DR cost from your memorized substate priors. "
-                "Per-axis trigger letters: UD uses R+U, FB uses U+F, RL uses "
-                "F+L. Cost: 5s + 0.003s per state explored."
+                "v35: BFS ≤ `max_depth` over EO-preserving moves on `axis`. "
+                "Returns top-`k` continuations sorted by total state-readable "
+                "bad pieces remaining. Each option has:\n"
+                "  - `setup_moves` / `setup_length`\n"
+                "  - `bad_corners`: corners with U/D sticker on wrong face "
+                "(state-readable count, not future knowledge)\n"
+                "  - `bad_slice_edges`: E-slice edges in the wrong slice "
+                "(also state-readable)\n"
+                "  - `substate_label`: e.g. DR-3C2E if you'd land here\n"
+                "  - `hits_named_trigger`: if true, applying `trigger_moves` "
+                "from this state reaches DR via a memorized family\n"
+                "There is NO oracle field — no expected total length, no "
+                "distance-to-DR, no JZP flag. Two options with the same "
+                "bad-piece count can have very different actual move cost "
+                "to DR; use the substate label to judge. The standard usage "
+                "is search-and-commit: pick the option whose substate you "
+                "want to be in, apply_moves the setup, then call this tool "
+                "again from the new state to look another max_depth deep. "
+                "Per-axis EO-preserving move sets: UD excludes F/B quarters, "
+                "FB excludes L/R quarters, RL excludes U/D quarters. "
+                "Cost: 3s + 0.0003s per state explored "
+                "(depth 4 ≈ 6s; depth 5 ≈ 30s)."
             ),
             "input_schema": {
                 "type": "object",
                 "properties": {
                     "slot": _SLOT,
                     "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
-                    "max_setup": {"type": "integer", "minimum": 1, "maximum": 6, "default": 5},
+                    "max_depth": {"type": "integer", "minimum": 1, "maximum": 5, "default": 4},
+                    "k": {"type": "integer", "minimum": 1, "maximum": 10, "default": 5},
                 },
                 "required": ["slot", "axis"],
             },
         },
-        # v33: dr_recognize is back, with a much smaller scope: looks up
-        # the current DR state in a 3,657-pattern memory (DR states ≤4
-        # moves from solved per axis), and falls back to brain_suggest
-        # if the state isn't memorized. probe_dr_pattern stays removed.
         {
-            "name": "dr_recognize",
+            "name": "bookmark_fork",
             "description": (
-                "Recognize the DR pattern at the current EO-solved state. "
-                "Three possible sources of answer (returned in `source` field):\n"
-                "  - 'memory': state is one of ~3,657 patterns within 4 moves "
-                "of solved-DR per axis. Returns the trigger_family (DR-3C2E, "
-                "DR-4C4E, etc.), setup_moves, and trigger_moves.\n"
-                "  - 'brain': state is OUTSIDE the memory (>4 moves from "
-                "solved). Returns brain_top_moves — the trained policy's "
-                "top-K next-move suggestions. Apply the most plausible one "
-                "and re-query, like a human using trained intuition.\n"
-                "  - 'memory_partial': state is in memory but full path > "
-                "4 moves; returns the first 4 setup moves to apply.\n"
-                "EO on `axis` must already be solved. Cost: 3-4s simulated."
+                "v35: snapshot the current slot's history + on_inverse flag "
+                "under `name`. Use this when you've reached a fork point — "
+                "two reasonable continuations exist, and you want to explore "
+                "one while keeping the other available. The bookmark survives "
+                "the rest of this attempt AND is carried into the next "
+                "attempt's prior-attempts info. Cost: 2s."
             ),
             "input_schema": {
                 "type": "object",
                 "properties": {
                     "slot": _SLOT,
-                    "axis": {"type": "string", "enum": ["UD", "FB", "RL"]},
+                    "name": {"type": "string", "description": "Short identifier, e.g. 'UD-norm-after-EO'."},
+                    "description": {"type": "string", "description": "Free-text: what was being considered at this fork."},
                 },
-                "required": ["slot", "axis"],
+                "required": ["slot", "name"],
             },
+        },
+        {
+            "name": "restore_fork",
+            "description": (
+                "v35: jump a slot back to a bookmarked state. By default "
+                "restores into the bookmark's original slot; pass `slot` to "
+                "restore into a different one (useful for branching off "
+                "without losing the current line). Overwrites the slot's "
+                "current history. Cost: 3s."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "slot": {"type": "string", "description": "Optional override; default = bookmark's slot."},
+                },
+                "required": ["name"],
+            },
+        },
+        {
+            "name": "list_bookmarks",
+            "description": (
+                "v35: list all bookmarks set this session, including ones "
+                "carried over from prior attempts. Free — like glancing at "
+                "your scratch paper."
+            ),
+            "input_schema": {"type": "object", "properties": {}},
         },
         {
             "name": "analyze_residual",
@@ -1561,8 +1686,10 @@ You are NOT a brute-force search engine. You have a HUMAN solver's tools:
 - **Visualization** (depth 4): lookahead does policy-pruned beam search
   to depth {MAX_HUMAN_RECALL}, width K. This is what a human can hold
   in their head — 3-4 moves of mental visualization, not a deep search.
-- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_recognize (3,657-pattern DR memory + brain fallback),
-  apply_htr_phase return AT MOST {MAX_HUMAN_RECALL} moves per call. If
+- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_progress_options
+  (BFS to depth 4 over EO-preserving moves, ranked by state-readable bad-
+  piece counts), apply_htr_phase return AT MOST {MAX_HUMAN_RECALL} moves
+  per call. If
   the optimal solution is longer, you see only the first 4 moves of
   progress toward it. APPLY THEM, then RE-QUERY from the new state to
   see the next chunk. This is the real human workflow: a champion sees
@@ -1585,44 +1712,48 @@ inferior branches.
 > is the cheap EO. eo_pattern_lookup(axis='UD') returns 4 moves. But
 > before I commit, let me check inverse-FB — sometimes the "ugly" axis
 > on inverse has a shorter EO + cleaner DR substate. niss_flip,
-> eo_pattern_lookup(axis='FB') → 5 moves. dr_trigger_options on both:
-> UD-normal best is DR-4C4E in 1mv (single R, but 4c4e finishes in
-> ~9mv). Inverse-FB best is DR-3C2E in 3mv (3c2e finishes in ~5mv).
-> Joint: UD-normal 4+1 = 5mv to DR, ~9mv finish, ~14 total. Inverse-FB
-> 5+3 = 8mv to DR, ~5mv finish, ~13 total. Inverse-FB wins by ~1 move
-> AND gives a cleaner substate. Staying flipped, applying the inverse-
-> FB EO. I did NOT take the shortest EO — I joined EO+DR+finish in my
-> head before committing.
+> eo_pattern_lookup(axis='FB') → 5 moves. Committed EO on each side
+> separately (via apply_moves + bookmark_fork so I can return), then
+> ran dr_progress_options(axis=X) on each. UD-normal's top option:
+> bad_c=4 bad_e=4 in 1mv setup (DR-4C4E, hits_named_trigger=true) —
+> tempting but 4C4E priors are 12-14mv post-DR. Inverse-FB top:
+> bad_c=2 bad_e=1 in 3mv (DR-2C1E substate, no named trigger hit but
+> only 3 bad pieces remaining — one more apply + re-query should
+> close it). Joint estimate: UD-normal 4+1+13=18; inverse-FB 5+3+?
+> (need to commit and re-query). I commit the inverse-FB setup,
+> apply 3mv, re-query: bad_c=0 bad_e=0 in 1mv (DR-3C2E hit). Total
+> 5+3+1=9 to DR with a 3C2E substate (6-8mv post-DR = ~16 total).
+> Inverse-FB wins by ~2 moves AND gives a cleaner substate.
 
-### Exemplar B — Picking the longer DR for a cleaner substate
-> Post-EO on the inverse-FB axis. dr_trigger_options(axis='FB') returns
-> three candidates (BFS-discovery order, no oracle ranking):
-> - DR-4C4E (U): 1mv setup. Tempting on length but substate is the
->   worst case — priors say 12-14mv post-DR.
-> - DR-3C2E (U F U'): 3mv setup. 3C2E priors are 6-8mv post-DR.
-> - DR-2C4E (U L2 U): 3mv setup. 2C4E priors are 10-12mv post-DR.
-> I try_alg each (setup+trigger), inspect_state the residual. The 3C2E
-> residual looks textbook clean — 3 misoriented corners visible across
-> the U layer, 2 slice edges in their slots. Total estimate ~3+8=11
-> vs 4C4E ~1+13=14. Taking DR-3C2E. Length of DR is a red herring;
-> what matters is dr_moves + post_dr.
+### Exemplar B — Search-and-commit toward DR with no immediate trigger
+> Post-EO on UD-normal. dr_progress_options(axis='UD', max_depth=4):
+> top three options all show bad_c=2 bad_e=1 (DR-2C1E substate), 3-4
+> move setups, hits_named_trigger=false. No named trigger lands at
+> depth 4 — but the bad-piece counts dropped from (4,4) to (2,1).
+> That's real progress. I pick the 3-move setup that lands at 2C1E,
+> apply_moves, re-query from the new state. Now dr_progress_options
+> returns bad_c=0 bad_e=0 in 1mv (DR hits via a named 4C2E trigger).
+> Total DR = 3+1 = 4 moves committed across two iterations. This is
+> the search-and-commit loop: pick the best-looking direction at the
+> 4-move horizon, commit, look again. Don't wait for the tool to hand
+> you DR in one call.
 
-### Exemplar C — Branch journal with explicit rejection rationale
+### Exemplar C — Bookmarking a fork for cross-attempt handoff
 > Logging branches as I scout.
-> **Branch 1 — UD axis DR (Branch I'm bookmarking):** dr_trigger_options
-> finds a 4-move setup to RZP, then a 3-move trigger gives DR in 11
-> total. Substate: 1 quarter-turn corner. HTR estimate 5 moves. Finish
-> leaves 2e2e (potential 1-move insertion via replace_and_shorten).
-> Projected total: 20-21. **Bookmarking.**
-> **Branch 2 — RL axis DR (scouted from same EO):** holding Branch 1
-> aside. dr_trigger_options(axis='RL') returns nothing under 7 moves —
-> corner orientation is wrong-parity for this axis. **Reject:** 7+ move
-> DR with a bad substate dominates Branch 1.
-> **Branch 3 — FB axis DR:** would require redoing EO from scratch.
-> **Reject** without scouting; the cost of re-EO is not recoverable.
-> Committing to Branch 1. **Lesson:** when a branch is rejected, write
-> *why* (parity, length, substate quality), not just "it lost." This
-> is the elite-FMC compare-before-commit pattern.
+> **Branch 1 — UD-normal DR:** dr_progress_options returns top option
+> with bad_c=2 bad_e=2 in 4mv (DR-2C2E substate), no named trigger
+> hit. Looks reachable but the 2C2E substate has rough post-DR
+> priors (~10-12). I commit and re-query: bad_c=1 bad_e=0 in 1mv (a
+> 4C2E trigger hit on the second look). 5mv to DR, 4C2E substate.
+> Projected total ~20-22. Bookmarking the post-EO state as
+> 'UD-norm-post-EO' before committing further — if the finish goes
+> poorly I or a future attempt can return here.
+> **Branch 2 — FB-inverse DR:** would require committing inverse-FB
+> EO from scratch. **Reject** without scouting; the cost of switching
+> axes after this much committed isn't recoverable in the remaining
+> budget. Note the rejection so a later attempt can pick up FB-inverse
+> from the prior bookmark if it exists.
+> Committing to Branch 1.
 
 # Branch journal (v14b, elite-solver behavior)
 
@@ -1668,11 +1799,12 @@ solves in v11-v13.
       transitions and 50% START on inverse.
    d) **For each (side, axis) candidate with a viable EO**, also
       probe DR cost: commit the EO via apply_moves, then call
-      dr_trigger_options(axis=X) from the new state. The decision
+      dr_progress_options(axis=X) from the new state. The decision
       is JOINT: EO_len + DR_total. A 4-move EO with an 8-move DR
       (12mv to DR) beats a 2-move EO with a 12-move DR. You read
       the candidates and judge — there is no pre-packaged
-      comparison table anymore.
+      comparison table anymore. When two side-axis candidates look
+      close, bookmark_fork the loser before committing the winner.
    e) Pick a (side, axis) and commit. If you committed to inverse,
       stay flipped; if you bounced back to normal, niss_flip once
       more so the slot's perspective matches your plan.
@@ -1687,13 +1819,13 @@ solves in v11-v13.
      the new state. Repeat until found=1 with no partial flag.
 
 3. **DR feasibility check (before each EO axis decision is final)**:
-   v32: apply the EO candidate first, then call dr_trigger_options
-   on the new state. Use the trigger family + setup length to judge
-   the joint EO+DR cost. There's no pre-EO probe tool anymore — you
-   commit moves to see DR options (more human-shape; the cost is
-   tracked by apply_moves at 10 TPS).
+   apply the EO candidate first, then call dr_progress_options on
+   the new state. Read `bad_corners` + `bad_slice_edges` of the top
+   options to judge the joint EO+DR cost. There's no pre-EO probe
+   tool — you commit moves to see DR options (more human-shape;
+   the cost is tracked by apply_moves at 10 TPS).
 
-4. **DR compose** (dr_trigger_options is your ONLY DR tool — all 3 axes):
+4. **DR compose** (v35 — `dr_progress_options` is your DR tool, all 3 axes):
 
    **DR-LENGTH HARD RULE (v14b, from 333.fm corpus research)**: elite
    solves get DR in ≤6 moves with 85.7% probability. **DR ≥10 moves NEVER
@@ -1726,28 +1858,37 @@ solves in v11-v13.
    length. There is no tool flag for this anymore; identify it by
    reading the state.
 
-   a) Call `dr_trigger_options(axis=X)` for each candidate axis. The
-      tool returns `trigger_family`, `total_to_dr`, `setup_moves`,
-      `pre_trigger_signature` (the XCYE substate label). No oracle
-      score, no ranking. To compare candidates, try_alg the (setup +
-      trigger) for each, inspect_state on the residual, estimate
-      finish length from the substate priors table, then pick.
-      NARRATE your pick:
-      > "Comparing on UD: 4C4E in 1mv (residual 4C4E → 12-14mv typical
-      > = ~14 total) vs 3C2E in 4mv (residual 3C2E → 6-8mv typical =
-      > ~11 total). Picking 3C2E."
-   b) Per-axis trigger letters in the named catalog: UD uses R+U,
-      FB uses U+F, RL uses F+L (cube-symmetry equivalents).
-   c) v33: if `dr_trigger_options` returns 0 options at depth 5, try
-      `dr_recognize(axis=X)` next. It looks up your current DR state
-      in a 3,657-pattern memory (DR states ≤4 moves from solved):
-      - `source: memory` → here are the moves to DR, apply them.
-      - `source: brain` → state isn't in memory; brain suggests the
-        top-K next moves. Pick the most plausible (often R, U, F, or
-        their inverses), apply ONE move via apply_moves, then re-call
-        dr_recognize from the new state. Iterate. This is the human
-        flow: when you don't instantly recognize a case, you use
-        trained intuition for a single move, then look again.
+   **The v35 search-and-commit loop**:
+
+   a) Call `dr_progress_options(slot, axis=X, max_depth=4, k=5)`.
+      Returns up to k continuations sorted by total bad pieces
+      (`bad_corners + bad_slice_edges`, state-readable counts).
+      Each option carries `substate_label` (e.g. DR-3C2E — what kind
+      of state you'd land in) and `hits_named_trigger` (true if
+      applying `trigger_moves` from this state reaches DR via a
+      memorized family). NO oracle: no expected_total_to_solved,
+      no JZP flag, no ranking by post-DR cost.
+
+   b) Pick the option whose substate you want. If `hits_named_trigger
+      = true`, apply the setup + trigger via apply_moves and you're
+      at DR. If not, apply just the setup (commit, don't try_alg-
+      and-discard), then call `dr_progress_options` AGAIN from the
+      new state to look another max_depth moves deep. This is the
+      human flow: see 4-5 moves ahead, commit to the most promising
+      direction, re-evaluate from the new state. Don't expect the
+      first call to hand you DR on a plate.
+
+   c) Per-axis EO-preserving moves: UD excludes F/B quarters, FB
+      excludes L/R, RL excludes U/D.
+
+   d) When two roughly-equal options exist and you want to come back
+      to one later, call `bookmark_fork(slot, name, description)`
+      BEFORE committing. The bookmark survives this attempt and is
+      carried into the next attempt's `list_bookmarks`. Use
+      `restore_fork(name)` to jump back. Example: "I see UD-normal
+      with a clean 3C2E in 5 and FB-inverse with a 4C2E in 4. Going
+      with FB-inverse first; bookmarking UD-normal at the post-EO
+      state as 'UD-3C2E-candidate'."
 
 5. **POST-DR DECISION** (v14b — research-driven priority):
 
