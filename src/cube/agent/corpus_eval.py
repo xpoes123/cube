@@ -22,7 +22,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from cube.agent import build_index, human_narrative, render_narrative, scramble_gen, simulated_fmc
+from cube.agent import build_index, human_narrative, render_narrative, scramble_gen, simulated_fmc, synthesize_scramble
 
 
 def _git_push_scramble(scramble_id: str, summary: dict, out_dir: Path) -> None:
@@ -344,6 +344,8 @@ def main(argv: list[str] | None = None) -> int:
                              "Useful when n_best>1 already burns cycles per scramble.")
     parser.add_argument("--version-notes", type=str, default=None,
                         help="One-paragraph 'what changed in this version' for the SUMMARY.md header.")
+    parser.add_argument("--synth-model", default=synthesize_scramble.DEFAULT_MODEL,
+                        help="Model used for the per-scramble synthesis blog post (default: Opus 4.7).")
     args = parser.parse_args(argv)
 
     if "ANTHROPIC_API_KEY" not in os.environ:
@@ -378,8 +380,17 @@ def main(argv: list[str] | None = None) -> int:
                 "halt_reason": f"crash: {type(e).__name__}", "solution": [],
                 "transcript_path": "", "narrative_path": "",
             })
-        # Per-scramble live update: write incremental SUMMARY.md, then
-        # commit + push so the user can watch progress in the repo.
+        # Per-scramble live update: synthesize the blog post, write
+        # incremental SUMMARY.md, commit + push so the user can watch
+        # progress in the repo.
+        try:
+            synthesize_scramble.synthesize(
+                scramble_id, args.out_dir,
+                corpus_path=args.corpus_333fm,
+                model=args.synth_model,
+            )
+        except Exception as e:
+            print(f"  warn: synthesis failed for {scramble_id}: {type(e).__name__}: {e}", flush=True)
         try:
             write_summary(
                 args.out_dir, summaries, args.model,
