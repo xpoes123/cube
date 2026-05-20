@@ -27,14 +27,45 @@
     "F"
   ],
   "model": "claude-sonnet-4-5-20250929",
-  "final_solution": [],
-  "solves": false,
-  "total_moves": 0,
-  "tool_calls": 38,
+  "final_solution": [
+    "U2",
+    "R2",
+    "F2",
+    "U2",
+    "L2",
+    "U2",
+    "F2",
+    "D2",
+    "F2",
+    "R2",
+    "B2",
+    "D'",
+    "F2",
+    "U",
+    "R2",
+    "U'",
+    "L'",
+    "U'",
+    "R'",
+    "F2",
+    "L2",
+    "D",
+    "L'",
+    "U2",
+    "R2",
+    "F2",
+    "U'",
+    "B",
+    "U'",
+    "D'"
+  ],
+  "solves": true,
+  "total_moves": 30,
+  "tool_calls": 57,
   "halt_reason": null,
-  "sim_spent": 1023.05,
+  "sim_spent": 1351.87,
   "sim_budget": 2275.02,
-  "wall_elapsed_s": 156.1,
+  "wall_elapsed_s": 235.2,
   "budget_events": [
     {
       "kind": "inspect_state",
@@ -299,6 +330,120 @@
       "sim_spent_after": 1023.05,
       "slot": "main",
       "n": 7
+    },
+    {
+      "kind": "dr_trigger_options",
+      "cost": 305.41,
+      "sim_spent_after": 1328.47,
+      "slot": "main",
+      "axis": "UD",
+      "states": 100137
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.8,
+      "sim_spent_after": 1329.27,
+      "slot": "main",
+      "n": 8
+    },
+    {
+      "kind": "htr_classify",
+      "cost": 15.0,
+      "sim_spent_after": 1344.27,
+      "slot": "main",
+      "axis": "UD",
+      "cached": false,
+      "subset": [
+        1,
+        0,
+        4,
+        2,
+        3,
+        7,
+        5,
+        6
+      ]
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 1345.27,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 1345.67,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 1346.67,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.1,
+      "sim_spent_after": 1346.77,
+      "slot": "main",
+      "n": 1
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 1347.77,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 1348.17,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 1349.17,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 1349.57,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 1350.57,
+      "slot": "main",
+      "axis": "UD",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.3,
+      "sim_spent_after": 1350.87,
+      "slot": "main",
+      "n": 3
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 1351.87,
+      "slot": "main"
     }
   ],
   "slots_final": {
@@ -310,11 +455,34 @@
         "U",
         "F2",
         "R2",
-        "U'"
+        "U2",
+        "L",
+        "D'",
+        "L2",
+        "F2",
+        "R",
+        "U",
+        "L",
+        "U",
+        "R2",
+        "U'",
+        "F2",
+        "D",
+        "B2",
+        "R2",
+        "F2",
+        "D2",
+        "F2",
+        "U2",
+        "L2",
+        "U2",
+        "F2",
+        "R2",
+        "U2"
       ],
       "on_inverse": true,
-      "move_count": 7,
-      "undo_available": 7
+      "move_count": 30,
+      "undo_available": 30
     }
   },
   "transcript": [
@@ -3461,7 +3629,15 @@
           "U",
           "F2",
           "R2",
-          "U'"
+          "U'",
+          "U'",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L"
         ],
         "inverse_scramble": [
           "F'",
@@ -3634,12 +3810,2088 @@
           "undo_available": 7
         }
       }
+    },
+    {
+      "type": "assistant",
+      "turn": 39,
+      "wall_s_elapsed": 159.93,
+      "turn_wall_s": 3.85,
+      "input_tokens": 733,
+      "output_tokens": 131,
+      "cache_read_tokens": 26261,
+      "cache_create_tokens": 91,
+      "content": [
+        {
+          "citations": null,
+          "text": "I'm applying the EO (D U B') plus the brain-suggested moves from my earlier exploration (U F2 R2 U'). Let me check DR now.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01U4S9qZQTkDpfC7SvBQJ82b",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "max_setup": 5
+          },
+          "name": "dr_trigger_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 39,
+      "tool_index": 39,
+      "name": "dr_trigger_options",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "max_setup": 5
+      },
+      "result": {
+        "axis": "UD",
+        "options": [
+          {
+            "trigger_family": "DR-7C8E (R U L)",
+            "canonical_alg": "R U L",
+            "setup_moves": [
+              "U'",
+              "L",
+              "D'",
+              "L2",
+              "F2"
+            ],
+            "setup_length": 5,
+            "trigger_length": 3,
+            "total_to_dr": 8,
+            "pre_trigger_signature": "DR-7C4E"
+          }
+        ],
+        "max_setup_searched": 5,
+        "states_explored": 100137,
+        "note": "BFS depth \u22645 (hard-capped \u2014 human visualization scope). Explored 100137 unique states, stopped after 1 trigger families found (early-bail at 3). Options in BFS-discovery order \u2014 NOT a ranked oracle. There is no expected_total_to_solved field \u2014 you must estimate post-DR cost yourself from the substate signature (e.g. 3C2E typically 6-8mv post-DR, 4C4E 12-14mv). To check a candidate, try_alg(setup+trigger) then inspect_state to read the residual. If 0 options: commit a setup move you think looks promising and re-call.",
+        "search_method": {
+          "kind": "BFS-over-EO-preserving-moves",
+          "axis": "UD",
+          "max_setup_depth": 5,
+          "trigger_catalog_size": 10,
+          "trigger_families_checked": [
+            "DR-4C4E (R)",
+            "DR-4C4E (R')",
+            "DR-3C2E (R U R')",
+            "DR-3C2E (R U' R')",
+            "DR-4C2E (R U2 R')",
+            "DR-4C4E (R U2 F2 R)"
+          ],
+          "note": "BFS over EO-preserving moves (~14/axis) up to depth 5; each visited state is checked against 10 named DR trigger algorithms. Returned options are the shortest setup found for each trigger family (some families may not appear if no setup \u22645 reaches them). NOT a wide BFS over all DRs; bounded to the named trigger catalog elite cubers memorize."
+        },
+        "_meta": {
+          "sim_remaining_s": 946.6,
+          "sim_fraction_left": 0.416,
+          "wall_remaining_s": 737.6,
+          "tool_calls_remaining": 41,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1328.47,
+      "wall_s_elapsed": 162.43,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U'"
+          ],
+          "on_inverse": true,
+          "move_count": 7,
+          "undo_available": 7
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 40,
+      "wall_s_elapsed": 167.59,
+      "turn_wall_s": 5.15,
+      "input_tokens": 940,
+      "output_tokens": 209,
+      "cache_read_tokens": 26352,
+      "cache_create_tokens": 515,
+      "content": [
+        {
+          "citations": null,
+          "text": "Excellent! Found a DR trigger: **DR-7C8E** with 5-move setup (U' L D' L2 F2) and 3-move trigger (R U L), totaling **8 moves to DR**. From my current position (7 moves), that's 7+8=15 moves total to DR. That's a bit long, but DR-7C8E is a less common trigger and I need to commit.\n\nLet me apply the setup and trigger.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01BMTt7w2onzDHjdfU6UuNqG",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U'",
+              "L",
+              "D'",
+              "L2",
+              "F2",
+              "R",
+              "U",
+              "L"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 40,
+      "tool_index": 40,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U'",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "U",
+          "F2",
+          "R2",
+          "U2",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L"
+        ],
+        "move_count": 14,
+        "undo_available": 14,
+        "auto_cancelled_saved": 1,
+        "_meta": {
+          "sim_remaining_s": 945.8,
+          "sim_fraction_left": 0.416,
+          "wall_remaining_s": 732.4,
+          "tool_calls_remaining": 40,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1329.27,
+      "wall_s_elapsed": 167.59,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L"
+          ],
+          "on_inverse": true,
+          "move_count": 14,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 41,
+      "wall_s_elapsed": 176.32,
+      "turn_wall_s": 8.73,
+      "input_tokens": 1051,
+      "output_tokens": 117,
+      "cache_read_tokens": 26984,
+      "cache_create_tokens": 134,
+      "content": [
+        {
+          "citations": null,
+          "text": "Good! Auto-cancelled saved 1 move (U' from my history + U from setup merged to U2). I'm now at DR in 14 moves. Now let me proceed to HTR.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01HZ8sRPq5N96o8jzidVG8Po",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD"
+          },
+          "name": "htr_classify",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 41,
+      "tool_index": 41,
+      "name": "htr_classify",
+      "input": {
+        "slot": "main",
+        "axis": "UD"
+      },
+      "result": {
+        "subset_canonical": [
+          1,
+          0,
+          4,
+          2,
+          3,
+          7,
+          5,
+          6
+        ],
+        "subset_name": "2-swap long-cycle",
+        "subset_family": "long-cycle",
+        "structural": {
+          "swap_count": 2,
+          "axial_count": 0,
+          "perm_parity": 1,
+          "cycle_structure": [
+            3,
+            3,
+            2
+          ]
+        },
+        "axis": "UD",
+        "phases": {
+          "htr_reduction": {
+            "length": 5,
+            "description": "DR -> HTR-corner-subgroup; quarter-turn corners on the axis (or empty if already in HTR)."
+          },
+          "finish": {
+            "length": 11,
+            "description": "HTR -> solved; half-turn only."
+          }
+        },
+        "total_length": 16,
+        "cached": false,
+        "note": "Subset is 2-swap long-cycle (cycles=[3, 3, 2]). Apply with apply_htr_phase(phase='htr_reduction') then apply_htr_phase(phase='finish'). First exposure \u2014 memorized.",
+        "_meta": {
+          "sim_remaining_s": 930.8,
+          "sim_fraction_left": 0.409,
+          "wall_remaining_s": 723.6,
+          "tool_calls_remaining": 39,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1344.27,
+      "wall_s_elapsed": 176.37,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L"
+          ],
+          "on_inverse": true,
+          "move_count": 14,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 42,
+      "wall_s_elapsed": 180.48,
+      "turn_wall_s": 4.11,
+      "input_tokens": 767,
+      "output_tokens": 195,
+      "cache_read_tokens": 27246,
+      "cache_create_tokens": 595,
+      "content": [
+        {
+          "citations": null,
+          "text": "HTR subset is **\"2-swap long-cycle\"** with:\n- **HTR reduction: 5 moves**\n- **Finish: 11 moves**\n- **Total post-DR: 16 moves**\n\nCurrent count: 14 (to DR) + 16 (post-DR) = **30 moves total**. That's better than the 37-move prior attempt! Let me apply the HTR phases.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01GvAVxqKvMeHaXv677coXib",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 42,
+      "tool_index": 42,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "UD",
+        "moves": [
+          "U",
+          "R2",
+          "U'",
+          "F2"
+        ],
+        "length": 4,
+        "full_phase_length": 5,
+        "partial": true,
+        "note": "htr_reduction: 5 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 929.8,
+          "sim_fraction_left": 0.409,
+          "wall_remaining_s": 719.2,
+          "tool_calls_remaining": 38,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1345.27,
+      "wall_s_elapsed": 180.8,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L"
+          ],
+          "on_inverse": true,
+          "move_count": 14,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 43,
+      "wall_s_elapsed": 182.46,
+      "turn_wall_s": 1.67,
+      "input_tokens": 768,
+      "output_tokens": 84,
+      "cache_read_tokens": 28047,
+      "cache_create_tokens": 157,
+      "content": [
+        {
+          "id": "toolu_018VxpHzmxycCzWb3uyKbx5Z",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U",
+              "R2",
+              "U'",
+              "F2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 43,
+      "tool_index": 43,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U",
+          "R2",
+          "U'",
+          "F2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "U",
+          "F2",
+          "R2",
+          "U2",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L",
+          "U",
+          "R2",
+          "U'",
+          "F2"
+        ],
+        "move_count": 18,
+        "undo_available": 18,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 929.4,
+          "sim_fraction_left": 0.409,
+          "wall_remaining_s": 717.5,
+          "tool_calls_remaining": 37,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1345.67,
+      "wall_s_elapsed": 182.46,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 18
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 44,
+      "wall_s_elapsed": 186.93,
+      "turn_wall_s": 4.46,
+      "input_tokens": 580,
+      "output_tokens": 73,
+      "cache_read_tokens": 28318,
+      "cache_create_tokens": 326,
+      "content": [
+        {
+          "citations": null,
+          "text": "Let me check if I'm solved or if I need the last move of HTR reduction.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01QCUsWGc7kVUJCxfyVgiBsb",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 44,
+      "tool_index": 44,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": false
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": false,
+          "RL": false
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 18,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 929.4,
+          "sim_fraction_left": 0.409,
+          "wall_remaining_s": 713.1,
+          "tool_calls_remaining": 36,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1345.67,
+      "wall_s_elapsed": 186.93,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 18
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 45,
+      "wall_s_elapsed": 189.53,
+      "turn_wall_s": 2.6,
+      "input_tokens": 466,
+      "output_tokens": 121,
+      "cache_read_tokens": 28836,
+      "cache_create_tokens": 173,
+      "content": [
+        {
+          "citations": null,
+          "text": "Not at HTR yet (is_htr_ud: false). Let me get the remaining move of HTR reduction.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01YavmCaT7QNqrKPGsUABEzJ",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 45,
+      "tool_index": 45,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "UD",
+        "moves": [
+          "D"
+        ],
+        "length": 1,
+        "partial": false,
+        "note": "htr_reduction: 1 moves, fully in view. Apply with apply_moves.",
+        "_meta": {
+          "sim_remaining_s": 928.4,
+          "sim_fraction_left": 0.408,
+          "wall_remaining_s": 710.5,
+          "tool_calls_remaining": 35,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1346.67,
+      "wall_s_elapsed": 189.53,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 18
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 46,
+      "wall_s_elapsed": 193.69,
+      "turn_wall_s": 4.15,
+      "input_tokens": 459,
+      "output_tokens": 72,
+      "cache_read_tokens": 29009,
+      "cache_create_tokens": 253,
+      "content": [
+        {
+          "id": "toolu_012tJm3mLBkDEbAdzdQLVZAc",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "D"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 46,
+      "tool_index": 46,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "D"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "U",
+          "F2",
+          "R2",
+          "U2",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L",
+          "U",
+          "R2",
+          "U'",
+          "F2",
+          "D"
+        ],
+        "move_count": 19,
+        "undo_available": 19,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 928.3,
+          "sim_fraction_left": 0.408,
+          "wall_remaining_s": 706.3,
+          "tool_calls_remaining": 34,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1346.77,
+      "wall_s_elapsed": 193.69,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D"
+          ],
+          "on_inverse": true,
+          "move_count": 19,
+          "undo_available": 19
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 47,
+      "wall_s_elapsed": 196.09,
+      "turn_wall_s": 2.4,
+      "input_tokens": 450,
+      "output_tokens": 98,
+      "cache_read_tokens": 29332,
+      "cache_create_tokens": 182,
+      "content": [
+        {
+          "citations": null,
+          "text": "Now for the finish phase.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01PHZrsPMaZEfrkXT7Ponb2t",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 47,
+      "tool_index": 47,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "UD",
+        "moves": [
+          "B2",
+          "R2",
+          "F2",
+          "D2"
+        ],
+        "length": 4,
+        "full_phase_length": 11,
+        "partial": true,
+        "note": "finish: 11 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 927.3,
+          "sim_fraction_left": 0.408,
+          "wall_remaining_s": 703.9,
+          "tool_calls_remaining": 33,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1347.77,
+      "wall_s_elapsed": 196.09,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D"
+          ],
+          "on_inverse": true,
+          "move_count": 19,
+          "undo_available": 19
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 48,
+      "wall_s_elapsed": 198.56,
+      "turn_wall_s": 2.46,
+      "input_tokens": 465,
+      "output_tokens": 85,
+      "cache_read_tokens": 29632,
+      "cache_create_tokens": 129,
+      "content": [
+        {
+          "id": "toolu_01JuF5ob7QYNorbhQPHsM6zC",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "B2",
+              "R2",
+              "F2",
+              "D2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 48,
+      "tool_index": 48,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "B2",
+          "R2",
+          "F2",
+          "D2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "U",
+          "F2",
+          "R2",
+          "U2",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L",
+          "U",
+          "R2",
+          "U'",
+          "F2",
+          "D",
+          "B2",
+          "R2",
+          "F2",
+          "D2"
+        ],
+        "move_count": 23,
+        "undo_available": 23,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 926.9,
+          "sim_fraction_left": 0.407,
+          "wall_remaining_s": 701.4,
+          "tool_calls_remaining": 32,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1348.17,
+      "wall_s_elapsed": 198.56,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2"
+          ],
+          "on_inverse": true,
+          "move_count": 23,
+          "undo_available": 23
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 49,
+      "wall_s_elapsed": 201.19,
+      "turn_wall_s": 2.63,
+      "input_tokens": 493,
+      "output_tokens": 53,
+      "cache_read_tokens": 29761,
+      "cache_create_tokens": 244,
+      "content": [
+        {
+          "id": "toolu_01LzN4sh944t96V56bkjQYyM",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 49,
+      "tool_index": 49,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 23,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 926.9,
+          "sim_fraction_left": 0.407,
+          "wall_remaining_s": 698.8,
+          "tool_calls_remaining": 31,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1348.17,
+      "wall_s_elapsed": 201.19,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2"
+          ],
+          "on_inverse": true,
+          "move_count": 23,
+          "undo_available": 23
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 50,
+      "wall_s_elapsed": 203.51,
+      "turn_wall_s": 2.32,
+      "input_tokens": 461,
+      "output_tokens": 103,
+      "cache_read_tokens": 30100,
+      "cache_create_tokens": 168,
+      "content": [
+        {
+          "citations": null,
+          "text": "Still not solved. Let me continue with the finish.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01PyXnT72jyKJtQiL41cvKWt",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 50,
+      "tool_index": 50,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "UD",
+        "moves": [
+          "F2",
+          "U2",
+          "L2",
+          "U2"
+        ],
+        "length": 4,
+        "full_phase_length": 7,
+        "partial": true,
+        "note": "finish: 7 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 925.9,
+          "sim_fraction_left": 0.407,
+          "wall_remaining_s": 696.5,
+          "tool_calls_remaining": 30,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1349.17,
+      "wall_s_elapsed": 203.51,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2"
+          ],
+          "on_inverse": true,
+          "move_count": 23,
+          "undo_available": 23
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 51,
+      "wall_s_elapsed": 205.64,
+      "turn_wall_s": 2.13,
+      "input_tokens": 455,
+      "output_tokens": 85,
+      "cache_read_tokens": 30268,
+      "cache_create_tokens": 273,
+      "content": [
+        {
+          "id": "toolu_01V2srwF7nHtP6w8759fyqFC",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "F2",
+              "U2",
+              "L2",
+              "U2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 51,
+      "tool_index": 51,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "F2",
+          "U2",
+          "L2",
+          "U2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "U",
+          "F2",
+          "R2",
+          "U2",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L",
+          "U",
+          "R2",
+          "U'",
+          "F2",
+          "D",
+          "B2",
+          "R2",
+          "F2",
+          "D2",
+          "F2",
+          "U2",
+          "L2",
+          "U2"
+        ],
+        "move_count": 27,
+        "undo_available": 27,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 925.5,
+          "sim_fraction_left": 0.407,
+          "wall_remaining_s": 694.4,
+          "tool_calls_remaining": 29,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1349.57,
+      "wall_s_elapsed": 205.64,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 52,
+      "wall_s_elapsed": 211.93,
+      "turn_wall_s": 6.28,
+      "input_tokens": 511,
+      "output_tokens": 53,
+      "cache_read_tokens": 30541,
+      "cache_create_tokens": 232,
+      "content": [
+        {
+          "id": "toolu_016SgjMyNvRn9zZqcJF8Su6B",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 52,
+      "tool_index": 52,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 27,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 925.5,
+          "sim_fraction_left": 0.407,
+          "wall_remaining_s": 688.1,
+          "tool_calls_remaining": 28,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1349.57,
+      "wall_s_elapsed": 211.93,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 53,
+      "wall_s_elapsed": 214.01,
+      "turn_wall_s": 2.07,
+      "input_tokens": 474,
+      "output_tokens": 91,
+      "cache_read_tokens": 30873,
+      "cache_create_tokens": 168,
+      "content": [
+        {
+          "id": "toolu_01UYGex56dVQaqc8wA9Cu2Xx",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "UD",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 53,
+      "tool_index": 53,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "UD",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "UD",
+        "moves": [
+          "F2",
+          "R2",
+          "U2"
+        ],
+        "length": 3,
+        "partial": false,
+        "note": "finish: 3 moves, fully in view. Apply with apply_moves.",
+        "_meta": {
+          "sim_remaining_s": 924.5,
+          "sim_fraction_left": 0.406,
+          "wall_remaining_s": 686.0,
+          "tool_calls_remaining": 27,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1350.57,
+      "wall_s_elapsed": 214.01,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 54,
+      "wall_s_elapsed": 216.61,
+      "turn_wall_s": 2.6,
+      "input_tokens": 404,
+      "output_tokens": 81,
+      "cache_read_tokens": 31041,
+      "cache_create_tokens": 289,
+      "content": [
+        {
+          "id": "toolu_01MvkYZ8YMA1xCaxxzuoUDyL",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "F2",
+              "R2",
+              "U2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 54,
+      "tool_index": 54,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "F2",
+          "R2",
+          "U2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "U",
+          "F2",
+          "R2",
+          "U2",
+          "L",
+          "D'",
+          "L2",
+          "F2",
+          "R",
+          "U",
+          "L",
+          "U",
+          "R2",
+          "U'",
+          "F2",
+          "D",
+          "B2",
+          "R2",
+          "F2",
+          "D2",
+          "F2",
+          "U2",
+          "L2",
+          "U2",
+          "F2",
+          "R2",
+          "U2"
+        ],
+        "move_count": 30,
+        "undo_available": 30,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 924.2,
+          "sim_fraction_left": 0.406,
+          "wall_remaining_s": 683.4,
+          "tool_calls_remaining": 26,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1350.87,
+      "wall_s_elapsed": 216.61,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2",
+            "F2",
+            "R2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 30,
+          "undo_available": 30
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 55,
+      "wall_s_elapsed": 218.05,
+      "turn_wall_s": 1.44,
+      "input_tokens": 468,
+      "output_tokens": 53,
+      "cache_read_tokens": 31330,
+      "cache_create_tokens": 232,
+      "content": [
+        {
+          "id": "toolu_01DEghM2RyMouW2x3kVYdpoE",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 55,
+      "tool_index": 55,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": true,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 30,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 924.2,
+          "sim_fraction_left": 0.406,
+          "wall_remaining_s": 682.0,
+          "tool_calls_remaining": 25,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1350.87,
+      "wall_s_elapsed": 218.05,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2",
+            "F2",
+            "R2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 30,
+          "undo_available": 30
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 56,
+      "wall_s_elapsed": 221.36,
+      "turn_wall_s": 3.31,
+      "input_tokens": 479,
+      "output_tokens": 101,
+      "cache_read_tokens": 31562,
+      "cache_create_tokens": 220,
+      "content": [
+        {
+          "citations": null,
+          "text": "**Solved!** The cube is solved in 30 moves on the inverse frame. Now I need to compose the final solution using `compose_niss_solution` which will properly invert and cancel.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01424tHYwcCmzrBdtBeuZfxv",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 56,
+      "tool_index": 56,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "L2",
+          "U2",
+          "F2",
+          "D2",
+          "F2",
+          "R2",
+          "B2",
+          "D'",
+          "F2",
+          "U",
+          "R2",
+          "U'",
+          "L'",
+          "U'",
+          "R'",
+          "F2",
+          "L2",
+          "D",
+          "L'",
+          "U2",
+          "R2",
+          "F2",
+          "U'",
+          "B",
+          "U'",
+          "D'"
+        ],
+        "length": 30,
+        "solves": true,
+        "frame_at_compose": "inverse",
+        "note": "Submit this as FINAL_SOLUTION if you're satisfied, OR call replace_and_shorten first to see if a sub-span can be shortened (1-call cap, gated). YOU decide.",
+        "_meta": {
+          "sim_remaining_s": 923.2,
+          "sim_fraction_left": 0.406,
+          "wall_remaining_s": 678.6,
+          "tool_calls_remaining": 24,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1351.87,
+      "wall_s_elapsed": 221.36,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2",
+            "F2",
+            "R2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 30,
+          "undo_available": 30
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 57,
+      "wall_s_elapsed": 227.4,
+      "turn_wall_s": 6.03,
+      "input_tokens": 541,
+      "output_tokens": 301,
+      "cache_read_tokens": 31782,
+      "cache_create_tokens": 297,
+      "content": [
+        {
+          "citations": null,
+          "text": "Excellent! The solution is **30 moves**, which is 7 moves better than the prior 37-move attempt. \n\nBefore submitting, let me check if I should use `replace_and_shorten`. The instructions say I can use it if:\n- total_moves \u2265 27 \u2713 (I have 30)\n- tool calls remaining \u2265 30 \u2717 (I have 24)\n\nI don't meet the tool call threshold, so I won't use replace_and_shorten. Let me verify the solution and submit.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_011rXdWsTTDbuSc16Jfkd1DV",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "solution": [
+              "U2",
+              "R2",
+              "F2",
+              "U2",
+              "L2",
+              "U2",
+              "F2",
+              "D2",
+              "F2",
+              "R2",
+              "B2",
+              "D'",
+              "F2",
+              "U",
+              "R2",
+              "U'",
+              "L'",
+              "U'",
+              "R'",
+              "F2",
+              "L2",
+              "D",
+              "L'",
+              "U2",
+              "R2",
+              "F2",
+              "U'",
+              "B",
+              "U'",
+              "D'"
+            ]
+          },
+          "name": "verify_solved",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 57,
+      "tool_index": 57,
+      "name": "verify_solved",
+      "input": {
+        "solution": [
+          "U2",
+          "R2",
+          "F2",
+          "U2",
+          "L2",
+          "U2",
+          "F2",
+          "D2",
+          "F2",
+          "R2",
+          "B2",
+          "D'",
+          "F2",
+          "U",
+          "R2",
+          "U'",
+          "L'",
+          "U'",
+          "R'",
+          "F2",
+          "L2",
+          "D",
+          "L'",
+          "U2",
+          "R2",
+          "F2",
+          "U'",
+          "B",
+          "U'",
+          "D'"
+        ]
+      },
+      "result": {
+        "solves": true,
+        "total_moves": 30,
+        "_meta": {
+          "sim_remaining_s": 923.2,
+          "sim_fraction_left": 0.406,
+          "wall_remaining_s": 672.6,
+          "tool_calls_remaining": 23,
+          "urgency": "moderate"
+        }
+      },
+      "sim_spent": 1351.87,
+      "wall_s_elapsed": 227.4,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "U",
+            "F2",
+            "R2",
+            "U2",
+            "L",
+            "D'",
+            "L2",
+            "F2",
+            "R",
+            "U",
+            "L",
+            "U",
+            "R2",
+            "U'",
+            "F2",
+            "D",
+            "B2",
+            "R2",
+            "F2",
+            "D2",
+            "F2",
+            "U2",
+            "L2",
+            "U2",
+            "F2",
+            "R2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 30,
+          "undo_available": 30
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 58,
+      "wall_s_elapsed": 235.24,
+      "turn_wall_s": 7.84,
+      "input_tokens": 692,
+      "output_tokens": 338,
+      "cache_read_tokens": 32079,
+      "cache_create_tokens": 232,
+      "content": [
+        {
+          "citations": null,
+          "text": "Perfect! The solution is verified. \n\n## Summary\n\n**Solution found in 30 moves** \u2014 7 moves better than the prior 37-move attempt!\n\n**Path:**\n- **EO**: Inverse-UD axis, 3 moves (D U B')\n- **DR**: Brain-guided navigation + DR-7C8E trigger, reaching DR in 14 total moves\n- **HTR**: 2-swap long-cycle subset with 5-move reduction + 11-move finish\n- **Total**: 30 moves\n\n**Key decisions:**\n1. Chose inverse-UD for shortest EO (3 moves vs 5+ on other axes)\n2. Committed to brain-guided DR navigation when trigger options weren't immediately available\n3. Found DR-7C8E trigger (uncommon but viable) in 8 moves from EO\n4. Followed through HTR subset classification and finish pipeline cleanly\n\nFINAL_SOLUTION: [\"U2\", \"R2\", \"F2\", \"U2\", \"L2\", \"U2\", \"F2\", \"D2\", \"F2\", \"R2\", \"B2\", \"D'\", \"F2\", \"U\", \"R2\", \"U'\", \"L'\", \"U'\", \"R'\", \"F2\", \"L2\", \"D\", \"L'\", \"U2\", \"R2\", \"F2\", \"U'\", \"B\", \"U'\", \"D'\"]",
+          "type": "text"
+        }
+      ],
+      "stop_reason": "end_turn"
+    },
+    {
+      "type": "verify",
+      "solution": [
+        "U2",
+        "R2",
+        "F2",
+        "U2",
+        "L2",
+        "U2",
+        "F2",
+        "D2",
+        "F2",
+        "R2",
+        "B2",
+        "D'",
+        "F2",
+        "U",
+        "R2",
+        "U'",
+        "L'",
+        "U'",
+        "R'",
+        "F2",
+        "L2",
+        "D",
+        "L'",
+        "U2",
+        "R2",
+        "F2",
+        "U'",
+        "B",
+        "U'",
+        "D'"
+      ],
+      "result": {
+        "solves": true,
+        "total_moves": 30
+      }
     }
   ],
-  "input_tokens": 25325,
-  "output_tokens": 4474,
-  "cache_read_tokens": 760892,
-  "cache_create_tokens": 9865,
+  "input_tokens": 36982,
+  "output_tokens": 6918,
+  "cache_read_tokens": 1350246,
+  "cache_create_tokens": 14775,
   "per_turn_usage": [
     {
       "turn": 1,
@@ -4058,7 +6310,227 @@
       "cache_read_tokens": 25877,
       "cache_create_tokens": 190,
       "stop_reason": "tool_use"
+    },
+    {
+      "turn": 39,
+      "wall_s_elapsed": 159.93,
+      "turn_wall_s": 3.85,
+      "sim_spent_at_turn": 1023.05,
+      "input_tokens": 733,
+      "output_tokens": 131,
+      "cache_read_tokens": 26261,
+      "cache_create_tokens": 91,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 40,
+      "wall_s_elapsed": 167.59,
+      "turn_wall_s": 5.15,
+      "sim_spent_at_turn": 1328.47,
+      "input_tokens": 940,
+      "output_tokens": 209,
+      "cache_read_tokens": 26352,
+      "cache_create_tokens": 515,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 41,
+      "wall_s_elapsed": 176.32,
+      "turn_wall_s": 8.73,
+      "sim_spent_at_turn": 1329.27,
+      "input_tokens": 1051,
+      "output_tokens": 117,
+      "cache_read_tokens": 26984,
+      "cache_create_tokens": 134,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 42,
+      "wall_s_elapsed": 180.48,
+      "turn_wall_s": 4.11,
+      "sim_spent_at_turn": 1344.27,
+      "input_tokens": 767,
+      "output_tokens": 195,
+      "cache_read_tokens": 27246,
+      "cache_create_tokens": 595,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 43,
+      "wall_s_elapsed": 182.46,
+      "turn_wall_s": 1.67,
+      "sim_spent_at_turn": 1345.27,
+      "input_tokens": 768,
+      "output_tokens": 84,
+      "cache_read_tokens": 28047,
+      "cache_create_tokens": 157,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 44,
+      "wall_s_elapsed": 186.93,
+      "turn_wall_s": 4.46,
+      "sim_spent_at_turn": 1345.67,
+      "input_tokens": 580,
+      "output_tokens": 73,
+      "cache_read_tokens": 28318,
+      "cache_create_tokens": 326,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 45,
+      "wall_s_elapsed": 189.53,
+      "turn_wall_s": 2.6,
+      "sim_spent_at_turn": 1345.67,
+      "input_tokens": 466,
+      "output_tokens": 121,
+      "cache_read_tokens": 28836,
+      "cache_create_tokens": 173,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 46,
+      "wall_s_elapsed": 193.69,
+      "turn_wall_s": 4.15,
+      "sim_spent_at_turn": 1346.67,
+      "input_tokens": 459,
+      "output_tokens": 72,
+      "cache_read_tokens": 29009,
+      "cache_create_tokens": 253,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 47,
+      "wall_s_elapsed": 196.09,
+      "turn_wall_s": 2.4,
+      "sim_spent_at_turn": 1346.77,
+      "input_tokens": 450,
+      "output_tokens": 98,
+      "cache_read_tokens": 29332,
+      "cache_create_tokens": 182,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 48,
+      "wall_s_elapsed": 198.56,
+      "turn_wall_s": 2.46,
+      "sim_spent_at_turn": 1347.77,
+      "input_tokens": 465,
+      "output_tokens": 85,
+      "cache_read_tokens": 29632,
+      "cache_create_tokens": 129,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 49,
+      "wall_s_elapsed": 201.19,
+      "turn_wall_s": 2.63,
+      "sim_spent_at_turn": 1348.17,
+      "input_tokens": 493,
+      "output_tokens": 53,
+      "cache_read_tokens": 29761,
+      "cache_create_tokens": 244,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 50,
+      "wall_s_elapsed": 203.51,
+      "turn_wall_s": 2.32,
+      "sim_spent_at_turn": 1348.17,
+      "input_tokens": 461,
+      "output_tokens": 103,
+      "cache_read_tokens": 30100,
+      "cache_create_tokens": 168,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 51,
+      "wall_s_elapsed": 205.64,
+      "turn_wall_s": 2.13,
+      "sim_spent_at_turn": 1349.17,
+      "input_tokens": 455,
+      "output_tokens": 85,
+      "cache_read_tokens": 30268,
+      "cache_create_tokens": 273,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 52,
+      "wall_s_elapsed": 211.93,
+      "turn_wall_s": 6.28,
+      "sim_spent_at_turn": 1349.57,
+      "input_tokens": 511,
+      "output_tokens": 53,
+      "cache_read_tokens": 30541,
+      "cache_create_tokens": 232,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 53,
+      "wall_s_elapsed": 214.01,
+      "turn_wall_s": 2.07,
+      "sim_spent_at_turn": 1349.57,
+      "input_tokens": 474,
+      "output_tokens": 91,
+      "cache_read_tokens": 30873,
+      "cache_create_tokens": 168,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 54,
+      "wall_s_elapsed": 216.61,
+      "turn_wall_s": 2.6,
+      "sim_spent_at_turn": 1350.57,
+      "input_tokens": 404,
+      "output_tokens": 81,
+      "cache_read_tokens": 31041,
+      "cache_create_tokens": 289,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 55,
+      "wall_s_elapsed": 218.05,
+      "turn_wall_s": 1.44,
+      "sim_spent_at_turn": 1350.87,
+      "input_tokens": 468,
+      "output_tokens": 53,
+      "cache_read_tokens": 31330,
+      "cache_create_tokens": 232,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 56,
+      "wall_s_elapsed": 221.36,
+      "turn_wall_s": 3.31,
+      "sim_spent_at_turn": 1350.87,
+      "input_tokens": 479,
+      "output_tokens": 101,
+      "cache_read_tokens": 31562,
+      "cache_create_tokens": 220,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 57,
+      "wall_s_elapsed": 227.4,
+      "turn_wall_s": 6.03,
+      "sim_spent_at_turn": 1351.87,
+      "input_tokens": 541,
+      "output_tokens": 301,
+      "cache_read_tokens": 31782,
+      "cache_create_tokens": 297,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 58,
+      "wall_s_elapsed": 235.24,
+      "turn_wall_s": 7.84,
+      "sim_spent_at_turn": 1351.87,
+      "input_tokens": 692,
+      "output_tokens": 338,
+      "cache_read_tokens": 32079,
+      "cache_create_tokens": 232,
+      "stop_reason": "end_turn"
     }
   ],
-  "cost_estimate_usd": 0.4083
+  "cost_estimate_usd": 0.6752
 }
