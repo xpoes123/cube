@@ -30,11 +30,11 @@
   "final_solution": [],
   "solves": false,
   "total_moves": 0,
-  "tool_calls": 123,
-  "halt_reason": null,
-  "sim_spent": 570.96,
+  "tool_calls": 138,
+  "halt_reason": "wall_clock",
+  "sim_spent": 595.16,
   "sim_budget": 3600.0,
-  "wall_elapsed_s": 810.9,
+  "wall_elapsed_s": 903.6,
   "budget_events": [
     {
       "kind": "inspect_state",
@@ -878,43 +878,121 @@
       "sim_spent_after": 570.96,
       "slot": "main",
       "n": 8
+    },
+    {
+      "kind": "restore_fork",
+      "cost": 3.0,
+      "sim_spent_after": 573.96,
+      "slot": "main",
+      "name": "ud-inv-stuck-2C0E"
+    },
+    {
+      "kind": "analyze_residual",
+      "cost": 2.0,
+      "sim_spent_after": 575.96,
+      "slot": "main"
+    },
+    {
+      "kind": "brain_suggest",
+      "cost": 3.0,
+      "sim_spent_after": 578.96,
+      "slot": "main",
+      "step": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 1.2,
+      "sim_spent_after": 580.16,
+      "slot": "main",
+      "n": 12
+    },
+    {
+      "kind": "brain_suggest",
+      "cost": 3.0,
+      "sim_spent_after": 583.16,
+      "slot": "main",
+      "step": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.1,
+      "sim_spent_after": 583.26,
+      "slot": "main",
+      "n": 1
+    },
+    {
+      "kind": "brain_suggest",
+      "cost": 3.0,
+      "sim_spent_after": 586.26,
+      "slot": "main",
+      "step": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.1,
+      "sim_spent_after": 586.36,
+      "slot": "main",
+      "n": 1
+    },
+    {
+      "kind": "brain_suggest",
+      "cost": 3.0,
+      "sim_spent_after": 589.36,
+      "slot": "main",
+      "step": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.8,
+      "sim_spent_after": 590.16,
+      "slot": "main",
+      "n": 8
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 591.16,
+      "slot": "main"
+    },
+    {
+      "kind": "restore_fork",
+      "cost": 3.0,
+      "sim_spent_after": 594.16,
+      "slot": "main",
+      "name": "ud-inv-stuck-2C0E"
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 595.16,
+      "slot": "main"
     }
   ],
   "slots_final": {
     "main": {
       "history": [
-        "R'",
-        "D'",
-        "R'",
-        "U2",
-        "F'",
-        "R'",
-        "U",
-        "L",
-        "U2",
-        "D'",
-        "R",
         "D",
-        "R",
+        "U",
+        "B'",
+        "L'",
+        "U'",
+        "L",
+        "F2",
+        "D'",
+        "F2",
+        "R'",
         "F2",
         "U'",
-        "R'",
-        "L",
-        "D",
-        "R'",
-        "D",
-        "L'",
+        "L2",
+        "B2",
         "U",
-        "L'",
-        "U'",
-        "R",
-        "U2",
-        "R'",
-        "F2"
+        "F2",
+        "D",
+        "U2"
       ],
-      "on_inverse": false,
-      "move_count": 28,
-      "undo_available": 28
+      "on_inverse": true,
+      "move_count": 18,
+      "undo_available": 4
     }
   },
   "bookmarks": {
@@ -17455,12 +17533,1672 @@
           "undo_available": 28
         }
       }
+    },
+    {
+      "type": "assistant",
+      "turn": 124,
+      "wall_s_elapsed": 815.1,
+      "turn_wall_s": 4.16,
+      "input_tokens": 521,
+      "output_tokens": 196,
+      "cache_read_tokens": 120204,
+      "cache_create_tokens": 310,
+      "content": [
+        {
+          "signature": "EukDCmMIDRgCKkCS/o8xfqsbRWw7DqEE8dzrDutz2fiduYzf2smNAJ/eBE55RlI7PnEkeaKwaNnSPMIqbwqCvoeGMA/nzNdsQdZdMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDMqJSUouQEfG/MSjyBoMZjGzss0LeAlSgHe+IjAZt0CxCPtxWBU1HTw+1KGATrZqg0rVn6DnaiFVYwtBg9xpgqo/qzXv9YKnBmsBUqUqswLSYj1HBzInT9IGea2s5c39u9Gc8j1kgrj7gLagJ1cwJTItaUQGPoj6VD/AxV7wTLC6lMTIJhhJ8PvkxYH8v9kHxeLxocDoJh+Rxv+3ppovBZYnFifMECaee7XuoiZ6X/KQINda1WtNhgBPlrwXDw6O0PudMPNL1fE9g52q5q2njNuZ8VITGKaE9QW80XsbPkZs+7gQ7CuAwI4URdaO0qpS3jRbjwMxlGKRihAZ7wGfEWlKYz9M4laLk94QTTmLt6mHhirXnMPNHfkfpPP+HCa1bc/nLKSDDGuIBe6fHuYtkeXdYOOsnDVuIecoHuo/XCfyElzFNbZx15Ls/SUnEfs+pfo54PhJH9ftddqfK/MxRJuBLhwsyyQHZXWwudLslkLEMhbAKxgtWEkUyEdSIstSyVVDGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01YLH7WZWek346naZXNv8up2",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "name": "ud-inv-stuck-2C0E"
+          },
+          "name": "restore_fork",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 124,
+      "tool_index": 124,
+      "name": "restore_fork",
+      "input": {
+        "name": "ud-inv-stuck-2C0E"
+      },
+      "result": {
+        "ok": true,
+        "restored_to_slot": "main",
+        "name": "ud-inv-stuck-2C0E",
+        "move_count": 18,
+        "on_inverse": true,
+        "description": "UD-inverse EO+setup reaches 2C0E/0C2E but DR closure is 6+ moves away \u2014 abandoned",
+        "_meta": {
+          "sim_remaining_s": 3026.0,
+          "sim_fraction_left": 0.841,
+          "wall_remaining_s": 84.9,
+          "tool_calls_remaining": 26,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 573.96,
+      "wall_s_elapsed": 815.1,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 125,
+      "wall_s_elapsed": 817.47,
+      "turn_wall_s": 2.36,
+      "input_tokens": 611,
+      "output_tokens": 67,
+      "cache_read_tokens": 120350,
+      "cache_create_tokens": 465,
+      "content": [
+        {
+          "id": "toolu_017u5Q7WDxVXasmn8uRCWTUB",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "analyze_residual",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 125,
+      "tool_index": 125,
+      "name": "analyze_residual",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "residual_class": "mixed",
+        "corner_perm_cycles": [
+          [
+            "ULB",
+            "DBL",
+            "DRB"
+          ],
+          [
+            "UBR",
+            "DFR"
+          ]
+        ],
+        "edge_perm_cycles": [
+          [
+            "UR",
+            "DB",
+            "UL",
+            "DL",
+            "UB"
+          ],
+          [
+            "UF",
+            "DF"
+          ],
+          [
+            "FR",
+            "FL"
+          ],
+          [
+            "BL",
+            "BR"
+          ]
+        ],
+        "corner_twists": [],
+        "edge_flips": [],
+        "is_solved": false,
+        "is_pure_corner_3cycle": false,
+        "is_pure_edge_3cycle": false,
+        "num_corners_unsolved": 5,
+        "num_edges_unsolved": 11,
+        "num_pieces_unsolved": 16,
+        "_meta": {
+          "sim_remaining_s": 3024.0,
+          "sim_fraction_left": 0.84,
+          "wall_remaining_s": 82.5,
+          "tool_calls_remaining": 25,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 575.96,
+      "wall_s_elapsed": 817.47,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 126,
+      "wall_s_elapsed": 826.88,
+      "turn_wall_s": 9.4,
+      "input_tokens": 569,
+      "output_tokens": 557,
+      "cache_read_tokens": 120749,
+      "cache_create_tokens": 482,
+      "content": [
+        {
+          "signature": "EscKCmMIDRgCKkCJK2/7h+7vgixpts6muHIS1Ils8otJYhRkYVgGfC1VR1JWgtZg52QGM9KlQWydoGMEKN+JcDyb9IuaAk0uWjK5Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDFxza20kwpO7xGqXfBoM6tim597B6rlo2RRxIjCiTP16cVm9iTTdvMkU30AIJxrncDQnu8Y/AcYVzKW/mX87swPVGB5Ba7oCylmgaMoqkQk1Gx5jdSeWxjlO5yb/EJ2TzuzZ9ZVy3amtvRhzQROTB7jRbQSXzoMdogY/izBBVj/FyGPCTRF1Hie14fETOIVvdpBCEmdWteaeZGZcG1C23rpXLR5qbfzwmBn0k/AIvKCng+T8YgrvX2NM57YeHXbTDm81WpnaQKgkTs1nYFJOYb3gR9QF/YijqxIW1PfYREMbLTx0Fp8+YUE+mrwAYMwmyvGEUsIya/lAyXutCaTGxEtIrHGiSTO6b9Vik5MK+lC/wINDnFlz/uAg22NoCsGZjFvp2CYpM0UFcY7SZRNpYmJGQ9NPP1Np1zZOIohQlxyh2JRmUp/ATf7wMzWnWWron0bLOamF1K1UJEWWSXL2icubpa36QB6eAVlxZxLhm7X4v0x5Tdh9nHcmnmga7gzNMvg69nybadanYkfOF9gjTknS76kGuahL7eEmpww1AV4j28JscE116JRTLPBhsMHGvNNKB04kl890ejkfTU85z5eDxjlYtCsZA59sSGgRIHMkeq567y8i+hyv0jY4QogA3OyBrkIpoDv849CTjb/bIH2LFWSSDfwlEoajKnkkD5QwQobIIUncwrPrXax6Zt6sZqsMvdL4wkJIMolMjVH5+941mN9SxNwxjx8ui9rDL0NLPiZC2eaWLyzgl2W97jnV7fDpCn2faTN5Rv8iYZl3hsS+8jjwO1MANAuftRM6j5rZoZgSDaihFwTF0kv49n5yIYyNdysc2xxtjtk6IzKswa3PdHk7a0PawViFCWcc4TnNYOFmO3j7XGeRQyzEGC6llqYA86T2WLWBAGUHgVmBXvVy5XpRousC2j1tljWJEhOe+lAoAUyrJkIQmp7grxw+3mClD/Hp053X5SS8CRv5pyrjMQauFCWm5h1eUnG6m6H+vEHuMddgcy/498/T+DNqxrtwdu4b4o32hFqjx83/yjWR9rfS6PaTI0fDNN+9zhOyo58puQELJRRkFr4xRgn/2vKy4rEhPv/VOPy9Ppopj0+EWft2o3vrupjf2M6hggCyQOfv5U9wvWMEGlQ6mIXdVY11ieivHbX80MS0guLPOv1I/HaoX0vGTf3rV6DbDj+jsUBgJ8sPkNtg3qMzCm3/gGEuwV7hQeuzSppR0tOh/Ge4cN0E8y6Bjuq9BhAPOFe3bKhN8OnA6S2kpwgoU89pAsFush3yRxemusDvGDxCKgVLyu/fsLMC5qqRdNJreFl8BhNNw/RFEQOW0aLpa06ZS6y+VWGeccdlu48IAEJQrwJQtuNvCHyjJEc3/e8IkHcVAgyOSfrWj+SOJSsKQLF+6qErETOoB/0YC/GNJj05KgfdmgH86SlqtFsK6/9at4A7JFerBnJ0q9TvIuLU3axkB/HyRlyTUADuQfDMrrQ6TdHVyXHY2Pi51NTwN0LNg5+TFIQNdKIG50Xvme6FnZKdbEf1fvHP1qpYIoZdKVQzc8mgnJ7fq1mT+gBp4JiO4Wjcwepl+RQT+vXnHmDIXvVWebIljar+zMnI/DWecbV28a8IT3rNhRIfqyqK7/mgDr3BAJ0dRKgWc+wQcz9ezd9MARgB",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_013CHV7kyNkKAvF1TKNwqt33",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "step": "finish",
+            "k": 3
+          },
+          "name": "brain_suggest",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 126,
+      "tool_index": 126,
+      "name": "brain_suggest",
+      "input": {
+        "slot": "main",
+        "step": "finish",
+        "k": 3
+      },
+      "result": {
+        "from_brain": true,
+        "step": "finish",
+        "candidates": [
+          {
+            "move": "U2",
+            "prob": 0.39635947346687317
+          },
+          {
+            "move": "F2",
+            "prob": 0.32872408628463745
+          },
+          {
+            "move": "R2",
+            "prob": 0.13216380774974823
+          }
+        ],
+        "note": "top-3 from brain_finish (nissy-trained state-conditioned)",
+        "_meta": {
+          "sim_remaining_s": 3021.0,
+          "sim_fraction_left": 0.839,
+          "wall_remaining_s": 73.1,
+          "tool_calls_remaining": 24,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 578.96,
+      "wall_s_elapsed": 826.88,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 127,
+      "wall_s_elapsed": 833.96,
+      "turn_wall_s": 7.07,
+      "input_tokens": 1073,
+      "output_tokens": 389,
+      "cache_read_tokens": 121034,
+      "cache_create_tokens": 459,
+      "content": [
+        {
+          "signature": "EpUGCmMIDRgCKkDl9oLSpo8jnZaQIhyRVYFEoIqeWmb171txGBvnTPZyoXgeAKDvGxOm+sIBHNZ/dCRPucYrarzCO6fRk07B6pCOMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDP1OnlpX1vDiosFrTRoMlV0RltjO3XjwPMOWIjB5oAKKkbRBj58Su392Cmr2L/SbEDe9Vg/HHH4HiX/x1nl2LC+Hbjd5j+p2k/Vale4q3wSeXR3Xc6hJA2iBWbjdfU5ZZn2Ab4WOI5HaY03u6fshhTgEl8xAPenclbowxF1xkEe4gfHGN5yJhtD2+qM1Awz8mznWSf8mh5UvIplEGh0zBDsOuzuFT5elyZSeyA7uDFij1vkaOBDqUoii5jqjbCP0ntQT3CFsu4hQn5WMVR5JbmvKc94EZAMczFiCkCSyjAb8WHUy22VIPZsB2TkFcM3uqn71JrCucnbbX4kM0QJ3GN/EMtREvsaF/xHBMGfalUhknBEjLtKenWsWBi2YJ0OWrUw89726KkwDVGkAI7i9BAirDOWUtxIas3aeGr6ZvThcOgpC2ggqPa5SSf1bWHQixHggSd/nIzpXjYRImOHiJCtD5e1AuZCA47Tfkp+jiYkkjtJJDwg8UkEAqlDo5Gt9f+JIz66Dss7OQE+7KGgc2aXu+1vfCq4JWGhRVsE3Mr4agfNfKcfQ8ZnaZDxn4E9d+4ei4Xa/C+f293uv/fE/okWMIgQ7C1xsYufs31DP10zmUCidM4QBFBaEgysy/cMfaQ98kpimJNRP+5Y0ghmYzPhTJGaYFdQOPcieyaHxxLO1K8QUm7kS6dKjHsatFkfisfFponoHqFnrwgyWRTgM8/ezTPXC5lSpQaxinpvj/0HzYh9tJY4Dec2CMmUz4nVOwgZCndPs6tBZhDQf2LBZCIgu9gu6LpZWxx9o2XgxEZZMqcfNP/cQns5upT0ib0Y4h/B7ufw12BkhqVRvBxGWNfIqCrSex1xxnp1w4ueszHEfpeaeI7TXZ1jBUqDVIaHmeOjqh7eiQQxR7Q/Kh0h0GAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01HxzSiYCb4TNjwAzfv9ziHP",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "F2",
+              "U2",
+              "F2",
+              "L2",
+              "U2",
+              "R2",
+              "D2",
+              "R2",
+              "F2",
+              "U2",
+              "B2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 127,
+      "tool_index": 127,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "F2",
+          "U2",
+          "F2",
+          "L2",
+          "U2",
+          "R2",
+          "D2",
+          "R2",
+          "F2",
+          "U2",
+          "B2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "L'",
+          "U'",
+          "L",
+          "F2",
+          "D'",
+          "F2",
+          "R'",
+          "F2",
+          "U'",
+          "L2",
+          "B2",
+          "U",
+          "F2",
+          "D",
+          "F2",
+          "U2",
+          "F2",
+          "L2",
+          "U2",
+          "R2",
+          "D2",
+          "R2",
+          "F2",
+          "U2",
+          "B2"
+        ],
+        "move_count": 28,
+        "undo_available": 14,
+        "auto_cancelled_saved": 2,
+        "_meta": {
+          "sim_remaining_s": 3019.8,
+          "sim_fraction_left": 0.839,
+          "wall_remaining_s": 66.0,
+          "tool_calls_remaining": 23,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 580.16,
+      "wall_s_elapsed": 833.96,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "B2"
+          ],
+          "on_inverse": true,
+          "move_count": 28,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 128,
+      "wall_s_elapsed": 837.48,
+      "turn_wall_s": 3.5,
+      "input_tokens": 839,
+      "output_tokens": 65,
+      "cache_read_tokens": 121425,
+      "cache_create_tokens": 932,
+      "content": [
+        {
+          "id": "toolu_01RQZ56RgSNc7dzwKfWJshbm",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 128,
+      "tool_index": 128,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": false
+        },
+        "is_dr_per_axis": {
+          "UD": false,
+          "FB": false,
+          "RL": false
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 28,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 3019.8,
+          "sim_fraction_left": 0.839,
+          "wall_remaining_s": 62.5,
+          "tool_calls_remaining": 22,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 580.16,
+      "wall_s_elapsed": 837.48,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "B2"
+          ],
+          "on_inverse": true,
+          "move_count": 28,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 129,
+      "wall_s_elapsed": 845.34,
+      "turn_wall_s": 7.85,
+      "input_tokens": 526,
+      "output_tokens": 388,
+      "cache_read_tokens": 121799,
+      "cache_create_tokens": 1156,
+      "content": [
+        {
+          "signature": "EvgGCmMIDRgCKkCsqHBb67Z/JlrE4yr4TP3skPTQgjnC8xMK/tXlhL43MIxvr5ve5gbCuOFNAD5qzkT6HO7WM0oPphhAb79ytonyMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDE1pa30loX48RXk/GxoM9xoV7A6rhu0DPDyMIjDT9TT1CipAMJ0mVbIqTSlKitv0iXvL0R0UhtpLpbye48ZH6nlZAth0404v18zKIRUqwgVuTF5FCjyzkSeN+MqWEZs4d3/gg1d01+ETO/LUaXgwepG5uaHoPYSuSSvfL+T8Sc9sN5+G7EwZdxSbGUVIaCUbQXxPNdQZ3JbSwW2xVQhH2v85TWDHi9vuVZJ+XOw+2BylxstUbEBaxoRJ/V+1phrgQQMMzpPOO9wGZjsxKqh14aw5CjKGqZPH4uO7NbphZBZhM9jRdZeZN0hcp11X4FQHBHLDw6kJJteqxiUERWo9qeYSPI9PlfPInYmM91rt8iZwylevMh3LaiRDwgXQE2GhTDdlmdrdUhRmZdCD8USMY4W6HCwm1LqhW+RbQp3nV/gM3vCpbxC+Yz/6bcf3lpb4Ufgt0I0EIID6b96Jwj6cDlkmpWrIySIPCGPQB/4QfTzCqugLQ+JCHeb6MPwI8kKPXamXiVidMP3ojRo9SV3LZVb6pVETEpM1mTVL1qeUd9xjXTrVGUrOc2jXEyT6bWi/dFm0qkp9k9lwHG4RI4Jixji91TXlm8IIQKMi3vSLH70Exqu5eiW0sRefHKB3ccx3gt4dgnchm6d3231aiV4T9CWDoVt3NISMokeCHP/Z3hU8o1D4mrNYAfbZt4nG2PoX162Uy2mW13gTY4w9qm1fP6PwIEiwSTDpwozaDNLUC7STCHBf+x9dH6vDD4DxBHnVNvgGU9Cf4w9WVSq4vUDmnhAyn4RAIqL4njxy8WZpOuF18PBGUDYDwx+IGhnUOsRFSn0PooteH3v2Clv2+gugTXvzkmvQRHPWVy6iDV9q02iZMdyzGLPRwIiWRWv7R1C0uIeMRn4t5FmNZ3SF2nvaUiUxcceL+JBFL1/AL2ZxUjpasVaB970fkcfiXH+VEJOb0As2SIcXHy1y7PQWLh2cVhSga/heZkpI8QefU6Igc1SpuAGt7p2Rjkyd1gEJWf0+JNWhj3k0CMXfiAnJRKMvITO+GAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01FnpGoQXGQH2eeaNxEiKJPV",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "step": "finish",
+            "k": 3
+          },
+          "name": "brain_suggest",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 129,
+      "tool_index": 129,
+      "name": "brain_suggest",
+      "input": {
+        "slot": "main",
+        "step": "finish",
+        "k": 3
+      },
+      "result": {
+        "from_brain": true,
+        "step": "finish",
+        "candidates": [
+          {
+            "move": "B2",
+            "prob": 0.7662492990493774
+          },
+          {
+            "move": "F2",
+            "prob": 0.14937524497509003
+          },
+          {
+            "move": "R2",
+            "prob": 0.06422512233257294
+          }
+        ],
+        "note": "top-3 from brain_finish (nissy-trained state-conditioned)",
+        "_meta": {
+          "sim_remaining_s": 3016.8,
+          "sim_fraction_left": 0.838,
+          "wall_remaining_s": 54.7,
+          "tool_calls_remaining": 21,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 583.16,
+      "wall_s_elapsed": 845.34,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "B2"
+          ],
+          "on_inverse": true,
+          "move_count": 28,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 130,
+      "wall_s_elapsed": 847.86,
+      "turn_wall_s": 2.52,
+      "input_tokens": 817,
+      "output_tokens": 92,
+      "cache_read_tokens": 122565,
+      "cache_create_tokens": 696,
+      "content": [
+        {
+          "id": "toolu_01Rpn37VBxUELNgy8nQUxjrU",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "B2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 130,
+      "tool_index": 130,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "B2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "L'",
+          "U'",
+          "L",
+          "F2",
+          "D'",
+          "F2",
+          "R'",
+          "F2",
+          "U'",
+          "L2",
+          "B2",
+          "U",
+          "F2",
+          "D",
+          "F2",
+          "U2",
+          "F2",
+          "L2",
+          "U2",
+          "R2",
+          "D2",
+          "R2",
+          "F2",
+          "U2"
+        ],
+        "move_count": 27,
+        "undo_available": 13,
+        "auto_cancelled_saved": 2,
+        "_meta": {
+          "sim_remaining_s": 3016.7,
+          "sim_fraction_left": 0.838,
+          "wall_remaining_s": 52.1,
+          "tool_calls_remaining": 20,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 583.26,
+      "wall_s_elapsed": 847.86,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 13
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 131,
+      "wall_s_elapsed": 852.59,
+      "turn_wall_s": 4.71,
+      "input_tokens": 538,
+      "output_tokens": 110,
+      "cache_read_tokens": 123195,
+      "cache_create_tokens": 674,
+      "content": [
+        {
+          "id": "toolu_01F4Jx5NazmhjBx63UN8YhmN",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "step": "finish",
+            "k": 2
+          },
+          "name": "brain_suggest",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 131,
+      "tool_index": 131,
+      "name": "brain_suggest",
+      "input": {
+        "slot": "main",
+        "step": "finish",
+        "k": 2
+      },
+      "result": {
+        "from_brain": true,
+        "step": "finish",
+        "candidates": [
+          {
+            "move": "R2",
+            "prob": 0.7486685514450073
+          },
+          {
+            "move": "U2",
+            "prob": 0.13989555835723877
+          }
+        ],
+        "note": "top-2 from brain_finish (nissy-trained state-conditioned)",
+        "_meta": {
+          "sim_remaining_s": 3013.7,
+          "sim_fraction_left": 0.837,
+          "wall_remaining_s": 47.4,
+          "tool_calls_remaining": 19,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 586.26,
+      "wall_s_elapsed": 852.59,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 13
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 132,
+      "wall_s_elapsed": 855.89,
+      "turn_wall_s": 3.3,
+      "input_tokens": 533,
+      "output_tokens": 92,
+      "cache_read_tokens": 123480,
+      "cache_create_tokens": 690,
+      "content": [
+        {
+          "id": "toolu_01CUnD5mjSov4Mr4hoHnTcoX",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "R2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 132,
+      "tool_index": 132,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "R2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "L'",
+          "U'",
+          "L",
+          "F2",
+          "D'",
+          "F2",
+          "R'",
+          "F2",
+          "U'",
+          "L2",
+          "B2",
+          "U",
+          "F2",
+          "D",
+          "F2",
+          "U2",
+          "F2",
+          "L2",
+          "U2",
+          "R2",
+          "D2",
+          "R2",
+          "F2",
+          "U2",
+          "R2"
+        ],
+        "move_count": 28,
+        "undo_available": 14,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3013.6,
+          "sim_fraction_left": 0.837,
+          "wall_remaining_s": 44.1,
+          "tool_calls_remaining": 18,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 586.36,
+      "wall_s_elapsed": 855.89,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 28,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 133,
+      "wall_s_elapsed": 858.3,
+      "turn_wall_s": 2.4,
+      "input_tokens": 519,
+      "output_tokens": 110,
+      "cache_read_tokens": 124077,
+      "cache_create_tokens": 440,
+      "content": [
+        {
+          "id": "toolu_01VAhTa7q27VB3BxgG4jN4cV",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "step": "finish",
+            "k": 2
+          },
+          "name": "brain_suggest",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 133,
+      "tool_index": 133,
+      "name": "brain_suggest",
+      "input": {
+        "slot": "main",
+        "step": "finish",
+        "k": 2
+      },
+      "result": {
+        "from_brain": true,
+        "step": "finish",
+        "candidates": [
+          {
+            "move": "R2",
+            "prob": 0.5914969444274902
+          },
+          {
+            "move": "F2",
+            "prob": 0.28558045625686646
+          }
+        ],
+        "note": "top-2 from brain_finish (nissy-trained state-conditioned)",
+        "_meta": {
+          "sim_remaining_s": 3010.6,
+          "sim_fraction_left": 0.836,
+          "wall_remaining_s": 41.7,
+          "tool_calls_remaining": 17,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 589.36,
+      "wall_s_elapsed": 858.3,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 28,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 134,
+      "wall_s_elapsed": 862.61,
+      "turn_wall_s": 4.29,
+      "input_tokens": 537,
+      "output_tokens": 202,
+      "cache_read_tokens": 124406,
+      "cache_create_tokens": 389,
+      "content": [
+        {
+          "signature": "EuoCCmMIDRgCKkD8FPbH3d5QdmLnHvwAEyecK8k104427xIgcQPFCKzghPMR1YtGJ3onk/iTDLFiVlQOmIydklNfMtFK9ap6LRJmMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDAV+ZqL0h6ND1A3rYRoMuiDxTvsBbUkdMfN/IjCAkLPsALpUGTrsAkejprS8vhdJkgdxT0IYHHmWIiefpKE53ki3kTO5/wl1dXhVracqtAF5qtrJ6C5vZ3KgDt7LPMmnVpko/Fp442W3NzAxooW2QC3WXyQEWeITX85WR7IQN+3b4L4Pb4sJ/f75Eh2CKZU5ehZ7oe3+t8cVqFKKweyTIEKPl+JhB39UfPd9ETuFFeaCPIaWHcT3/L/uIEjYotKFbAdn6nmk7jVgoJD66T/Qd1/P258ufYtTk3L3LX468YvBZmqxohZl/yKdgW6EJ+Luaa9fo5q9qMbKRZ6xhGPdo1OgCRAYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01KER9Ux6Xhi4TNdy9KxYMJQ",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "F2",
+              "D2",
+              "L2",
+              "F2",
+              "U2",
+              "R2",
+              "F2",
+              "D2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 134,
+      "tool_index": 134,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "F2",
+          "D2",
+          "L2",
+          "F2",
+          "U2",
+          "R2",
+          "F2",
+          "D2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "D",
+          "U",
+          "B'",
+          "L'",
+          "U'",
+          "L",
+          "F2",
+          "D'",
+          "F2",
+          "R'",
+          "F2",
+          "U'",
+          "L2",
+          "B2",
+          "U",
+          "F2",
+          "D",
+          "F2",
+          "U2",
+          "F2",
+          "L2",
+          "U2",
+          "R2",
+          "D2",
+          "R2",
+          "F2",
+          "U2",
+          "R2",
+          "F2",
+          "D2",
+          "L2",
+          "F2",
+          "U2",
+          "R2",
+          "F2",
+          "D2"
+        ],
+        "move_count": 36,
+        "undo_available": 22,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3009.8,
+          "sim_fraction_left": 0.836,
+          "wall_remaining_s": 37.4,
+          "tool_calls_remaining": 16,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 590.16,
+      "wall_s_elapsed": 862.61,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "R2",
+            "F2",
+            "D2",
+            "L2",
+            "F2",
+            "U2",
+            "R2",
+            "F2",
+            "D2"
+          ],
+          "on_inverse": true,
+          "move_count": 36,
+          "undo_available": 22
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 135,
+      "wall_s_elapsed": 864.97,
+      "turn_wall_s": 2.35,
+      "input_tokens": 661,
+      "output_tokens": 65,
+      "cache_read_tokens": 124702,
+      "cache_create_tokens": 444,
+      "content": [
+        {
+          "id": "toolu_019jWG1vmffoz1uqYcnGdDMy",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 135,
+      "tool_index": 135,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": false
+        },
+        "is_dr_per_axis": {
+          "UD": false,
+          "FB": false,
+          "RL": false
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 36,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 3009.8,
+          "sim_fraction_left": 0.836,
+          "wall_remaining_s": 35.0,
+          "tool_calls_remaining": 15,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 590.16,
+      "wall_s_elapsed": 864.97,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "R2",
+            "F2",
+            "D2",
+            "L2",
+            "F2",
+            "U2",
+            "R2",
+            "F2",
+            "D2"
+          ],
+          "on_inverse": true,
+          "move_count": 36,
+          "undo_available": 22
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 136,
+      "wall_s_elapsed": 876.2,
+      "turn_wall_s": 11.22,
+      "input_tokens": 558,
+      "output_tokens": 579,
+      "cache_read_tokens": 125035,
+      "cache_create_tokens": 499,
+      "content": [
+        {
+          "signature": "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",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01UBWH1C3qRXytVUujXPA9y6",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 136,
+      "tool_index": 136,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "D2",
+          "F2",
+          "R2",
+          "U2",
+          "F2",
+          "L2",
+          "D2",
+          "F2",
+          "R2",
+          "U2",
+          "F2",
+          "R2",
+          "D2",
+          "R2",
+          "U2",
+          "L2",
+          "F2",
+          "U2",
+          "F2",
+          "D'",
+          "F2",
+          "U'",
+          "B2",
+          "L2",
+          "U",
+          "F2",
+          "R",
+          "F2",
+          "D",
+          "F2",
+          "L'",
+          "U",
+          "L",
+          "B",
+          "U'",
+          "D'"
+        ],
+        "length": 36,
+        "solves": false,
+        "frame_at_compose": "inverse",
+        "note": "Your slot state isn't solved yet \u2014 keep working.",
+        "_meta": {
+          "sim_remaining_s": 3008.8,
+          "sim_fraction_left": 0.836,
+          "wall_remaining_s": 23.8,
+          "tool_calls_remaining": 14,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 591.16,
+      "wall_s_elapsed": 876.2,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "F2",
+            "U2",
+            "F2",
+            "L2",
+            "U2",
+            "R2",
+            "D2",
+            "R2",
+            "F2",
+            "U2",
+            "R2",
+            "F2",
+            "D2",
+            "L2",
+            "F2",
+            "U2",
+            "R2",
+            "F2",
+            "D2"
+          ],
+          "on_inverse": true,
+          "move_count": 36,
+          "undo_available": 22
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 137,
+      "wall_s_elapsed": 890.25,
+      "turn_wall_s": 14.03,
+      "input_tokens": 1085,
+      "output_tokens": 768,
+      "cache_read_tokens": 125331,
+      "cache_create_tokens": 541,
+      "content": [
+        {
+          "signature": "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",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01LUNwQCJAHwBoE1GUtPseXx",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "name": "ud-inv-stuck-2C0E"
+          },
+          "name": "restore_fork",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 137,
+      "tool_index": 137,
+      "name": "restore_fork",
+      "input": {
+        "name": "ud-inv-stuck-2C0E"
+      },
+      "result": {
+        "ok": true,
+        "restored_to_slot": "main",
+        "name": "ud-inv-stuck-2C0E",
+        "move_count": 18,
+        "on_inverse": true,
+        "description": "UD-inverse EO+setup reaches 2C0E/0C2E but DR closure is 6+ moves away \u2014 abandoned",
+        "_meta": {
+          "sim_remaining_s": 3005.8,
+          "sim_fraction_left": 0.835,
+          "wall_remaining_s": 9.8,
+          "tool_calls_remaining": 13,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 594.16,
+      "wall_s_elapsed": 890.25,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 4
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 138,
+      "wall_s_elapsed": 903.61,
+      "turn_wall_s": 13.35,
+      "input_tokens": 1249,
+      "output_tokens": 697,
+      "cache_read_tokens": 125806,
+      "cache_create_tokens": 865,
+      "content": [
+        {
+          "signature": "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",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Out of wall time. I have to ship what I have, knowing it doesn't solve. My DR path got stuck at 2C0E (twisted corners) on this scramble \u2014 the corner topology required a 7-8 move comm I couldn't compose under pressure. Submitting the best partial attempt for transparency.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01PJfvkZp6VSftvjEKvRWQdf",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 138,
+      "tool_index": 138,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "U2",
+          "D'",
+          "F2",
+          "U'",
+          "B2",
+          "L2",
+          "U",
+          "F2",
+          "R",
+          "F2",
+          "D",
+          "F2",
+          "L'",
+          "U",
+          "L",
+          "B",
+          "U'",
+          "D'"
+        ],
+        "length": 18,
+        "solves": false,
+        "frame_at_compose": "inverse",
+        "note": "Your slot state isn't solved yet \u2014 keep working.",
+        "_meta": {
+          "sim_remaining_s": 3004.8,
+          "sim_fraction_left": 0.835,
+          "wall_remaining_s": -3.6,
+          "tool_calls_remaining": 12,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 595.16,
+      "wall_s_elapsed": 903.61,
+      "slots_after": {
+        "main": {
+          "history": [
+            "D",
+            "U",
+            "B'",
+            "L'",
+            "U'",
+            "L",
+            "F2",
+            "D'",
+            "F2",
+            "R'",
+            "F2",
+            "U'",
+            "L2",
+            "B2",
+            "U",
+            "F2",
+            "D",
+            "U2"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 4
+        }
+      }
     }
   ],
-  "input_tokens": 166192,
-  "output_tokens": 39764,
-  "cache_read_tokens": 8354277,
-  "cache_create_tokens": 143786,
+  "input_tokens": 176828,
+  "output_tokens": 44141,
+  "cache_read_tokens": 10198435,
+  "cache_create_tokens": 152828,
   "per_turn_usage": [
     {
       "turn": 1,
@@ -18814,7 +20552,172 @@
       "cache_read_tokens": 119521,
       "cache_create_tokens": 595,
       "stop_reason": "tool_use"
+    },
+    {
+      "turn": 124,
+      "wall_s_elapsed": 815.1,
+      "turn_wall_s": 4.16,
+      "sim_spent_at_turn": 570.96,
+      "input_tokens": 521,
+      "output_tokens": 196,
+      "cache_read_tokens": 120204,
+      "cache_create_tokens": 310,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 125,
+      "wall_s_elapsed": 817.47,
+      "turn_wall_s": 2.36,
+      "sim_spent_at_turn": 573.96,
+      "input_tokens": 611,
+      "output_tokens": 67,
+      "cache_read_tokens": 120350,
+      "cache_create_tokens": 465,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 126,
+      "wall_s_elapsed": 826.88,
+      "turn_wall_s": 9.4,
+      "sim_spent_at_turn": 575.96,
+      "input_tokens": 569,
+      "output_tokens": 557,
+      "cache_read_tokens": 120749,
+      "cache_create_tokens": 482,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 127,
+      "wall_s_elapsed": 833.96,
+      "turn_wall_s": 7.07,
+      "sim_spent_at_turn": 578.96,
+      "input_tokens": 1073,
+      "output_tokens": 389,
+      "cache_read_tokens": 121034,
+      "cache_create_tokens": 459,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 128,
+      "wall_s_elapsed": 837.48,
+      "turn_wall_s": 3.5,
+      "sim_spent_at_turn": 580.16,
+      "input_tokens": 839,
+      "output_tokens": 65,
+      "cache_read_tokens": 121425,
+      "cache_create_tokens": 932,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 129,
+      "wall_s_elapsed": 845.34,
+      "turn_wall_s": 7.85,
+      "sim_spent_at_turn": 580.16,
+      "input_tokens": 526,
+      "output_tokens": 388,
+      "cache_read_tokens": 121799,
+      "cache_create_tokens": 1156,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 130,
+      "wall_s_elapsed": 847.86,
+      "turn_wall_s": 2.52,
+      "sim_spent_at_turn": 583.16,
+      "input_tokens": 817,
+      "output_tokens": 92,
+      "cache_read_tokens": 122565,
+      "cache_create_tokens": 696,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 131,
+      "wall_s_elapsed": 852.59,
+      "turn_wall_s": 4.71,
+      "sim_spent_at_turn": 583.26,
+      "input_tokens": 538,
+      "output_tokens": 110,
+      "cache_read_tokens": 123195,
+      "cache_create_tokens": 674,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 132,
+      "wall_s_elapsed": 855.89,
+      "turn_wall_s": 3.3,
+      "sim_spent_at_turn": 586.26,
+      "input_tokens": 533,
+      "output_tokens": 92,
+      "cache_read_tokens": 123480,
+      "cache_create_tokens": 690,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 133,
+      "wall_s_elapsed": 858.3,
+      "turn_wall_s": 2.4,
+      "sim_spent_at_turn": 586.36,
+      "input_tokens": 519,
+      "output_tokens": 110,
+      "cache_read_tokens": 124077,
+      "cache_create_tokens": 440,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 134,
+      "wall_s_elapsed": 862.61,
+      "turn_wall_s": 4.29,
+      "sim_spent_at_turn": 589.36,
+      "input_tokens": 537,
+      "output_tokens": 202,
+      "cache_read_tokens": 124406,
+      "cache_create_tokens": 389,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 135,
+      "wall_s_elapsed": 864.97,
+      "turn_wall_s": 2.35,
+      "sim_spent_at_turn": 590.16,
+      "input_tokens": 661,
+      "output_tokens": 65,
+      "cache_read_tokens": 124702,
+      "cache_create_tokens": 444,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 136,
+      "wall_s_elapsed": 876.2,
+      "turn_wall_s": 11.22,
+      "sim_spent_at_turn": 590.16,
+      "input_tokens": 558,
+      "output_tokens": 579,
+      "cache_read_tokens": 125035,
+      "cache_create_tokens": 499,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 137,
+      "wall_s_elapsed": 890.25,
+      "turn_wall_s": 14.03,
+      "sim_spent_at_turn": 591.16,
+      "input_tokens": 1085,
+      "output_tokens": 768,
+      "cache_read_tokens": 125331,
+      "cache_create_tokens": 541,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 138,
+      "wall_s_elapsed": 903.61,
+      "turn_wall_s": 13.35,
+      "sim_spent_at_turn": 594.16,
+      "input_tokens": 1249,
+      "output_tokens": 697,
+      "cache_read_tokens": 125806,
+      "cache_create_tokens": 865,
+      "stop_reason": "tool_use"
     }
   ],
-  "cost_estimate_usd": 4.1405
+  "cost_estimate_usd": 4.8252
 }

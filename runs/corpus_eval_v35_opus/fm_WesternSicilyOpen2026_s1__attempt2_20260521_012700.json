@@ -27,14 +27,49 @@
     "F"
   ],
   "model": "claude-opus-4-7",
-  "final_solution": [],
-  "solves": false,
-  "total_moves": 0,
-  "tool_calls": 34,
+  "final_solution": [
+    "R2",
+    "F2",
+    "U2",
+    "B2",
+    "U2",
+    "B2",
+    "R2",
+    "F2",
+    "U2",
+    "R2",
+    "U2",
+    "L'",
+    "F2",
+    "U2",
+    "R2",
+    "D2",
+    "R",
+    "U2",
+    "R",
+    "U2",
+    "B'",
+    "D2",
+    "R2",
+    "U2",
+    "F'",
+    "B'",
+    "L'",
+    "F2",
+    "L",
+    "U2",
+    "L'",
+    "U2",
+    "D",
+    "R2"
+  ],
+  "solves": true,
+  "total_moves": 34,
+  "tool_calls": 36,
   "halt_reason": null,
-  "sim_spent": 85.04,
+  "sim_spent": 116.04,
   "sim_budget": 3320.76,
-  "wall_elapsed_s": 127.4,
+  "wall_elapsed_s": 150.8,
   "budget_events": [
     {
       "kind": "inspect_state",
@@ -269,6 +304,18 @@
       "sim_spent_after": 85.04,
       "slot": "main",
       "n": 3
+    },
+    {
+      "kind": "replace_and_shorten",
+      "cost": 30.0,
+      "sim_spent_after": 115.04,
+      "slot": "main"
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 116.04,
+      "slot": "main"
     }
   ],
   "slots_final": {
@@ -4485,12 +4532,315 @@
           "undo_available": 34
         }
       }
+    },
+    {
+      "type": "assistant",
+      "turn": 32,
+      "wall_s_elapsed": 137.57,
+      "turn_wall_s": 10.15,
+      "input_tokens": 549,
+      "output_tokens": 571,
+      "cache_read_tokens": 41738,
+      "cache_create_tokens": 381,
+      "content": [
+        {
+          "signature": "EusICmMIDRgCKkAghTI2l9yDDb+o+UTxPuHEDXY7wHs5mnDeUkd2aMIhTkdZo3uJbT3WjxhDFNAK7zZvGP1se0Mhpt8bfk34u17NMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDPq5Un9Ogbc9cYWtjhoM0l/60BzjYn/c2UrnIjDJb4xDFnbR+hPNDUJF2Mfsj9V6tDgMkS1dgCd4vcThrvZ4YwX4HMgiwsRVsofNbAEqtQf9fL36xo5tJw7noJmOjig5sjEL/qKM7+9tjDcVYspSgrirdYNaaHsBrqVI4ROm1YiD3QtoKMAE4ZgII6dylr0WeuKLcNilSG1XC2al13pywgJ3fSPp+zsb27Q5fMvqVom8elP4IOjCPMlzPax69PGWUGonRnuS96DVnAHGn6FCyDAXo3K/zRvwNMJ0F/UU1aOFTVtnz2XhtN+uZyjjNxCEMwqe4uWypFYhRJ6pgtGR1G8+K/I//cjsP7Haxm2djoA4bPnnnwrFz/56vnlDoBMRAW+LgLjhlSiEYH2+2/K1sAnhDr5mkNoR1ZxkhkDii50zkeBaoEpuVlpqJEmBEhEtfT35P5mbyEAZnHAHyG/RRstMrwqYPWXuBxvCNaW/t3zGIr/vCGy/LjqHLysHmfmJDcDE4fZK5qCzX1OGVRpZ30RHqWiZU5N6zAxvD04ia0tCcNYzrHQjfk7opWlywzJpNA44g8ZGq8czi3Ee9Lbq4OaGe9GqhuZ941k4jYjiIhnqJU9BdswUsQDyQkp2uE8UjtpKp9A0hQDFVLxY6NNfaFX5Ci0Pn6edQyJe5dEK0/t5eAeA8W/8dhSSuUq04InLKl8W52/zeYs9AERgde4yW1IKm5e4TtNuCsQTukAZnIWcu/4O4ne/d0EkOq7NlpPbwFoZSRsyAtdGYvrOfFwCa6YHVJmTSJl5eQkHSvSr7rtWlejmRdq/b/D8BfWjiaxlrZv3r66I4Y14/vtrtQSY2dVrsGGE8h9zszhVXMDXuNhHzzg2oW51kfkMGPz1dkr2xaNONuxA2TVxUOXwMxlSKF+9rUQjK4+wd5ydcRDquwQ2I2cdO/lr2D+IAmWug6oFoD43s9celgbi1PKKPcHqv5T39UBjPv3WBy9g0Pk2BCFjIvolTFGd6rtZrShg3pKkTT366+LCOYIGewCU+ZIJ3IZFLKxrJH3RZVEfjEaRcuOk2uVp4wXTmb7aJgWQcQfY7Ib+vU+Zko7hLpDMdlvMAEx8VroSwjEILajcJ/O4EpvItfsV0K7fGJIcUjA+zLwMrzQUUoeV79sPAeK0QwlecthnY8xcMYYYgVOTauCYO5DUla27KPIE58I6TikIMRucjYmmpdDeJiQseasx4y3NUTFJAmQPXkek4Vmseo9IyDJZGCsA5X8i0yBlZN/In6pIa1QPDwBp9PzhGoCJq4sPs2UX8Sy1gUP+V4Vz+184qsmUpU4ScL1iziCfFTxeVLxaLYkdwCzKs0ao2WQnDQ3/615APuoGGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Solved at 34 moves. Both r&s gates pass (\u226527 moves, 116 tool calls remaining). Mandatory refinement attempt:",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01FFQAfCMkKsJN1cJzZPtovj",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "start": 4,
+            "end": 34,
+            "axis": "RL"
+          },
+          "name": "replace_and_shorten",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 32,
+      "tool_index": 35,
+      "name": "replace_and_shorten",
+      "input": {
+        "slot": "main",
+        "start": 4,
+        "end": 34,
+        "axis": "RL"
+      },
+      "result": {
+        "error": "could not solve micro-scramble for span [4:34]: no DR found",
+        "rs_calls_used": 1,
+        "_meta": {
+          "sim_remaining_s": 3205.7,
+          "sim_fraction_left": 0.965,
+          "wall_remaining_s": 759.7,
+          "tool_calls_remaining": 115,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 115.04,
+      "wall_s_elapsed": 140.27,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 33,
+      "wall_s_elapsed": 144.33,
+      "turn_wall_s": 4.05,
+      "input_tokens": 920,
+      "output_tokens": 170,
+      "cache_read_tokens": 42018,
+      "cache_create_tokens": 430,
+      "content": [
+        {
+          "signature": "EtwCCmMIDRgCKkDP4ZEuRTAuDsEUO2G/naMFHLF7mG+gjUc+8yCyedYYFMkm+ZQD2zmqF7PmDKSDMMPxbLlIOpFikjfuMU0ScEtGMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDLA+0akTkkBqD86XRxoMg0YL1owxlIGGTZc8IjAmt3aDYJy8mdKqu96/w9POk0f3uToSR4Aeqbjb0Ioqn4q+mSllSEhkEYdL1An1UzoqpgEAoKxglFr5ZfK38cREcSk8VMm3PdVRiIL93BKqpueONcp9ABbUygKQR/u8SDo7TalqivTSoN2Jk5YVtvQQWL5KfApwwHp08yCTAzNfyusU1zz3xk8qdVWmYIGX8ocwHYLHmz4HylqFlzV38m/14SiZrrZB+zWNpfq+SLlw4x6a+Mdh6LUyVd3xKOUKOY28cjANAz4ICg7+6imVhcD8wqwANWJC9GMlGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "r&s used up the 1-call cap. Submitting the 34-move solve.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01RtzstGceS2CktGsm5uf1nY",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 33,
+      "tool_index": 36,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "R2",
+          "F2",
+          "U2",
+          "B2",
+          "U2",
+          "B2",
+          "R2",
+          "F2",
+          "U2",
+          "R2",
+          "U2",
+          "L'",
+          "F2",
+          "U2",
+          "R2",
+          "D2",
+          "R",
+          "U2",
+          "R",
+          "U2",
+          "B'",
+          "D2",
+          "R2",
+          "U2",
+          "F'",
+          "B'",
+          "L'",
+          "F2",
+          "L",
+          "U2",
+          "L'",
+          "U2",
+          "D",
+          "R2"
+        ],
+        "length": 34,
+        "solves": true,
+        "frame_at_compose": "inverse",
+        "note": "Submit this as FINAL_SOLUTION if you're satisfied, OR call replace_and_shorten first to see if a sub-span can be shortened (1-call cap, gated). YOU decide.",
+        "_meta": {
+          "sim_remaining_s": 3204.7,
+          "sim_fraction_left": 0.965,
+          "wall_remaining_s": 755.7,
+          "tool_calls_remaining": 114,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 116.04,
+      "wall_s_elapsed": 144.33,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 34,
+      "wall_s_elapsed": 150.77,
+      "turn_wall_s": 6.44,
+      "input_tokens": 758,
+      "output_tokens": 412,
+      "cache_read_tokens": 42382,
+      "cache_create_tokens": 722,
+      "content": [
+        {
+          "citations": null,
+          "text": "Verified 34-move solve. Solution composed correctly from the inverse frame.\n\n**Summary:**\n- **EO** (inverse, RL-axis): `R2 D'` \u2014 2 moves (vs prior's 4-move normal EO)\n- **DR setup**: `U2 L U2 L' F2 L B F U2 R2 D2 B` \u2014 12 moves through 2C1E \u2192 0C1E \u2192 DR\n- **HTR reduction** (2-swap long-cycle subset): `U2 R' U2 R' D2 R2 U2 F2 L` \u2014 9 moves\n- **Finish**: `U2 R2 U2 F2 R2 B2 U2 B2 U2 F2 R2` \u2014 11 moves\n- Total: 34 moves (matches prior draft length, different solution path)\n\nFINAL_SOLUTION: [\"R2\", \"F2\", \"U2\", \"B2\", \"U2\", \"B2\", \"R2\", \"F2\", \"U2\", \"R2\", \"U2\", \"L'\", \"F2\", \"U2\", \"R2\", \"D2\", \"R\", \"U2\", \"R\", \"U2\", \"B'\", \"D2\", \"R2\", \"U2\", \"F'\", \"B'\", \"L'\", \"F2\", \"L\", \"U2\", \"L'\", \"U2\", \"D\", \"R2\"]",
+          "type": "text"
+        }
+      ],
+      "stop_reason": "end_turn"
+    },
+    {
+      "type": "verify",
+      "solution": [
+        "R2",
+        "F2",
+        "U2",
+        "B2",
+        "U2",
+        "B2",
+        "R2",
+        "F2",
+        "U2",
+        "R2",
+        "U2",
+        "L'",
+        "F2",
+        "U2",
+        "R2",
+        "D2",
+        "R",
+        "U2",
+        "R",
+        "U2",
+        "B'",
+        "D2",
+        "R2",
+        "U2",
+        "F'",
+        "B'",
+        "L'",
+        "F2",
+        "L",
+        "U2",
+        "L'",
+        "U2",
+        "D",
+        "R2"
+      ],
+      "result": {
+        "solves": true,
+        "total_moves": 34
+      }
     }
   ],
-  "input_tokens": 39102,
-  "output_tokens": 6440,
-  "cache_read_tokens": 1025294,
-  "cache_create_tokens": 27104,
+  "input_tokens": 41329,
+  "output_tokens": 7593,
+  "cache_read_tokens": 1151432,
+  "cache_create_tokens": 28637,
   "per_turn_usage": [
     {
       "turn": 1,
@@ -4832,7 +5182,40 @@
       "cache_read_tokens": 41382,
       "cache_create_tokens": 472,
       "stop_reason": "tool_use"
+    },
+    {
+      "turn": 32,
+      "wall_s_elapsed": 137.57,
+      "turn_wall_s": 10.15,
+      "sim_spent_at_turn": 85.04,
+      "input_tokens": 549,
+      "output_tokens": 571,
+      "cache_read_tokens": 41738,
+      "cache_create_tokens": 381,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 33,
+      "wall_s_elapsed": 144.33,
+      "turn_wall_s": 4.05,
+      "sim_spent_at_turn": 115.04,
+      "input_tokens": 920,
+      "output_tokens": 170,
+      "cache_read_tokens": 42018,
+      "cache_create_tokens": 430,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 34,
+      "wall_s_elapsed": 150.77,
+      "turn_wall_s": 6.44,
+      "sim_spent_at_turn": 116.04,
+      "input_tokens": 758,
+      "output_tokens": 412,
+      "cache_read_tokens": 42382,
+      "cache_create_tokens": 722,
+      "stop_reason": "end_turn"
     }
   ],
-  "cost_estimate_usd": 0.6231
+  "cost_estimate_usd": 0.6907
 }

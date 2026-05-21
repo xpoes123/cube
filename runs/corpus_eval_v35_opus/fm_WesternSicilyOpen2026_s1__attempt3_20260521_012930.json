@@ -1,0 +1,2503 @@
+{
+  "scramble": [
+    "R'",
+    "U'",
+    "F",
+    "U2",
+    "F2",
+    "D2",
+    "B2",
+    "D",
+    "B'",
+    "U",
+    "L'",
+    "B'",
+    "F2",
+    "R2",
+    "U'",
+    "L2",
+    "F2",
+    "B2",
+    "D'",
+    "F2",
+    "L2",
+    "F",
+    "R'",
+    "U'",
+    "F"
+  ],
+  "model": "claude-opus-4-7",
+  "final_solution": [],
+  "solves": false,
+  "total_moves": 0,
+  "tool_calls": 14,
+  "halt_reason": null,
+  "sim_spent": 59.79,
+  "sim_budget": 3204.72,
+  "wall_elapsed_s": 110.2,
+  "budget_events": [
+    {
+      "kind": "inspect_state",
+      "cost": 5.0,
+      "sim_spent_after": 5.0,
+      "slot": "main"
+    },
+    {
+      "kind": "niss_flip",
+      "cost": 2.0,
+      "sim_spent_after": 7.0,
+      "slot": "main"
+    },
+    {
+      "kind": "try_alg",
+      "cost": 1.5,
+      "sim_spent_after": 8.5,
+      "slot": "main",
+      "n": 2
+    },
+    {
+      "kind": "try_alg",
+      "cost": 1.5,
+      "sim_spent_after": 10.0,
+      "slot": "main",
+      "n": 2
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.2,
+      "sim_spent_after": 10.2,
+      "slot": "main",
+      "n": 2
+    },
+    {
+      "kind": "dr_progress_options",
+      "cost": 6.87,
+      "sim_spent_after": 17.07,
+      "slot": "main",
+      "axis": "RL",
+      "max_depth": 4,
+      "states": 12884
+    },
+    {
+      "kind": "brain_suggest",
+      "cost": 3.0,
+      "sim_spent_after": 20.07,
+      "slot": "main",
+      "step": "dr"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 20.47,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "dr_progress_options",
+      "cost": 23.62,
+      "sim_spent_after": 44.09,
+      "slot": "main",
+      "axis": "RL",
+      "max_depth": 5,
+      "states": 68748
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.5,
+      "sim_spent_after": 44.59,
+      "slot": "main",
+      "n": 5
+    },
+    {
+      "kind": "dr_progress_options",
+      "cost": 12.7,
+      "sim_spent_after": 57.29,
+      "slot": "main",
+      "axis": "RL",
+      "max_depth": 5,
+      "states": 32345
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.5,
+      "sim_spent_after": 57.79,
+      "slot": "main",
+      "n": 5
+    },
+    {
+      "kind": "htr_classify",
+      "cost": 1.0,
+      "sim_spent_after": 58.79,
+      "slot": "main",
+      "axis": "RL",
+      "cached": true,
+      "subset": [
+        0,
+        2,
+        1,
+        5,
+        3,
+        7,
+        4,
+        6
+      ]
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 59.79,
+      "slot": "main",
+      "axis": "RL",
+      "phase": "htr_reduction"
+    }
+  ],
+  "slots_final": {
+    "main": {
+      "history": [
+        "R2",
+        "D'",
+        "U2",
+        "L",
+        "U2",
+        "L'",
+        "F2",
+        "L",
+        "B",
+        "F",
+        "U2",
+        "R2",
+        "D2",
+        "B"
+      ],
+      "on_inverse": true,
+      "move_count": 14,
+      "undo_available": 14
+    }
+  },
+  "bookmarks": {},
+  "transcript": [
+    {
+      "type": "system",
+      "content": "You are an expert Rubik's Cube FMC solver in a SIMULATED COMPETITION.\n\n# Rules (match WCA FMC)\n- You have ONE HOUR total simulated time (3600 seconds budget).\n- You operate on up to 3 named cube-state slots (start with 'main').\n- Per slot you have a 4-move undo buffer. To go back further you\n  must reset_slot (costs 25s \u2014 like solving + rescrambling on paper).\n- Applying each move costs 1s simulated.\n- Looking ahead costs simulated time too: lookahead ~8s,\n  find_dr_via_trigger ~20s, policy_intuition ~3s.\n- The HTR finish is NOT a brute-force solver. It is a memorized lookup:\n  first time you see a subset you 'learn' it (15s); future\n  uses are nearly free (1s). So get to DR, identify the\n  subset with htr_subset, then lookup_subset_finish.\n- Call budget_status whenever you want a full breakdown.\n\n# v34: TIME AWARENESS (pace yourself like a real competitor)\n\nEvery tool result you receive now includes a `_meta` block with these\nfields:\n  - `sim_remaining_s`        \u2014 of 3600s WCA budget\n  - `sim_fraction_left`      \u2014 0.0 to 1.0\n  - `wall_remaining_s`       \u2014 real clock for the model API\n  - `tool_calls_remaining`   \u2014 of the per-attempt cap\n  - `urgency`                \u2014 one of: ample, moderate, low, critical\n\n`urgency` is computed from sim_fraction_left:\n  - ample    (>60% left)  \u2192 explore broadly, scout alternates, NISS freely\n  - moderate (30-60%)     \u2192 commit to your best branch, no more scouting\n  - low      (10-30%)     \u2192 no new branches; finish the current pipeline\n  - critical (<10%)       \u2192 ship whatever solves, even if 35+ moves\n\nRead `_meta` on every tool result. Verbalize it when it changes your\nplan: \"I'm at sim_remaining=600s with no DR yet \u2014 switching to ship mode,\ntaking the 4C4E even though 3C2E might be cleaner, no time to scout.\"\nA competitor who burns 50 minutes scouting and runs out of time scores\nDNF. A competitor who ships a 32-move solve at minute 55 scores 32.\n\n# FMC technique reference (use this vocabulary in your narration)\n\n### EO (Edge Orientation) \u2014 ALGORITHMIC, not search\nEO is fundamentally algorithmic. Each bad-edge configuration has known\nfix patterns; lookahead/policy are CONFIRMATION tools, not the primary\nfinder. Workflow on the cube:\n\n1. Read `bad_edges_per_axis` AND `bad_edge_slots_per_axis` from inspect_state.\n2. The flipping moves per axis are:\n   - **UD-axis EO**: F, F', B, B' (quarter turns of F/B flip UD-EO)\n   - **FB-axis EO**: L, L', R, R' (quarter turns of L/R flip FB-EO)\n   - **RL-axis EO**: U, U', D, D' (quarter turns of U/D flip RL-EO)\n   Half turns and axis-moves preserve EO.\n3. A flip move toggles the 4 edges on its face. So a single flip move\n   changes bad-edge-count by \u00b14 or \u00b12 or 0 depending on how many of that\n   face's edges were already bad.\n\n**By bad-edge count (on chosen axis)**:\n- **0**: solved on this axis. Done.\n- **2**: ONE-MOVE solutions exist when the two bad edges sit on\n  perpendicular faces that share one flipping face. E.g., on UD-axis,\n  if the 2 bad edges are both on the F face (after-state) \u2192 F fixes\n  both. Bad edges on opposite sides of the same flipping axis \u2192 2 moves\n  needed. Look at `bad_edge_slots_per_axis` and try the flipping move\n  that touches both slot names.\n- **4**: typically 1-3 moves. Strong cases:\n  - All 4 on one flipping face \u2192 1 move (F or B on UD-axis).\n  - 2 on F, 2 on B \u2192 2 moves (F + B or similar).\n  - Scattered \u2192 3-4 moves using a setup. Common: `U B U'` shape that\n    rotates 2 edges onto F before the F flip.\n- **6**: usually 2-4 moves. The `<setup> F <setup'> B` symmetry pattern\n  works when the configuration is roughly symmetric on the flipping axis.\n- **8**: 3-5 moves. Classic `<m> F <m'> B` symmetry \u2014 find a 1-2 move\n  setup `<m>` that puts 4 bad edges on F, then `F <m'> B` flips both\n  4-groups. NISS-trace the inverse: 1-move-to-8-bad often gives sub5 EO.\n- **10**: rare. Usually NISS to inverse helps.\n- **12**: all-bad. Two flips on opposite faces don't cancel cleanly;\n  typically NISS.\n\n**Procedure** (per axis):\n1. Note the bad-edge count and slot names from inspect_state.\n2. Identify which flipping moves touch which bad edges (e.g., F touches\n   slots UF, FR, DF, FL). A single flip \"fixes\" any of those that were\n   bad and \"breaks\" any that were good.\n3. If a one-move fix exists, you'll see it directly: a single flipping\n   move where ALL the moves' affected slots were currently bad.\n4. Otherwise enumerate 2-3 move setups manually using try_alg. The\n   transformer's policy_intuition gives top-k starting moves; combine\n   with the algorithmic count to pick which try_alg to test.\n5. Once you have a candidate sequence, lookahead/probe_dr_after_eo\n   confirms it (or finds a 1-move-shorter alternative).\n\n**Axis selection rule of thumb**:\n- Smallest bad-edge count is usually shortest EO BUT not always.\n- A scrambled state with 2 bad edges on UD that DON'T share a flipping\n  face needs ~3-4 moves. A state with 4 bad edges on FB all clustered\n  may need only 1 move. **Check the slot pattern, not just the count.**\n\nNISS-EO trigger: 1-move reduction to 4 bad edges \u2192 niss-trace the\ninverse for sub5 EOs. Trace good-edges (not bad) when looking at\n1-move-to-8-bad.\n\n### NISS Decision Rules\n- After EO: only switch if you have very few EOs of the shortest length. Otherwise stay.\n- After RZP: switch in 5; switch in 6 only if **JZP** or **DR-2e3c**.\n- JZP preserves across axes: if you have JZP on normal, the OTHER axis after switching also has JZP \u2014 switch even for marginal 2c6e-JZP if it becomes 4e4c.\n- ARM swaps axes on switch; use ARM stats on the opposite axis to decide.\n\n### RZP \u2192 DR\nRZP = \"completely random moves\" between EO and DR. Look for rzps of length \u22645 (\u22646 if JZP/3c2e). Standard triggers:\n- `R` \u2192 **DR-4c4e** (most common, grind this)\n- `R U2 R'` \u2192 **DR-4c2e**\n- `R U R'` or `R U' R'` \u2192 **DR-3c2e**\n- `R U2 F2 R` \u2192 DR-4c4e variant\n- Advanced: `R U L` \u2192 DR-7c8e; `R L` \u2192 DR-8c8e; `R U2 F2 U2 R` \u2192 DR-2e; `R U2 D2 L` \u2192 DR-4e\n\nDR length targets: sub-15 beginner, sub-12 intermediate, sub-11 advanced. Abandon RZP if intuition says bad \u2014 don't sink time unless rzp \u22643.\n\n**JZP requirements**: no U/D corner stickers on R/L; no E-slice edges in M-slice; even number of unoriented corners. Cases like 4c6e/2c2e/2c4e become viable (5-6 to DR).\n\n**ARM** (Axial Reduction Minus): how close the *other* axis is to JZP. Count misoriented corner stickers WITHOUT F/B color, plus misoriented E-layer edges.\n\n**Pairs tracing** (Wen): for each E-slice edge not in its slice, check the misoriented corner whose two slice-facing stickers match the edge \u2014 that's a pair on inverse. Switch on 2+ pairs.\n\n### HTR (Half-Turn Reduction)\nSolvable with only double turns. 0-5 quarter-turn corners remain after DR. HTR triggers: `R`, `R U2 R'`, `R U2 F2 R`. Process: count qt \u2192 reduce/grow to 1 or 2 qt \u2192 setup to trigger.\n\n**HTR corner subsets** (with approx DR\u2192solved finish lengths):\n- **4a1** ~12.5 \u2014 good\n- **4b2** ~12.5 \u2014 good, learn 4b2+4e cases\n- **4a2** ~13.3\n- **4c3** ~13.4\n- **2c3** ~12.9\n- **2c4** ~13.7 \u2014 hard, expect longer\n\nThe \"a/b\" letter distinguishes corner orbit shape; \"c\" generally means worse subsets.\n\n### Finish (from HTR)\nAny state is solvable in \u226414 moves from HTR. Practical: solve corners + as many edges as possible, then edge commutators on the rest. Or **Floppy Reduction** (FR): reduce to `<R2 L2 F2 B2>` along DR axis, solve the domino layers ignoring the middle slice.\n\n### Insertions & Commutators\nAfter skeleton with corners off:\n- **3c** \u2192 1 commutator (8 moves pure, often cancels)\n- **3c1t / 2c2t / 5c / 3c3c / 2t / 3t** \u2192 2 commutators\n- 4c1t / 3c2t / 4t / 5t \u2192 3+ comms, generally abandon\n\nA commutator affects exactly 3 corners; slide through the solution for cancellations.\n\n### DR-Xs (Slice EO Method)\nReplaces full EO with **slice EO**: orient only the 4 edges of ONE slice on one axis. Often a 0-1 move skip exists. NISS does NOT preserve slice EO.\n\nPipeline: slice-EO \u2192 rzp-Xs \u2192 DR-2s \u2192 DR-1s \u2192 real DR \u2192 HTR \u2192 finish.\n\n**DR-1s break-even**: 8-move DR-1s \u2248 11-move normal DR (~2.5 moves extra on average). Use when: slice EO skip or 1-mover exists AND DR-1s reachable in \u22648 moves.\n\n**DR-2s 8fe special case**: when all 8 non-slice edges flipped, go straight to HTR-2s \u2014 only ~1 move worse than normal DR. Look for `U R L` substitutions becoming `D U R L` (-2 moves).\n\n### Vocabulary\nRZP, JZP, JEO, ARM, AR-XcYe, DRM, \"trigger\" (R, RU2R', RUR'), 4c4e/3c2e/4c2e, \"4 bad edges,\" \"niss-trace,\" \"premove,\" \"pairs tracing,\" \"qt corners,\" AB3c (All But 3 corners), slice EO, DR-1s/-2s, \"leave slice,\" floppy reduction, hyperparity, HTR subset (4a1/4b2/4a2/4c3/2c3/2c4).\n\n### Time Budget (your 1-hour solve)\n- 0-10 min: enumerate EOs across axes/sides\n- 10-35 min: check EOs, find rzps, find DRs\n- 35-60 min: solve best DR through HTR + finish + insertions\n\n# The scramble (exactly 25 moves)\nR' U' F U2 F2 D2 B2 D B' U L' B' F2 R2 U' L2 F2 B2 D' F2 L2 F R' U' F\n\nJSON form (always pass this to verify_solved, never retype the scramble):\n  scramble = [\"R'\", \"U'\", \"F\", \"U2\", \"F2\", \"D2\", \"B2\", \"D\", \"B'\", \"U\", \"L'\", \"B'\", \"F2\", \"R2\", \"U'\", \"L2\", \"F2\", \"B2\", \"D'\", \"F2\", \"L2\", \"F\", \"R'\", \"U'\", \"F\"]\n\n# What you SEE in inspect_state (the champion's view)\n\nFor each axis, inspect_state reports a `dr_closeness_per_axis` block:\n- `misoriented_corners` (\"C\") and `misplaced_slice_edges` (\"E\"): these are\n  the DR-XCYE label that champions recite. (4, 4) = DR-4C4E (R trigger),\n  (4, 2) = DR-4C2E (R U2 R'), (3, 2) = DR-3C2E (R U R' / R U' R'),\n  (7, 8) = DR-7C8E (R U L), etc.\n\nv34 NOTE: oracle-flavored DR signals (`jzp_eligible`, `top_pairs_on_inverse`,\n`expected_total_to_solved`) have been REMOVED from tool outputs. You evaluate\ntrigger candidates the way a human does \u2014 try_alg the (setup + trigger),\ninspect_state, look at the residual, estimate finish length from the\nsubstate priors below. Nothing computes the answer for you.\n\nFor HTR (post-DR), `htr_closeness`:\n- `qt_corners` (0-5): primary HTR-distance signal. 0qt = already at HTR\n  corners; 4qt+ = expect longer finish.\n- `solved_corner_columns` (0-4): for floppy/slice-finish reasoning.\n\n# NISS-FIRST RULE\n\nAfter your initial EO scan, ALWAYS also check the inverse frame for each\naxis you might use. Use niss_flip + eo_pattern_lookup on the inverse to\ncompare. If EO is \u22651 move shorter on inverse, OR the inverse-side DR\nsubstate looks materially cleaner when you try_alg into it, the inverse\nframe is the better solving direction. NISS is cheap (~5s); always check it.\n\n# Human Tools (v11 \u2014 strict constraints)\nYou are NOT a brute-force search engine. You have a HUMAN solver's tools:\n\n- **Vision**: inspect_state shows the cube and per-axis bad-edge counts.\n- **Trained intuition** (transformer policy): policy_intuition returns\n  top-K candidate moves. This is your \"gut feeling\" \u2014 the same kind of\n  trained pattern recognition a champion has after years of practice.\n- **Visualization** (depth 4): lookahead does policy-pruned beam search\n  to depth 4, width K. This is what a human can hold\n  in their head \u2014 3-4 moves of mental visualization, not a deep search.\n- **Pattern memory** (4-move recall): eo_pattern_lookup, dr_progress_options\n  (BFS to depth 4 over EO-preserving moves, ranked by state-readable bad-\n  piece counts), apply_htr_phase return AT MOST 4 moves\n  per call. If\n  the optimal solution is longer, you see only the first 4 moves of\n  progress toward it. APPLY THEM, then RE-QUERY from the new state to\n  see the next chunk. This is the real human workflow: a champion sees\n  \"OK these 3 moves get me much closer\", commits, re-evaluates.\n- **What you DON'T have**: no wide BFS, no deep search, no oracle that\n  spits out the full solution. You compose by iterating.\n\nYour job is to narrate the FMC theory and reasoning as you go. The\ntranscript is the product. Show your work.\n\n# Elite-solver exemplars (v21 \u2014 read these before scouting)\n\nThree condensed reasoning patterns from elite WCA-FMC champions. They\nillustrate the *texture* of the solve narration you should imitate.\nMatch the voice: tool calls + terse rationale + explicit rejection of\ninferior branches.\n\n### Exemplar A \u2014 Multi-side EO scouting before committing\n> inspect_state shows bad_edges_per_axis = {UD: 2, FB: 4, RL: 6}. UD\n> is the cheap EO. eo_pattern_lookup(axis='UD') returns 4 moves. But\n> before I commit, let me check inverse-FB \u2014 sometimes the \"ugly\" axis\n> on inverse has a shorter EO + cleaner DR substate. niss_flip,\n> eo_pattern_lookup(axis='FB') \u2192 5 moves. Committed EO on each side\n> separately (via apply_moves + bookmark_fork so I can return), then\n> ran dr_progress_options(axis=X) on each. UD-normal's top option:\n> bad_c=4 bad_e=4 in 1mv setup (DR-4C4E, hits_named_trigger=true) \u2014\n> tempting but 4C4E priors are 12-14mv post-DR. Inverse-FB top:\n> bad_c=2 bad_e=1 in 3mv (DR-2C1E substate, no named trigger hit but\n> only 3 bad pieces remaining \u2014 one more apply + re-query should\n> close it). Joint estimate: UD-normal 4+1+13=18; inverse-FB 5+3+?\n> (need to commit and re-query). I commit the inverse-FB setup,\n> apply 3mv, re-query: bad_c=0 bad_e=0 in 1mv (DR-3C2E hit). Total\n> 5+3+1=9 to DR with a 3C2E substate (6-8mv post-DR = ~16 total).\n> Inverse-FB wins by ~2 moves AND gives a cleaner substate.\n\n### Exemplar B \u2014 Search-and-commit toward DR with no immediate trigger\n> Post-EO on UD-normal. dr_progress_options(axis='UD', max_depth=4):\n> top three options all show bad_c=2 bad_e=1 (DR-2C1E substate), 3-4\n> move setups, hits_named_trigger=false. No named trigger lands at\n> depth 4 \u2014 but the bad-piece counts dropped from (4,4) to (2,1).\n> That's real progress. I pick the 3-move setup that lands at 2C1E,\n> apply_moves, re-query from the new state. Now dr_progress_options\n> returns bad_c=0 bad_e=0 in 1mv (DR hits via a named 4C2E trigger).\n> Total DR = 3+1 = 4 moves committed across two iterations. This is\n> the search-and-commit loop: pick the best-looking direction at the\n> 4-move horizon, commit, look again. Don't wait for the tool to hand\n> you DR in one call.\n\n### Exemplar C \u2014 Bookmarking a fork for cross-attempt handoff\n> Logging branches as I scout.\n> **Branch 1 \u2014 UD-normal DR:** dr_progress_options returns top option\n> with bad_c=2 bad_e=2 in 4mv (DR-2C2E substate), no named trigger\n> hit. Looks reachable but the 2C2E substate has rough post-DR\n> priors (~10-12). I commit and re-query: bad_c=1 bad_e=0 in 1mv (a\n> 4C2E trigger hit on the second look). 5mv to DR, 4C2E substate.\n> Projected total ~20-22. Bookmarking the post-EO state as\n> 'UD-norm-post-EO' before committing further \u2014 if the finish goes\n> poorly I or a future attempt can return here.\n> **Branch 2 \u2014 FB-inverse DR:** would require committing inverse-FB\n> EO from scratch. **Reject** without scouting; the cost of switching\n> axes after this much committed isn't recoverable in the remaining\n> budget. Note the rejection so a later attempt can pick up FB-inverse\n> from the prior bookmark if it exists.\n> Committing to Branch 1.\n\n# Branch journal (v14b, elite-solver behavior)\n\nElite solvers literally log their rejected branches: \"tried 4b2 on FB,\nsaw 4c4e in 7 \u2014 took the 2c3 on UD in 5 instead.\" This is **comparison\nbefore commitment**. Before committing to an EO axis or a DR trigger,\nstate out loud the candidates you considered and WHY you rejected the\nothers, e.g.:\n\n  \"EO axes considered: UD=2bad/1mv, FB=4bad/3mv, RL=8bad/4mv \u2192 UD wins.\"\n  \"DR triggers on UD: 4C4E (1mv, residual priors 12-14mv = ~14 total),\n   3C2E (4mv, residual priors 6-8mv = ~11 total) \u2192 take 3C2E, 3 moves\n   cheaper despite the longer DR setup. I estimated post-DR from the\n   substate priors table; no oracle field tells me the answer.\"\n\nThis is BOTH the deliverable (the transcript reads like a champion's\nwalkthrough) AND a forcing function \u2014 verbalizing alternatives prevents\nthe default \"take the shortest DR\" trap that produced our 28-30 move\nsolves in v11-v13.\n\n# Pipeline (the realistic-human version)\n\n1. **Inspect + manual axis scouting** (v27 \u2014 no scout tool):\n   a) inspect_state(main). Read `bad_edges_per_axis` \u2014 typically one\n      axis has the fewest bad edges and that's your easiest EO. But\n      cheap EO doesn't always win; you'll compare candidates.\n\n      **NISS INVARIANT** (v31): `bad_edges_per_axis` is IDENTICAL on\n      normal and inverse \u2014 proven for every WCA scramble. The edges\n      that are bad don't change under inversion; only the SOLUTION\n      to fix them differs (because the cumulative state is different).\n      Do NOT call inspect_state again after niss_flip \u2014 you already\n      know the bad-edge counts. Save the tool call.\n   b) **Scout EO on the normal side** for the 1-2 most promising\n      axes: eo_pattern_lookup(axis=X). Returns the EO move list (or\n      partial if >4 moves). Note the length per candidate axis.\n   c) **Scout EO on the inverse side too** when the normal side\n      doesn't have an obviously short EO. niss_flip switches the\n      slot's perspective (you're now on the inverse state); call\n      eo_pattern_lookup again on the same axis \u2014 the SOLUTION will\n      differ (different moves to reach EO) even though the bad-edge\n      count is the same. Median elite WCA solves do 8 NISS\n      transitions and 50% START on inverse.\n   d) **For each (side, axis) candidate with a viable EO**, also\n      probe DR cost: commit the EO via apply_moves, then call\n      dr_progress_options(axis=X) from the new state. The decision\n      is JOINT: EO_len + DR_total. A 4-move EO with an 8-move DR\n      (12mv to DR) beats a 2-move EO with a 12-move DR. You read\n      the candidates and judge \u2014 there is no pre-packaged\n      comparison table anymore. When two side-axis candidates look\n      close, bookmark_fork the loser before committing the winner.\n   e) Pick a (side, axis) and commit. If you committed to inverse,\n      stay flipped; if you bounced back to normal, niss_flip once\n      more so the slot's perspective matches your plan.\n   f) Verbalize rejected candidates (\"UD-normal EO=4, FB-inverse\n      EO=3 but DR there is awful, sticking with UD-normal\").\n\n2. **Commit EO incrementally**:\n   - If the lookup returned the full sequence (\u22644 moves): apply_moves\n     the whole thing in one call. Narrate the move purpose.\n   - If partial: apply_moves the visible chunk, narrate \"this gets me\n     closer to EO on FB\", then re-query eo_pattern_lookup(axis=X) on\n     the new state. Repeat until found=1 with no partial flag.\n\n3. **DR feasibility check (before each EO axis decision is final)**:\n   apply the EO candidate first, then call dr_progress_options on\n   the new state. Read `bad_corners` + `bad_slice_edges` of the top\n   options to judge the joint EO+DR cost. There's no pre-EO probe\n   tool \u2014 you commit moves to see DR options (more human-shape;\n   the cost is tracked by apply_moves at 10 TPS).\n\n4. **DR compose** (v35 \u2014 `dr_progress_options` is your DR tool, all 3 axes):\n\n   **DR-LENGTH HARD RULE (v14b, from 333.fm corpus research)**: elite\n   solves get DR in \u22646 moves with 85.7% probability. **DR \u226510 moves NEVER\n   appears in sub-22 solves.** If your shortest DR option exceeds 10mv,\n   that's a SIGNAL the axis is wrong \u2014 probe another (NISS-flip first).\n\n   **DR-SUBSTATE PRIORS TABLE** (v28 \u2014 memorized like any elite cuber):\n   The DR length is half the story; the resulting substate's typical\n   POST-DR cost (HTR reduction + finish combined) is the other half.\n\n   | Trigger family | DR len | Typical post-DR | JZP-eligible post-DR |\n   |---|---:|---:|---:|\n   | DR-3C2E (`R U R'`, `R U' R'`) | 3mv  | **6-8 mv**  | **3-5 mv** |\n   | DR-4C2E (`R U2 R'`)           | 3mv  | 9-11 mv     | 5-7 mv     |\n   | DR-2C4E (`R F2 R'`-family)    | 3mv  | 10-12 mv    | 5-7 mv     |\n   | DR-4C4E (`R`)                 | 1mv  | 12-14 mv    | 7-9 mv     |\n\n   **Implication**: a 4-move 3C2E (1+3=4mv setup) reaching a 6mv finish\n   = 10mv from EO end to solved. A 1-move 4C4E reaches a 13mv finish\n   = 14mv. **The 3C2E saves 4 moves** even though its DR is 3 longer.\n   This is the single biggest move-count lever after EO/axis choice.\n\n   **JZP RECOGNITION (v34 \u2014 derive it yourself)**: A JZP-eligible state\n   has dramatically shorter DR. JZP conditions, readable from\n   inspect_state: no U/D corner stickers on R/L (read CO + corner perm),\n   no E-slice edges in M-slice (read slice marker), even number of\n   unoriented corners. When you spot a JZP state, lean toward it even\n   if the DR setup is 3-5 moves longer than the obvious shortest-DR\n   alternative \u2014 the post-DR finish on a JZP state can be half the\n   length. There is no tool flag for this anymore; identify it by\n   reading the state.\n\n   **The v35 search-and-commit loop**:\n\n   **DO NOT brain-walk DR.** Calling `brain_suggest(step='dr')` and\n   then applying one move and re-querying is the most expensive way\n   to navigate the cube. It burns tool calls (80-call wall is real)\n   without consulting the BFS horizon. Always use `dr_progress_options`\n   for DR navigation. Only use `brain_suggest` for the EO phase or as\n   a tie-breaker after `dr_progress_options` has shown you the top-k\n   options and you want a second opinion on which one to pick.\n\n   a) Call `dr_progress_options(slot, axis=X, max_depth=4, k=5)`.\n      Returns up to k continuations sorted by total bad pieces\n      (`bad_corners + bad_slice_edges`, state-readable counts).\n      Each option carries `substate_label` (e.g. DR-3C2E \u2014 what kind\n      of state you'd land in) and `hits_named_trigger` (true if\n      applying `trigger_moves` from this state reaches DR via a\n      memorized family). NO oracle: no expected_total_to_solved,\n      no JZP flag, no ranking by post-DR cost.\n\n   b) Pick the option whose substate you want. If `hits_named_trigger\n      = true`, apply the setup + trigger via apply_moves and you're\n      at DR. If not, apply just the setup (commit, don't try_alg-\n      and-discard), then call `dr_progress_options` AGAIN from the\n      new state to look another max_depth moves deep. This is the\n      human flow: see 4-5 moves ahead, commit to the most promising\n      direction, re-evaluate from the new state. Don't expect the\n      first call to hand you DR on a plate.\n\n   c) Per-axis EO-preserving moves: UD excludes F/B quarters, FB\n      excludes L/R, RL excludes U/D.\n\n   d) When two roughly-equal options exist and you want to come back\n      to one later, call `bookmark_fork(slot, name, description)`\n      BEFORE committing. The bookmark survives this attempt and is\n      carried into the next attempt's `list_bookmarks`. Use\n      `restore_fork(name)` to jump back. Example: \"I see UD-normal\n      with a clean 3C2E in 5 and FB-inverse with a 4C2E in 4. Going\n      with FB-inverse first; bookmarking UD-normal at the post-EO\n      state as 'UD-3C2E-candidate'.\"\n\n5. **POST-DR DECISION** (v14b \u2014 research-driven priority):\n\n   **PRIMARY PATH (Option A \u2014 Standard HTR finish)**: 333.fm corpus shows\n   elite solvers DO NOT use insertions. Elite insertion rate is 0.7%; long\n   (30+) solves use them 15.8%. Insertions are a recovery tool, not the\n   path to sub-25. **Default to the clean DR\u2192HTR\u2192finish pipeline.** Use\n   the inter-phase analyze_residual checks (step 6) as opportunistic\n   shortcuts, NOT primary tooling.\n\n   **FALLBACK (Option B \u2014 derive_corner_3cycle)**: ONLY if analyze_residual\n   returns `is_pure_corner_3cycle: true` between HTR-finish chunks \u2014 then\n   the 8-move comm is genuinely shorter than the remaining finish. Don't\n   force this; don't go searching for skeletons.\n\n   **REFINEMENT (Option D \u2014 replace_and_shorten)**: 1-call cap; the tool\n   enforces it. Use ONLY if your initial solve is \u226527 moves AND you have\n   \u226530 tool calls remaining. The tool will refuse otherwise.\n\n   **DEPRIORITIZED**: don't go looking for slice insertions or 3-cycle\n   skeletons proactively. Per the 333.fm research, the path to sub-25\n   is DR-quality, not insertion-skill.\n\n5b. **REFINEMENT (MANDATORY when gates pass)**: after you have a\n   verified solve, if total_moves \u2265 27 AND tool calls remaining \u2265 30\n   AND you haven't already called replace_and_shorten this run, you\n   **MUST** call replace_and_shorten ONCE on a large tail span\n   (e.g., start=4, end=N where N is your total move count). The tool\n   enforces the gates and will refuse otherwise \u2014 DO NOT try to call\n   it more than once. If it returns `solves_scramble: true` AND\n   `delta < 0`, accept the substitute as your new history (replace\n   history starting from `start` with `substitute_moves`). v13\n   evidence: this saved 3-5 moves on PSSS_s1 (30 \u2192 25). If r&s\n   would fall outside the gates, submit your current solve.\n\n   After r&s succeeds, you may submit immediately \u2014 don't try to\n   chain a second r&s; the tool enforces a 1-call cap.\n\n6. **HTR classify + phase compose** (running Option A) \u2014 with **free\n   inter-phase state checks** (v17: quick_check replaces analyze_residual\n   for the common case):\n   a) htr_classify(axis=X). Narrate the subset by name: \"this is a\n      4-swap axial subset with cycle structure (2,2,2,2).\"\n   b) apply_htr_phase(phase='htr_reduction'). If `partial: true`, the\n      reduction is longer than 4 moves; apply the visible chunk,\n      narrate (\"4 moves of corner orbit reduction\"), then **CALL\n      quick_check BEFORE re-querying apply_htr_phase**. quick_check is\n      FREE (0s) and returns is_solved/is_htr_ud/etc. If is_solved=true\n      \u2192 submit; if is_htr_ud=false \u2192 continue HTR-reduction. Only call\n      analyze_residual when you specifically suspect a pure 3-cycle\n      residual (rare; quick_check tells you when this is plausible).\n   c) Same for apply_htr_phase(phase='finish'): quick_check between\n      chunks. If is_solved emerges before the finish ends, ship it.\n\n   Why: a \"clean\" subset finish often produces a 3c residual one or two\n   chunks before fully solved \u2014 landing there earlier and inserting the\n   commutator saves 2-4 moves vs running the full finish. This is the\n   real human FMC pattern: see the residual, derive the comm, submit.\n\n6. **cancel + verify_solved**. Narrate the cancellations you spot.\n\n# Reasoning style \u2014 the deliverable\n\nBefore EACH tool call, narrate in 2-4 sentences:\n- What you SEE (state of cube, what's left, what theory applies).\n- What you EXPECT to happen (which moves should help and why).\n- WHY this tool is the right next step.\n\nThe whole transcript is the video. Verbalize FMC vocabulary: \"bad\nedges on UF and DB share the F flipping face\", \"RZP setup of 2 moves\ninto the R-U2-R' DR-4c4e trigger\", \"this is a 4-swap axial subset \u2014\n3-cycle finish with one extra pair\". This is the texture viewers want.\n\n# Strategy notes\n\n**SHIP RULE (read this twice)**: the primary goal is producing a\nSOLVED solution within budget. Any verified solve under 50 moves\nbeats a timeout. Once you have a working complete solution\n(EO + DR + finish, verified by verify_solved), CALL FINAL_SOLUTION\nand STOP. Do NOT keep searching for shorter alternatives unless you\nhave a very specific reason (e.g. you can see your current solution\nhas 4+ obviously cancellable moves and a quick try_alg would confirm).\nThe FMC theory targets (\"sub-15 DR is advanced\", etc.) are aspirational\nfor STRONG HUMANS over many practice solves \u2014 not requirements for\nthis attempt. A 33-move solve in 15 minutes beats a DNF chasing 25.\n\n- **Test before commit**: a 4-move EO probed with find_dr_via_trigger is\n  cheaper than a 2-move EO followed by 30 tool calls of manual DR\n  exploration that goes nowhere. Always test ALL viable EO axes' DR\n  options first.\n- **apply_moves has NO upper cap** \u2014 you can apply as many moves as you\n  want. Only undo_moves is capped at 4 per call. If you commit\n  10 moves you can't undo all 10; use reset_slot if you need to.\n- **try_alg is your cheap probe** (2s sim). Use it constantly to look\n  at after-states without committing. It does NOT modify the slot.\n- Slots are precious. Don't proliferate. Default: do everything in 'main'.\n- Backtracking tools (`reset_slot`, `undo_moves`, `new_slot`) exist but\n  use them sparingly. Empirically (v23b corpus eval), prompting the\n  agent to use backtracking proactively REGRESSED move count by 1.2\n  moves \u2014 same pattern as v14b's branch-journal thrash. Stick with\n  the committed branch unless something is *clearly* wrong.\n- NISS is cheap (~2s) and powerful \u2014 use it when stuck.\n- **Before submitting**: call cancel(moves=your_full_solution) to collapse\n  any adjacent same-face moves (e.g. `U U2` \u2192 `U'`). It's cheap and often\n  saves 1-3 moves.\n- **Submission (v17)**: ALWAYS call `compose_niss_solution(slot='main')`\n  BEFORE emitting FINAL_SOLUTION. It assembles the canonical normal-frame\n  solution from your slot history, runs cancel(), and verifies the solve.\n  If it returns solves=True, output the returned `solution` field as the\n  FINAL_SOLUTION list \u2014 do NOT hand-construct it from invert() calls\n  (WesternSicily v16 wasted 25 tool calls + 1 extra move because the\n  agent tried to invert mentally and got it wrong 3 times).\n    FINAL_SOLUTION: [\"R\", \"U'\", ...]\n- **HARD RULE \u2014 inverse-of-scramble is REJECTED**: applying the\n  cube-theoretic inverse of the scramble (each move reversed and\n  negated, e.g. scramble `R U F` \u2192 inverse `F' U' R'`) trivially\n  returns the cube to SOLVED. THIS IS NOT AN FMC SOLVE. The harness\n  detects this exact sequence and rejects the submission BEFORE\n  scoring it. A v35 attempt was caught knowingly submitting this and\n  rationalizing \"24 moves is good enough\"; that path is now closed.\n  If you find yourself with N moves of a verified solve and they\n  happen to equal `[negate(m) for m in reversed(scramble)]`, you do\n  NOT have a solve \u2014 go back and find a non-trivial one. The SHIP\n  RULE (\"any verified solve under 50 moves beats a timeout\") does\n  NOT override this; an inverse-of-scramble \"solve\" is treated as\n  a DNF and you will be told to keep working.\n\n# Reasoning style\nBefore each tool call, narrate in 1-2 sentences: what you observed, what\nhypothesis you're testing, why you picked this tool. This transcript is the\ndeliverable \u2014 your visible reasoning is the product.\n"
+    },
+    {
+      "type": "user",
+      "content": "Solve this scramble within your one-hour budget. Start with inspect_state(slot='main').\n\n## Context: your prior drafts on this exact scramble\n\n- Draft 1: 34 moves \u2014 `R2 F2 U2 B2 U2 B2 R2 F2 U2 R2 U2 L' F2 U2 R2 D2 R U2 R U2 B' D2 R2 U2 F' B' L' F2 L U2 L' U2 D R2`\n- Draft 2: 34 moves \u2014 `R2 F2 U2 B2 U2 B2 R2 F2 U2 R2 U2 L' F2 U2 R2 D2 R U2 R U2 B' D2 R2 U2 F' B' L' F2 L U2 L' U2 D R2`\n\nBest draft so far: **34 moves**.\n\n### Draft 1 \u2014 what I tried (condensed narrative)\n```\n# Solve \u2014 fm_WesternSicilyOpen2026_s1__attempt1_20260521_011536\n\n**Scramble**: `R' U' F U2 F2 D2 B2 D B' U L' B' F2 R2 U' L2 F2 B2 D' F2 L2 F R' U' F`  \n**Model**: `claude-opus-4-7`  \n**Result**: SOLVED in 34 moves\n**Solution**: `R2 F2 U2 B2 U2 B2 R2 F2 U2 R2 U2 L' F2 U2 R2 D2 R U2 R U2 B' D2 R2 U2 F' B' L' F2 L U2 L' U2 D R2`\n\n---\n\nI look over the cube.\nBad-edge counts: UD=4, FB=6, RL=4.\n\nEO scouting: UD=4 bad, FB=6 bad, RL=4 bad. UD and RL are the two cheap-EO candidates. Let me check eo_pattern_lookup on both.\n\nOn UD axis I recognize the EO pattern \u2014 `D R U2 F'` fixes it.\n\nOn RL axis I recognize the EO pattern \u2014 `U2 F2 R D'` fixes it.\n\nBoth 4-move EOs. Let me probe DR cost for each by try_alg'ing the EO then peeking at dr_progress_options. Also check inverse for FB.\n\nI try `D R U2 F'` on top to see the after-state (without committing).\n\nI try `U2 F2 R D'` on top to see the after-state (without committing).\n\nUD-EO lands at DR-4C2E with FB-axis also showing 3C2E (interesting cross-axis structure). RL-EO lands at DR-4C2E too. Comparable. Let me commit UD-EO and probe DR.\n\nI turn `D R U2 F'`.\n\nNo trigger lands within 4 moves. Best is 2C1E in 4 moves. Let me probe a couple of these candidates to see which has a near DR.\n\nI try `U2 R U R'` on top to see the after-state (without committing).\n\nI try `U' F2 R` on top to see the after-state (without committing).\n\nGoing with U2 R U R' \u2192 2C1E. Commit and re-query.\n\nI turn `U2 R U R'`.\n\n2C0E in 4 moves available. Let me try if known 2C triggers hit DR directly from the current 2C1E state first.\n\nI try `R U2 R'` on top to see the after-state (without committing).\n\nI try `R U R'` on top to see the after-state (without committing).\n\nI try `R U' R'` on top to see the after-state (without committing).\n\nCommit D2 L' U' L \u2192 2C0E.\n\nI turn `D2 L' U' L`.\n\nDepth 4 doesn't reach DR. Let me look depth 5.\n\nDepth 5 still can't fix 2C0E \u2014 these corners need a longer EO-preserving alg. Let me consult brain.\n\nMy trained intuition for dr: top candidates are U' (63%), D (23%), D' (11%).\n\nI turn `U'`.\n\nMy trained intuition for dr: top candidates are R' (89%), R2 (6%), F2 (3%).\n\nI turn `R'`.\n\nMy trained intuition for dr: top candidates are R' (48%), R (28%), F2 (15%).\n\nI look over the cube.\nBad-edge counts: UD=0, FB=4, RL=4.\nLast applied: `D2 L' U' L U' R'`.\n\nThat broke things \u2014 went from 2C0E to 5C2E. Let me undo and try a different tack.\n\nI rewind 2 moves.\n\nTrusting the brain may need a longer 2-twist alg. Let me brain-walk a few more moves but watch closely.\n\nI turn `U' R'`.\n\nMy trained intuition for dr: top candidates are R' (48%), R (28%), F2 (15%).\n\nI turn `R'`.\n\nI look over the cube.\nBad-edge counts: UD=0, FB=0, RL=4.\nLast applied: `D2 L' U' L U' R2`.\n\nNow UD is at 2C0E and FB is also EO-solved! Brain-walk one more.\n\nMy trained intuition for dr: top candidates are D (92%), D' (6%), R2 (1%).\n\nI turn `D`.\n\nMy trained intuition for dr: top candidates are D' (68%), D (30%), B2 (1%).\n\nI look over the cube.\nBad-edge counts: UD=0, FB=0, RL=2.\nLast applied: `L' U' L U' R2 D`.\n\nBoth DRs stuck at 2-twist. Let me try NISS to see what the inverse state looks like.\n\nNISS flip \u2014 switching to the inverse scramble.\n\nI look over the cube.\nBad-edge counts: UD=4, FB=6, RL=6.\nI'm currently working on the inverse scramble.\nLast applied: `L' U' L U' R2 D`.\n\nOn UD axis I recognize the EO pattern \u2014 `D2 L R F'` fixes it.\n\nNISS flip \u2014 switching back to the normal scramble.\n\nI look 4 moves ahead with a small beam.\n\nLet me try brain again from current state \u2014 might be a longer alg.\n\nMy trained intuition for dr: top candidates are D' (68%), D (30%), B2 (1%).\n\nI turn `D'`.\n\nLet me try some known 2-twist DR-preserving algs.\n\nI try `R2 U2 R' F2 R U2 R' F2 R'` on top to see the after-state (without committing).\n\nI try `R U2 R' F2 R U2 R' F2` on top to see the after-state (without committing).\n\nI try `F2 R U2 R' F2 L' U2 L` on top to see the after-state (without committing).\n\nStuck in a 2C0E well that needs 7+ extra moves. Let me rese\n```\n\n### Draft 2 \u2014 what I tried (condensed narrative)\n```\n# Solve \u2014 fm_WesternSicilyOpen2026_s1__attempt2_20260521_012700\n\n**Scramble**: `R' U' F U2 F2 D2 B2 D B' U L' B' F2 R2 U' L2 F2 B2 D' F2 L2 F R' U' F`  \n**Model**: `claude-opus-4-7`  \n**Result**: SOLVED in 34 moves\n**Solution**: `R2 F2 U2 B2 U2 B2 R2 F2 U2 R2 U2 L' F2 U2 R2 D2 R U2 R U2 B' D2 R2 U2 F' B' L' F2 L U2 L' U2 D R2`\n\n---\n\nI look over the cube.\nBad-edge counts: UD=4, FB=6, RL=4.\n\nPrior draft committed to UD-EO normal and got stuck in a 2C0E well. The bad-edge counts (UD=4, FB=6, RL=4) match. Prior also identified RL-EO = `U2 F2 R D'` landing at DR-4C2E. Let me try the RL branch this time \u2014 it's a clean sister branch the prior didn't pursue.\n\nLet me also peek at inverse to see if it offers a cleaner path before committing.\n\nOn RL axis I recognize the EO pattern \u2014 `U2 F2 R D'` fixes it.\n\nNISS flip \u2014 switching to the inverse scramble.\n\nOn UD axis I recognize the EO pattern \u2014 `L' F'` fixes it.\n\nOn RL axis I recognize the EO pattern \u2014 `R2 D'` fixes it.\n\n**Excellent finding** \u2014 on inverse both UD and RL have **2-move EOs** vs normal's 4-move. This is a clear win. Let me probe DR cost for both inverse-EO candidates.\n\nI try `L' F'` on top to see the after-state (without committing).\n\nI try `R2 D'` on top to see the after-state (without committing).\n\n**Inverse RL-EO `R2 D'` looks fantastic**: 2-move EO landing at DR-4C2E on RL axis. The other-axis ARM also shows C=3,E=3 which means corners are close. Let me commit and probe DR.\n\nI turn `R2 D'`.\n\nNo trigger hits at depth 4 \u2014 best is 2C1E in 4. Let me commit option 1 (`U2 L U2 B`) and re-query.\n\nI turn `U2 L U2 B`.\n\nStuck at 2C1E within 4. Let me look depth 5.\n\nFound it \u2014 `B' L' F2 L B` \u2192 DR-0C1E in 5 moves. Just 1 misplaced slice edge after this. Let me commit.\n\nI turn `B' L' F2 L B`.\n\n**Found DR**: `F U2 R2 D2 B` (5 moves) lands at full DR. Total to DR = 14 moves.\n\nI turn `F U2 R2 D2 B`.\n\nQuick check: DR-locked on RL, not yet HTR.\n\nDR-RL confirmed (on inverse). Now HTR.\n\nI recognize the HTR subset: **2-swap long-cycle**. Reduction is 9 moves, finish is 11 moves (recall).\n\n20 moves post-DR (9 reduction + 11 finish) = 34 total. Same as prior. Let me run the pipeline and see if there are inter-phase shortcuts via quick_check / analyze_residual.\n\nFor the corner reduction, I see `U2 R' U2 R'` (chunk of a 9-move phase) \u2014 apply and re-check.\n\nI turn `U2 R' U2 R'`.\n\nFor the corner reduction, I see `D2 R2 U2 F2` (chunk of a 5-move phase) \u2014 apply and re-check.\n\nI turn `D2 R2 U2 F2`.\n\nFor the corner reduction: `L`.\n\nI turn `L`.\n\nQuick check: in HTR.\n\nHTR reached at 23 moves. Now finish.\n\nFor the half-turn finish, I see `U2 R2 U2 F2` (chunk of a 11-move phase) \u2014 apply and re-check.\n\nI turn `U2 R2 U2 F2`.\n\nQuick check: in HTR.\n\nResidual class: mixed.\n\nFor the half-turn finish, I see `R2 B2 U2 B2` (chunk of a 7-move phase) \u2014 apply and re-check.\n\nI turn `R2 B2 U2 B2`.\n\nFor the half-turn finish: `U2 F2 R2`.\n\nI turn `U2 F2 R2`.\n\nA quick glance \u2014 the cube is solved.\n\nSolved at 34 moves. Both r&s gates pass (\u226527 moves, 116 tool calls remaining). Mandatory refinement attempt:\n\nr&s: could not solve micro-scramble for span [4:34]: no DR found\n\nr&s used up the 1-call cap. Submitting the 34-move solve.\n\nI assemble the canonical inverse-frame solution: **34 moves**, verified.\n\nVerified 34-move solve. Solution composed correctly from the inverse frame.\n\n**Summary:**\n- **EO** (inverse, RL-axis): `R2 D'` \u2014 2 moves (vs prior's 4-move normal EO)\n- **DR setup**: `U2 L U2 L' F2 L B F U2 R2 D2 B` \u2014 12 moves through 2C1E \u2192 0C1E \u2192 DR\n- **HTR reduction** (2-swap long-cycle subset): `U2 R' U2 R' D2 R2 U2 F2 L` \u2014 9 moves\n- **Finish**: `U2 R2 U2 F2 R2 B2 U2 B2 U2 F2 R2` \u2014 11 moves\n- Total: 34 moves (matches prior draft length, different solution path)\n\nFINAL_SOLUTION: [\"R2\", \"F2\", \"U2\", \"B2\", \"U2\", \"B2\", \"R2\", \"F2\", \"U2\", \"R2\", \"U2\", \"L'\", \"F2\", \"U2\", \"R2\", \"D2\", \"R\", \"U2\", \"R\", \"U2\", \"B'\", \"D2\", \"R2\", \"U2\", \"F'\", \"B'\", \"L'\", \"F2\", \"L\", \"U2\", \"L'\", \"U2\", \"D\", \"R2\"]\n\n**Verified solution (34 moves):** `R2 F2 U2 B2 U\n```\n\n**COMMIT HARD this draft.** Pick a line \u2014 same axis as the best prior draft if it looked promising, a sister branch if you have a clear reason, or restore_fork into a bookmark left by an earlier draft. Drive it to a clean finish. Do NOT over-ideate between branches mid-solve; do NOT abandon a path halfway through. The outer wrapper handles diversity \u2014 your job THIS draft is to find ONE complete, clean solution. A failed or incomplete solve is worse than a 30-move complete one. If prior drafts converged on similar moves, trust that EO/DR axis and push to optimize the FINISH this time."
+    },
+    {
+      "type": "assistant",
+      "turn": 1,
+      "wall_s_elapsed": 7.57,
+      "turn_wall_s": 7.57,
+      "input_tokens": 4922,
+      "output_tokens": 460,
+      "cache_read_tokens": 18682,
+      "cache_create_tokens": 0,
+      "content": [
+        {
+          "signature": "EosHCmMIDRgCKkCuB1L8c/IhZ5rSwSx5LHSW32W5wmKFDln3JWbvqvChdW3FS7g9ATCcIYO/uWMaj62tly9zmitEhibXeLHV8WsiMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDHU21//8NAKAmGuseBoMv/J/YIPKnnwpDXq+IjCdH3eAGPErBrWc6/0JIGenVgMoXoEx5vPG8suUCdJOYFzQQEVvxaHHvzapHrVmf9Eq1QVIRkPV/aRWvhZjqpzOrfaaUcnNAJWxi6cQJT1EVCMFuXGz+XPADI6MGRfWQejWb9KutsEzH5RENAW9n+IA+c8JIl8hj324oAbaqDBeGS4jnnl3HV41UcuiCrYlkEKRzAe72hiJ7eukAkcx6QXqc/JUhaV3byjLBrdyutlE05I/zQ2B+ig/MCVZFeBnrGM9/V/I3QlUG/qgSlp9Xg9XCcYXcFr6uRcaBxbNULK33Yf248SBrNJzLLo/GCRUE/4NWOBtwV/rIkZThtl4LZ6pdiS5TJ591fGwwViGX4CMmCH8zPh57oCYWXVN8Q+Ctbo/SDyRAtS9egGoGBvLcQieO+DeGCHF3IaTQ2zIVBsnhGj6IcFoJ4Kl3Fz66I+l2GtRbABwRuPJTsjFxLkIcdAk3syeRBfYWthjjRPoDDP/IbzsPV0BiKfqLYnoiHNoTUKof+T3Fx/pUC2FxWJHsCEG3lxqaSkmZEO9LYLoinYv0IZerNRpdBb/LCOd5eD8W/v+Wk5VObZ3eglAszj+9zTT0d38gzQ3SXh7BTfuz0P2fqMqNMhBcX2seLO4npFBQKT561XAj2Qc640iWR1RU/Ogc2lcZhXMyJqArBkIjT1KXfljjKXJHNz7ABCeytevTisuYNNCZQB5ZGqJxiT6FPtWZyaXN7E23zjZcRterc5MnGiUzvT4unYU0Kd7UEAZvBgmLY6KUoNlbEMoeOZ+F1r+2WsuLeLs8+ZVD2KLfU6ULnf51SJnYqTqT7/gWojGMoWT0t0F8WvoUwcDn94o31HDfGGyPmPzwaTMveZKARbw/fMKEQ8mNjcIRcs8TYhBgbGaOnbVD6AKWuwzKGQsZDTyQNK6SZOjr9DeMvgnmK7czriEi2WsG/FMtfbj+mD7wNY82QU142ClXScMinzzPcQ9tfhJ6W2tOxCisHpk9tYIFec9yS3+8l0BgJAoZKGwTmfQ7XLGvbjoxxgB",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Looking at the prior drafts, both got 34. Draft 2 found a great 2-move EO on inverse-RL (`R2 D'`) but the DR path (12 moves) + HTR finish (20 moves) totaled 34. Let me follow the same EO axis but explore DR options more carefully \u2014 maybe a different DR substate gives a shorter finish.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01DRQzQbPy6tD7Lh768jZ913",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "inspect_state",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 1,
+      "tool_index": 1,
+      "name": "inspect_state",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "bad_edges_per_axis": {
+          "UD": 4,
+          "FB": 6,
+          "RL": 4
+        },
+        "bad_edge_slots_per_axis": {
+          "UD": [
+            "UB",
+            "DF",
+            "DL",
+            "FL"
+          ],
+          "FB": [
+            "UR",
+            "UL",
+            "UB",
+            "DL",
+            "FR",
+            "BR"
+          ],
+          "RL": [
+            "UB",
+            "DL",
+            "DB",
+            "BR"
+          ]
+        },
+        "bad_edges_by_flipping_face": {
+          "UD": {
+            "F": [
+              "DF",
+              "FL"
+            ],
+            "B": [
+              "UB"
+            ]
+          },
+          "FB": {
+            "L": [
+              "UL",
+              "DL"
+            ],
+            "R": [
+              "UR",
+              "FR",
+              "BR"
+            ]
+          },
+          "RL": {
+            "U": [
+              "UB"
+            ],
+            "D": [
+              "DL",
+              "DB"
+            ]
+          }
+        },
+        "bad_corners_per_axis": {
+          "UD": 4,
+          "FB": 7,
+          "RL": 6
+        },
+        "eo_solved_axes": [],
+        "dr_solved_axes": [],
+        "dr_closeness_per_axis": {
+          "UD": {
+            "axis": "UD",
+            "misoriented_corners": 4,
+            "misplaced_slice_edges": 3,
+            "trigger_label": "DR-4C3E",
+            "jzp_eligible": false,
+            "top_pairs_on_inverse": 2,
+            "arm_other_axis": {
+              "C": 7,
+              "E": 2
+            }
+          },
+          "FB": {
+            "axis": "FB",
+            "misoriented_corners": 7,
+            "misplaced_slice_edges": 2,
+            "trigger_label": "DR-7C2E",
+            "arm_other_axis": {
+              "C": 4,
+              "E": 3
+            }
+          },
+          "RL": {
+            "axis": "RL",
+            "misoriented_corners": 6,
+            "misplaced_slice_edges": 2,
+            "trigger_label": "DR-6C2E",
+            "arm_other_axis": {
+              "C": 7,
+              "E": 2
+            }
+          }
+        },
+        "htr_closeness": null,
+        "solved_corners_count": 0,
+        "solved_edges_count": 2,
+        "in_strict_htr": false,
+        "in_canonical_htr_ud": false,
+        "is_solved": false,
+        "move_count": 0,
+        "slot": "main",
+        "on_inverse": false,
+        "undo_floor": 0,
+        "undo_available": 0,
+        "history_visible": [],
+        "history_truncated": 0,
+        "_meta": {
+          "sim_remaining_s": 3199.7,
+          "sim_fraction_left": 0.998,
+          "wall_remaining_s": 892.4,
+          "tool_calls_remaining": 149,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 5.0,
+      "wall_s_elapsed": 7.57,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": false,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 2,
+      "wall_s_elapsed": 13.4,
+      "turn_wall_s": 5.83,
+      "input_tokens": 866,
+      "output_tokens": 326,
+      "cache_read_tokens": 18682,
+      "cache_create_tokens": 5315,
+      "content": [
+        {
+          "signature": "ErkECmMIDRgCKkDSf6lkndD2zlMyRFscMMwGEcUDvHUBXDpEppLd+zbrVfrRULGhN/RoeWou+IUSfbauqOs/Y43vHUeg8EKYq6pTMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDPURpJBhAztwTSiXLRoMKqOdfMeHMqD6ZankIjCNq6lbAJLEOODNVJoDZa9BIr5w1hD3e26tksK0+AYjWxVAnkRuwP25U7jFXrvo89QqgwOXU0kv3l8ALMN/sLv/PWKL2lI6gczXD33e9uiIb1XGtbjyvqe06hc1xNNoq7TBofPnLDihuFhSezuFM2mxzgKMoWWt450FRGe6RX/RnEvn1jVfxrMIfgvfetoy3hYWDWHTIadgyj+lmm57StEnxf+/INyifwe30NIgDS9vXzSzJ0VffLrloOFh4H7eZmP0rJ26PMqCJsI3dRQrqBai6EDIeSjP02tp8RMOS+u6dapPo7sYvr1ScieqSul2vpHKTk3uVCJ/oBvpLEQmpTWgtk5kwxZbyi5CBFJKVoE3UyynSzy1m3Q33oC0VlCCXyPv/MhKwcIt1dpz8J80iS6oOl9wIcObggtThy/X2vzAYXfA44MHFnc3KBERDDBv6fVs2bVcIR8+NGhpwDvUJMKw2FwImz7VC2jVKrQaILC1zrx35iinzAk/V4G4o8f03mjEGLEhb3sjQwdxJ9+M08ldmIL7T88rKuIZk1QM/SYrMmmTRTOqeWgEdtCaH8Qbht0k6Rg156MYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Confirmed same scramble. Draft 2's inverse-side 2-move EOs are real: UD `L' F'` and RL `R2 D'`. Last time we picked RL and got 34. Let me also try UD-inverse this time \u2014 could give different DR substate.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01LrQnp3HNiWWoVpRssf7Kbm",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "niss_flip",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 2,
+      "tool_index": 2,
+      "name": "niss_flip",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "original_scramble": [
+          "R'",
+          "U'",
+          "F",
+          "U2",
+          "F2",
+          "D2",
+          "B2",
+          "D",
+          "B'",
+          "U",
+          "L'",
+          "B'",
+          "F2",
+          "R2",
+          "U'",
+          "L2",
+          "F2",
+          "B2",
+          "D'",
+          "F2",
+          "L2",
+          "F",
+          "R'",
+          "U'",
+          "F"
+        ],
+        "original_history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "B",
+          "B'",
+          "L'",
+          "F2",
+          "L",
+          "B"
+        ],
+        "inverse_scramble": [
+          "F'",
+          "U",
+          "R",
+          "F'",
+          "L2",
+          "F2",
+          "D",
+          "B2",
+          "F2",
+          "L2",
+          "U",
+          "R2",
+          "F2",
+          "B",
+          "L",
+          "U'",
+          "B",
+          "D'",
+          "B2",
+          "D2",
+          "F2",
+          "U2",
+          "F'",
+          "U",
+          "R"
+        ],
+        "inverse_cumulative": [
+          "F'",
+          "U",
+          "R",
+          "F'",
+          "L2",
+          "F2",
+          "D",
+          "B2",
+          "F2",
+          "L2",
+          "U",
+          "R2",
+          "F2",
+          "B",
+          "L",
+          "U'",
+          "B",
+          "D'",
+          "B2",
+          "D2",
+          "F2",
+          "U2",
+          "F'",
+          "U",
+          "R"
+        ],
+        "note": "To continue search on the inverse side, treat `inverse_cumulative` as the new effective scramble applied to SOLVED, and run search from there. Moves you find on this side are 'inverse-side' moves; the final solution is `normal_moves + invert(inverse_moves)` applied to the original scramble.",
+        "slot": "main",
+        "now_on_inverse": true,
+        "_meta": {
+          "sim_remaining_s": 3197.7,
+          "sim_fraction_left": 0.998,
+          "wall_remaining_s": 886.6,
+          "tool_calls_remaining": 148,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 7.0,
+      "wall_s_elapsed": 13.4,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 3,
+      "wall_s_elapsed": 15.21,
+      "turn_wall_s": 1.81,
+      "input_tokens": 1719,
+      "output_tokens": 95,
+      "cache_read_tokens": 18682,
+      "cache_create_tokens": 5315,
+      "content": [
+        {
+          "id": "toolu_01BKjeGBS7x8BmdqQsXzcgF5",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "alg": [
+              "L'",
+              "F'"
+            ]
+          },
+          "name": "try_alg",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 3,
+      "tool_index": 3,
+      "name": "try_alg",
+      "input": {
+        "slot": "main",
+        "alg": [
+          "L'",
+          "F'"
+        ]
+      },
+      "result": {
+        "before": {
+          "bad_edges_per_axis": {
+            "UD": 4,
+            "FB": 6,
+            "RL": 4
+          },
+          "bad_edge_slots_per_axis": {
+            "UD": [
+              "UF",
+              "DF",
+              "DL",
+              "FR"
+            ],
+            "FB": [
+              "UL",
+              "DF",
+              "DL",
+              "DB",
+              "FL",
+              "BR"
+            ],
+            "RL": [
+              "UR",
+              "DF",
+              "DL",
+              "DB"
+            ]
+          },
+          "bad_edges_by_flipping_face": {
+            "UD": {
+              "F": [
+                "UF",
+                "DF",
+                "FR"
+              ],
+              "B": []
+            },
+            "FB": {
+              "L": [
+                "UL",
+                "DL",
+                "FL"
+              ],
+              "R": [
+                "BR"
+              ]
+            },
+            "RL": {
+              "U": [
+                "UR"
+              ],
+              "D": [
+                "DF",
+                "DL",
+                "DB"
+              ]
+            }
+          },
+          "bad_corners_per_axis": {
+            "UD": 4,
+            "FB": 7,
+            "RL": 6
+          },
+          "eo_solved_axes": [],
+          "dr_solved_axes": [],
+          "dr_closeness_per_axis": {
+            "UD": {
+              "axis": "UD",
+              "misoriented_corners": 4,
+              "misplaced_slice_edges": 3,
+              "trigger_label": "DR-4C3E",
+              "jzp_eligible": false,
+              "top_pairs_on_inverse": 2,
+              "arm_other_axis": {
+                "C": 7,
+                "E": 2
+              }
+            },
+            "FB": {
+              "axis": "FB",
+              "misoriented_corners": 7,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-7C2E",
+              "arm_other_axis": {
+                "C": 4,
+                "E": 3
+              }
+            },
+            "RL": {
+              "axis": "RL",
+              "misoriented_corners": 6,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-6C2E",
+              "arm_other_axis": {
+                "C": 7,
+                "E": 2
+              }
+            }
+          },
+          "htr_closeness": null,
+          "solved_corners_count": 0,
+          "solved_edges_count": 2,
+          "in_strict_htr": false,
+          "in_canonical_htr_ud": false,
+          "is_solved": false,
+          "move_count": 0
+        },
+        "after": {
+          "bad_edges_per_axis": {
+            "UD": 0,
+            "FB": 4,
+            "RL": 4
+          },
+          "bad_edge_slots_per_axis": {
+            "UD": [],
+            "FB": [
+              "DL",
+              "DB",
+              "FR",
+              "BR"
+            ],
+            "RL": [
+              "UR",
+              "DF",
+              "DB",
+              "FR"
+            ]
+          },
+          "bad_edges_by_flipping_face": {
+            "UD": {
+              "F": [],
+              "B": []
+            },
+            "FB": {
+              "L": [
+                "DL"
+              ],
+              "R": [
+                "FR",
+                "BR"
+              ]
+            },
+            "RL": {
+              "U": [
+                "UR"
+              ],
+              "D": [
+                "DF",
+                "DB"
+              ]
+            }
+          },
+          "bad_corners_per_axis": {
+            "UD": 5,
+            "FB": 8,
+            "RL": 7
+          },
+          "eo_solved_axes": [
+            "UD"
+          ],
+          "dr_solved_axes": [],
+          "dr_closeness_per_axis": {
+            "UD": {
+              "axis": "UD",
+              "misoriented_corners": 5,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-5C2E",
+              "jzp_eligible": false,
+              "top_pairs_on_inverse": 1,
+              "arm_other_axis": {
+                "C": 8,
+                "E": 2
+              }
+            },
+            "FB": {
+              "axis": "FB",
+              "misoriented_corners": 8,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-8C2E",
+              "arm_other_axis": {
+                "C": 5,
+                "E": 2
+              }
+            },
+            "RL": {
+              "axis": "RL",
+              "misoriented_corners": 7,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-7C2E",
+              "arm_other_axis": {
+                "C": 8,
+                "E": 2
+              }
+            }
+          },
+          "htr_closeness": null,
+          "solved_corners_count": 0,
+          "solved_edges_count": 2,
+          "in_strict_htr": false,
+          "in_canonical_htr_ud": false,
+          "is_solved": false,
+          "move_count": 2
+        },
+        "deltas": {
+          "bad_edges_per_axis": {
+            "UD": -4,
+            "FB": -2
+          },
+          "bad_corners_per_axis": {
+            "UD": 1,
+            "FB": 1,
+            "RL": 1
+          }
+        },
+        "edge_changes_per_axis": {
+          "UD": {
+            "newly_oriented": [
+              "DF",
+              "DL",
+              "FR",
+              "UF"
+            ],
+            "newly_misoriented": []
+          },
+          "FB": {
+            "newly_oriented": [
+              "DF",
+              "FL",
+              "UL"
+            ],
+            "newly_misoriented": [
+              "FR"
+            ]
+          },
+          "RL": {
+            "newly_oriented": [
+              "DL"
+            ],
+            "newly_misoriented": [
+              "FR"
+            ]
+          }
+        },
+        "solved": false,
+        "_meta": {
+          "sim_remaining_s": 3196.2,
+          "sim_fraction_left": 0.997,
+          "wall_remaining_s": 884.8,
+          "tool_calls_remaining": 147,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 8.5,
+      "wall_s_elapsed": 15.21,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 4,
+      "wall_s_elapsed": 19.97,
+      "turn_wall_s": 4.76,
+      "input_tokens": 2272,
+      "output_tokens": 227,
+      "cache_read_tokens": 24064,
+      "cache_create_tokens": 1058,
+      "content": [
+        {
+          "signature": "Es8DCmMIDRgCKkDNX0wJD+8V3w5FFYkrDOIu8dHfAHx5DFH0qBUPMITCLpvySKioDsZl+MQKnYLk245OegNQLk4EqyMESPa51+UuMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDEIPJrWkMtZ5YYqI1xoMBD8s9Wr0AgDRyqmBIjBI0mb3F4kNZiKnGb/PMLRdLjdMRBxVnOvosdoto4NFxRU+fFSxkRqaoEKaP9vIKCcqmQIHtUkZHx1ay1cCD7JzeMyXanMFcp4mxqmm4bmBdHQCyNXRl+t9+/UUA0rMklzteDJbfLWBcXb189JfcpVk6YKtFOjLWinT6w+NoEUTMjAaEBG2jJ7qRDaK44CNV7Sd7v5SxhTC+pHPH0uLpeQAFyaJp3pHJxTxixrFzLRCdy/giBUCzlgI3KRyFH3NvWt6/z1hHr0191Sx6DCdlg1vB5+uvAXhYBHSY438YgV2QEGL+IduV5QrMXiDXBoUATIB1czui0SsiLCWznCCE2HgjDrwZDhh3A9k0xJxdhVNjcz2KNzQBOcXgHFC+of2QPR+kf2u5RB4wVJOB11KocPShOBYB0eWiXmmtYhvCwUkqNtMdp/0VmLROZ4jnxgB",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01NUjsc3RnMHddCau4ANzejK",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "alg": [
+              "R2",
+              "D'"
+            ]
+          },
+          "name": "try_alg",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 4,
+      "tool_index": 4,
+      "name": "try_alg",
+      "input": {
+        "slot": "main",
+        "alg": [
+          "R2",
+          "D'"
+        ]
+      },
+      "result": {
+        "before": {
+          "bad_edges_per_axis": {
+            "UD": 4,
+            "FB": 6,
+            "RL": 4
+          },
+          "bad_edge_slots_per_axis": {
+            "UD": [
+              "UF",
+              "DF",
+              "DL",
+              "FR"
+            ],
+            "FB": [
+              "UL",
+              "DF",
+              "DL",
+              "DB",
+              "FL",
+              "BR"
+            ],
+            "RL": [
+              "UR",
+              "DF",
+              "DL",
+              "DB"
+            ]
+          },
+          "bad_edges_by_flipping_face": {
+            "UD": {
+              "F": [
+                "UF",
+                "DF",
+                "FR"
+              ],
+              "B": []
+            },
+            "FB": {
+              "L": [
+                "UL",
+                "DL",
+                "FL"
+              ],
+              "R": [
+                "BR"
+              ]
+            },
+            "RL": {
+              "U": [
+                "UR"
+              ],
+              "D": [
+                "DF",
+                "DL",
+                "DB"
+              ]
+            }
+          },
+          "bad_corners_per_axis": {
+            "UD": 4,
+            "FB": 7,
+            "RL": 6
+          },
+          "eo_solved_axes": [],
+          "dr_solved_axes": [],
+          "dr_closeness_per_axis": {
+            "UD": {
+              "axis": "UD",
+              "misoriented_corners": 4,
+              "misplaced_slice_edges": 3,
+              "trigger_label": "DR-4C3E",
+              "jzp_eligible": false,
+              "top_pairs_on_inverse": 2,
+              "arm_other_axis": {
+                "C": 7,
+                "E": 2
+              }
+            },
+            "FB": {
+              "axis": "FB",
+              "misoriented_corners": 7,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-7C2E",
+              "arm_other_axis": {
+                "C": 4,
+                "E": 3
+              }
+            },
+            "RL": {
+              "axis": "RL",
+              "misoriented_corners": 6,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-6C2E",
+              "arm_other_axis": {
+                "C": 7,
+                "E": 2
+              }
+            }
+          },
+          "htr_closeness": null,
+          "solved_corners_count": 0,
+          "solved_edges_count": 2,
+          "in_strict_htr": false,
+          "in_canonical_htr_ud": false,
+          "is_solved": false,
+          "move_count": 0
+        },
+        "after": {
+          "bad_edges_per_axis": {
+            "UD": 4,
+            "FB": 6,
+            "RL": 0
+          },
+          "bad_edge_slots_per_axis": {
+            "UD": [
+              "UF",
+              "DL",
+              "DB",
+              "BR"
+            ],
+            "FB": [
+              "UL",
+              "DR",
+              "DL",
+              "DB",
+              "FR",
+              "FL"
+            ],
+            "RL": []
+          },
+          "bad_edges_by_flipping_face": {
+            "UD": {
+              "F": [
+                "UF"
+              ],
+              "B": [
+                "DB",
+                "BR"
+              ]
+            },
+            "FB": {
+              "L": [
+                "UL",
+                "DL",
+                "FL"
+              ],
+              "R": [
+                "DR",
+                "FR"
+              ]
+            },
+            "RL": {
+              "U": [],
+              "D": []
+            }
+          },
+          "bad_corners_per_axis": {
+            "UD": 4,
+            "FB": 3,
+            "RL": 4
+          },
+          "eo_solved_axes": [
+            "RL"
+          ],
+          "dr_solved_axes": [],
+          "dr_closeness_per_axis": {
+            "UD": {
+              "axis": "UD",
+              "misoriented_corners": 4,
+              "misplaced_slice_edges": 3,
+              "trigger_label": "DR-4C3E",
+              "jzp_eligible": false,
+              "top_pairs_on_inverse": 2,
+              "arm_other_axis": {
+                "C": 3,
+                "E": 3
+              }
+            },
+            "FB": {
+              "axis": "FB",
+              "misoriented_corners": 3,
+              "misplaced_slice_edges": 3,
+              "trigger_label": "DR-3C3E",
+              "arm_other_axis": {
+                "C": 4,
+                "E": 3
+              }
+            },
+            "RL": {
+              "axis": "RL",
+              "misoriented_corners": 4,
+              "misplaced_slice_edges": 2,
+              "trigger_label": "DR-4C2E",
+              "arm_other_axis": {
+                "C": 3,
+                "E": 3
+              }
+            }
+          },
+          "htr_closeness": null,
+          "solved_corners_count": 0,
+          "solved_edges_count": 1,
+          "in_strict_htr": false,
+          "in_canonical_htr_ud": false,
+          "is_solved": false,
+          "move_count": 2
+        },
+        "deltas": {
+          "bad_edges_per_axis": {
+            "RL": -4
+          },
+          "bad_corners_per_axis": {
+            "FB": -4,
+            "RL": -2
+          }
+        },
+        "edge_changes_per_axis": {
+          "UD": {
+            "newly_oriented": [
+              "DF",
+              "FR"
+            ],
+            "newly_misoriented": [
+              "BR",
+              "DB"
+            ]
+          },
+          "FB": {
+            "newly_oriented": [
+              "BR",
+              "DF"
+            ],
+            "newly_misoriented": [
+              "DR",
+              "FR"
+            ]
+          },
+          "RL": {
+            "newly_oriented": [
+              "DB",
+              "DF",
+              "DL",
+              "UR"
+            ],
+            "newly_misoriented": []
+          }
+        },
+        "solved": false,
+        "_meta": {
+          "sim_remaining_s": 3194.7,
+          "sim_fraction_left": 0.997,
+          "wall_remaining_s": 880.0,
+          "tool_calls_remaining": 146,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 10.0,
+      "wall_s_elapsed": 19.97,
+      "slots_after": {
+        "main": {
+          "history": [],
+          "on_inverse": true,
+          "move_count": 0,
+          "undo_available": 0
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 5,
+      "wall_s_elapsed": 30.26,
+      "turn_wall_s": 10.28,
+      "input_tokens": 3402,
+      "output_tokens": 623,
+      "cache_read_tokens": 25189,
+      "cache_create_tokens": 622,
+      "content": [
+        {
+          "signature": "ErMJCmMIDRgCKkCALrxDtV/uvRbJUnx7gao2oBCUOMmgTLhp9Mubh1tNHCaADnXvbRrWAhKhukEwqvRekURDU4jazoQE3lYQf8tyMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDNE5MvFakCW0C8cf7BoMbTrM0HLLHUpk+UynIjCILHAXoc3ZjHJ9hkGE+QAXM7ql4oONiBcVeEClDTgcPssVzOwzkBUQ+IW/Jhujlykq/QdqfDgTw5Z83b1iu8evHRsch44qpMtYnP/snCwVxDVwYxcAszjpji4/LV8H+jbJcDREQv2rUhJm/VICKrKy8F5oDFF/vQIhQo4ohh/U7PgkTybSvN6Z9PY0i2Kxz0xQbmJsuCCVeUnnSAJOZqCvgOg5S1ZP6F1ygkiVstiVRUleHP2a2OU9XOwGznKbU3N0PxUJIxug7nZMwqeenZL27lI5A6EsIoxOgewx/fqh6C/lxsklPYqiuYUjGO20QTVDqfBrDESzIqg+k0ReLoORPiudvdLFaj6NAamAaeusSKbOVDt+sISLwy/KSo8CLIc2E1B+zxMhonUxdkjCF+tEbc4KfRPn2pkUERNWzpDTpGcAOKuNzxMKOZWGD8GPkv00wX55lMKhwYbMXyDJPrcDTh8+on+yAaV81p2JcuOMe0qsyB7x+dqE3DloMtH4JHJfdSwQsQi1+HMymOdXV20bfSNweyej3r394W+LeObUixtPxM9ZB91LJUJhhk9mZlRWId3A4l02EukuO8YjCfhPO0kvq6cCk1xN0wsF7WnZ91AFnUPocL+kK7JqDVHQbDIhJs+nOwMPl/GTo0e0yFBo3VCQCr9Mu26Z8iKkoA2IAcjbxKEbUuCJGA9/mfh0zx3Oy4Z2z66LM/6SNexwfzv2o0R46rcNpK2meeotgVTExnc5UPFylid8+Hyp2cC1kCP2DZoG/KTRby0abUoiT9/I9a6IDyBJQluH77VBALnR5wy1zYKIGuGumlG+/lXMXGKepnxC5e5fg9NcMmIditQyGoUrmrtqIfPhxHhY3iulgD9oo/VMumCbZZwJtweVeOtMMtr8L9EVp7VE4oW9+mLYz4UnOBV91Jx+hqsCTaHbhqgbOx2EKFYKxohXNbiHzLIFz02t8uo7bN8FywnSxxTdK9V/WNxxFO+ckSs5Nc5bdamDPDboknOi84adk/KiFgHOct42ril44fLzMf6vLXACaV3iiZLg8gRCwJylSzj9TLMpz0aadxK7j6PkTTljCX6xpSVo6YcxNrZlfLy9fQeitOvWllr1iotlcN7henCJB9rdG6EEpiZfLwzq31bhm/pUSigSJDlekeX7OevAGdwpJvSc0I39rxmxCPq2VIp/wSm/Q4Zju+Rsez6BzAfXwQpOwQrOg7yrYGg1bx1wHusFNomrY9oN2GU4ffF0k0FYxqr+xFwanrZIrVoU5+bBI2oT1TdW5fsTlM871f1bE9Se9tOkNl61NaxFlX+zz9UWjvDeScUB9aYb7u7jg9awuATzHf5xbcxmEzaf68acI2E4uD2B6zjKFNFHUUvtxmM/MBm2v6BUrNuYsAIJKit/5dE/mGHRPzPinp+8H8e37xluGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "RL-inverse EO is the clear winner: 2 moves, lands at DR-4C2E on RL with FB also showing 3C3E (cross-axis interest). Committing.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_017xQpoxHhqXd3xRvdDi6LWF",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "R2",
+              "D'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 5,
+      "tool_index": 5,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "R2",
+          "D'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'"
+        ],
+        "move_count": 2,
+        "undo_available": 2,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3194.5,
+          "sim_fraction_left": 0.997,
+          "wall_remaining_s": 869.7,
+          "tool_calls_remaining": 145,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 10.2,
+      "wall_s_elapsed": 30.26,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'"
+          ],
+          "on_inverse": true,
+          "move_count": 2,
+          "undo_available": 2
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 6,
+      "wall_s_elapsed": 34.9,
+      "turn_wall_s": 4.64,
+      "input_tokens": 2357,
+      "output_tokens": 192,
+      "cache_read_tokens": 25715,
+      "cache_create_tokens": 1906,
+      "content": [
+        {
+          "citations": null,
+          "text": "Now let me look at DR options on RL axis. Prior draft picked `U2 L U2 L'` path (4 moves to 2C1E). Let me see fresh options.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01XtemyYbdHJ7N8F4ZkdoxZp",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "max_depth": 4,
+            "k": 8
+          },
+          "name": "dr_progress_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 6,
+      "tool_index": 6,
+      "name": "dr_progress_options",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "max_depth": 4,
+        "k": 8
+      },
+      "result": {
+        "axis": "RL",
+        "max_depth": 4,
+        "states_explored": 12884,
+        "starting_bad_corners": 4,
+        "starting_bad_slice_edges": 2,
+        "options": [
+          {
+            "setup_moves": [
+              "U2",
+              "L",
+              "U2",
+              "B"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "U2",
+              "L",
+              "U2",
+              "B'"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "R2",
+              "U2",
+              "R2",
+              "B"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "R2",
+              "U2",
+              "R2",
+              "B'"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "R2",
+              "D2",
+              "L2",
+              "F"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "R2",
+              "D2",
+              "L2",
+              "F'"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "R2",
+              "D2",
+              "L'",
+              "F"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "R2",
+              "D2",
+              "L'",
+              "F'"
+            ],
+            "setup_length": 4,
+            "bad_corners": 2,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-2C1E",
+            "hits_named_trigger": false
+          }
+        ],
+        "note": "BFS depth \u22644 over EO-preserving moves on axis RL; explored 12884 unique states. Each option reports `bad_corners` (corners with U/D sticker on the wrong face) and `bad_slice_edges` (E-slice edges in the wrong slice). These are state-readable counts \u2014 what you'd count yourself off the cube \u2014 NOT a distance-to-DR oracle. Sorted by total bad pieces ascending (ties: shorter setup first). Two states with the same bad-piece count can have very different actual move-to-DR distance; use the substate_label to judge which one you'd rather land in. If hits_named_trigger=true, applying trigger_moves from this state reaches DR. Otherwise: apply your chosen setup via apply_moves, then call dr_progress_options again from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3187.7,
+          "sim_fraction_left": 0.995,
+          "wall_remaining_s": 864.4,
+          "tool_calls_remaining": 144,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 17.07,
+      "wall_s_elapsed": 35.59,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'"
+          ],
+          "on_inverse": true,
+          "move_count": 2,
+          "undo_available": 2
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 7,
+      "wall_s_elapsed": 66.56,
+      "turn_wall_s": 30.96,
+      "input_tokens": 1539,
+      "output_tokens": 2000,
+      "cache_read_tokens": 27393,
+      "cache_create_tokens": 2346,
+      "content": [
+        {
+          "signature": "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",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "All 8 candidates land at DR-2C1E in 4 moves. Prior used `U2 L U2 B`. Let me commit it and look deeper, but also consult brain for a different angle.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01DjR1suxRVp99ixKA52CnnN",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "step": "dr",
+            "k": 5
+          },
+          "name": "brain_suggest",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 7,
+      "tool_index": 7,
+      "name": "brain_suggest",
+      "input": {
+        "slot": "main",
+        "step": "dr",
+        "k": 5
+      },
+      "result": {
+        "from_brain": true,
+        "step": "dr",
+        "candidates": [
+          {
+            "move": "U2",
+            "prob": 0.5046206712722778
+          },
+          {
+            "move": "R2",
+            "prob": 0.22562550008296967
+          },
+          {
+            "move": "D2",
+            "prob": 0.04783147946000099
+          },
+          {
+            "move": "R",
+            "prob": 0.04675160348415375
+          },
+          {
+            "move": "L",
+            "prob": 0.04184359684586525
+          }
+        ],
+        "note": "top-5 from brain_dr (nissy-trained state-conditioned)",
+        "_meta": {
+          "sim_remaining_s": 3184.7,
+          "sim_fraction_left": 0.994,
+          "wall_remaining_s": 833.4,
+          "tool_calls_remaining": 143,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 20.07,
+      "wall_s_elapsed": 66.56,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'"
+          ],
+          "on_inverse": true,
+          "move_count": 2,
+          "undo_available": 2
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 8,
+      "wall_s_elapsed": 69.72,
+      "turn_wall_s": 3.16,
+      "input_tokens": 3498,
+      "output_tokens": 168,
+      "cache_read_tokens": 29836,
+      "cache_create_tokens": 197,
+      "content": [
+        {
+          "signature": "EqsCCmMIDRgCKkAjFWV2Sp6jfAWSSjbPt75tCUv619fmvz67eBeIYaoLisU5qmuD6j3m7aktIX+hCAu7QbR06TPNUcN7jzylKQ81Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDLSjtXRwKr5/d4k5ixoMSkhi8QNh0jKbUW9QIjBb1ubxHv2rWz4ViDDICAQbBXQPdyJa2BPrsFrYGU/QELgMOX/CRKwIEjfqlcW9p9sqdgvTMTfDDfDcemDJBfATQKRXJ/xYkvgkcX6Wx6aoC8AvppC/8nl8aQyUw10/wq0KNoGzCeQ3xknrKL92vzoqlCJzFY+l/tt1tWuihaiJJjvGaTLom4RmaZE4shVcPQ0DEniU2LsLQNZU6EmCQb+jiathjtP7QTIYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01B8UrvEK7tmRN9FYc2i5psr",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "L",
+              "U2",
+              "B"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 8,
+      "tool_index": 8,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "L",
+          "U2",
+          "B"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "B"
+        ],
+        "move_count": 6,
+        "undo_available": 6,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3184.3,
+          "sim_fraction_left": 0.994,
+          "wall_remaining_s": 830.3,
+          "tool_calls_remaining": 142,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 20.47,
+      "wall_s_elapsed": 69.72,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 6,
+          "undo_available": 6
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 9,
+      "wall_s_elapsed": 72.05,
+      "turn_wall_s": 2.33,
+      "input_tokens": 688,
+      "output_tokens": 136,
+      "cache_read_tokens": 30170,
+      "cache_create_tokens": 2997,
+      "content": [
+        {
+          "id": "toolu_01HgJQKFv2Bs8mbDuThJavbU",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "max_depth": 5,
+            "k": 8
+          },
+          "name": "dr_progress_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 9,
+      "tool_index": 9,
+      "name": "dr_progress_options",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "max_depth": 5,
+        "k": 8
+      },
+      "result": {
+        "axis": "RL",
+        "max_depth": 5,
+        "states_explored": 68748,
+        "starting_bad_corners": 2,
+        "starting_bad_slice_edges": 1,
+        "options": [
+          {
+            "setup_moves": [
+              "B'",
+              "L'",
+              "F2",
+              "L",
+              "B"
+            ],
+            "setup_length": 5,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "B'",
+              "L'",
+              "F2",
+              "L",
+              "B'"
+            ],
+            "setup_length": 5,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "D2",
+              "L'",
+              "F'",
+              "L'",
+              "F"
+            ],
+            "setup_length": 5,
+            "bad_corners": 2,
+            "bad_slice_edges": 0,
+            "substate_label": "DR-2C0E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "D2",
+              "L'",
+              "F'",
+              "L'",
+              "F'"
+            ],
+            "setup_length": 5,
+            "bad_corners": 2,
+            "bad_slice_edges": 0,
+            "substate_label": "DR-2C0E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "L",
+              "F'",
+              "B2",
+              "L",
+              "F"
+            ],
+            "setup_length": 5,
+            "bad_corners": 2,
+            "bad_slice_edges": 0,
+            "substate_label": "DR-2C0E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "L",
+              "F'",
+              "B2",
+              "L",
+              "F'"
+            ],
+            "setup_length": 5,
+            "bad_corners": 2,
+            "bad_slice_edges": 0,
+            "substate_label": "DR-2C0E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "F'",
+              "U2",
+              "R2",
+              "D2",
+              "B"
+            ],
+            "setup_length": 5,
+            "bad_corners": 2,
+            "bad_slice_edges": 0,
+            "substate_label": "DR-2C0E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "F'",
+              "U2",
+              "R2",
+              "D2",
+              "B'"
+            ],
+            "setup_length": 5,
+            "bad_corners": 2,
+            "bad_slice_edges": 0,
+            "substate_label": "DR-2C0E",
+            "hits_named_trigger": false
+          }
+        ],
+        "note": "BFS depth \u22645 over EO-preserving moves on axis RL; explored 68748 unique states. Each option reports `bad_corners` (corners with U/D sticker on the wrong face) and `bad_slice_edges` (E-slice edges in the wrong slice). These are state-readable counts \u2014 what you'd count yourself off the cube \u2014 NOT a distance-to-DR oracle. Sorted by total bad pieces ascending (ties: shorter setup first). Two states with the same bad-piece count can have very different actual move-to-DR distance; use the substate_label to judge which one you'd rather land in. If hits_named_trigger=true, applying trigger_moves from this state reaches DR. Otherwise: apply your chosen setup via apply_moves, then call dr_progress_options again from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3160.6,
+          "sim_fraction_left": 0.986,
+          "wall_remaining_s": 825.7,
+          "tool_calls_remaining": 141,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 44.09,
+      "wall_s_elapsed": 74.3,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 6,
+          "undo_available": 6
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 10,
+      "wall_s_elapsed": 83.98,
+      "turn_wall_s": 9.68,
+      "input_tokens": 1428,
+      "output_tokens": 677,
+      "cache_read_tokens": 33278,
+      "cache_create_tokens": 421,
+      "content": [
+        {
+          "signature": "EocJCmMIDRgCKkBXtfdt3YtzlA6QUTuarpuUZK5811HW2dXlTnY7iOOwBy+pU4PBuMOAdrgM9DcOP2oDJyOsRrQwbZ53IEe2LnK1Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDHfDz8zaIiShyuS/nhoM+IDFpILUseJUSs7rIjCukkIGbh4ldr59WgqerdD/Ha3B/sw3oFKAy6B1sTMHkDAo1872YqmHk4yWc8X8oJoq0QdRP4lnQQfsho323RPHDSbSJbyIh4s0PeJORgDVv3dmVLuyUn2ty8Ra721PcT01ZV0k3koQjGJ0gN5gOxLyquL621BqI3Lcnp/dB3SfRd/QoJEl7XffMKz3bBAX6NnpKH5kmbDCrjb+Q/XHVIZiO6TJWqqpbhNzrw+/G+doDGYDYvQcLjEcsmeJtb9O26VmdrvXHi4Mgzlli6UC/MM5TBfacUOUVOpfr2JU1k60nCuMAsEWf+/zog5gux+9SHEwRvTpzmWIZoWuatGHmP7h+PAGJDpb/7MbY4m2lkpZz2KDJEp17KqP8AewBqCUNijejgcs3Uw1Am5Ghi0FdJ8s8fQwnQXxZoUcqqHV4S38zioSzTKfIlQ5+o4Ce/CM8KHPMY97qDWRFRfRyH0o/I60Z1UVJf2u8t+UMUZat/KjYrM+ltFdpi9gGnzEfdxi3logafDh+6I6Hyu7WHF7Sza5vgHvs0X+aCBsiUy/XZI/TFenEN3M3OnE/NsyWqn/ByYoNZJ14U+KmOQdZiCNn4B+mXSiNmBvgpO5ZFjJJk+uuTrSipCEu6nV/GTSgsdU4e0yfhJjzE+yZJ0K8YU0fI9ATlXZ4gLn8FKV/jy++nPgnVW/6O83Wb2t359Uv1Ed10UAxUZT83aQ0/PFziW884hUo0Lo3+So0JjRbnpW0F4khDKGs/eVZJH61S338+eKOeIJcXKQMRpKiYydadvusex655GTnTX1ZNoHS9yHrgeN0uslp/d9wYqXafr/t/9i8oPXSzQ1jbg1IypBiv+q0sMmJUUdOaQmvMbJMST/SoPt0L1Cr1DLtvkbU5PaiMylSPHbGnSFOFshI5AibjhuAuVcsbL5+fVfQVnjKWQg4246XVYrx1lflIAwlAH/Tbv6WSgRtwPuRjQi9a6qy4CcnC4LZ7PncyEc90X5X8iddnLOT5hfsxMxMsDyyBcxDw9ZWjfGHgNV60UKX8o+ospg1oB/dX+QaqhFLdF0huA7ehMK57v4zqAX0dRC1M+NhP+LuXTacnX3NS0qVeeekIu09Tn+Jo8NnRXjIceYz6GwkXM761FpXZNnhTN+YgFDjsjMW+Mi+WWYkFVa6+lf2DPJ7WnhGj1qRArv+WUFouYJC0rPR+yGHPeK5h1xPFiM6dgoiACuNJYpgFJt7DJzh+8/d5o+yRiPYziDvKj1jtrx07DxQf9eFfzzV3rTDyoh5Lc5C/HgW2jFrsHkzd7acA/eNVENLvVfOVqD7aaYxyzCjq6aLlLdRvWBDM7lgC4mbdhkLfMcPz10BIFugtGhku9jiuLpx2hMKRgB",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Same picture as before \u2014 best is `B' L' F2 L B` to DR-0C1E. The `B B'` cancels with prior `B`, giving net `L' F2 L B` (4 moves effective). Committing.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01H7rtZYHjHL2PfgKe4E8yZC",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "B'",
+              "L'",
+              "F2",
+              "L",
+              "B"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 10,
+      "tool_index": 10,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "B'",
+          "L'",
+          "F2",
+          "L",
+          "B"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B"
+        ],
+        "move_count": 9,
+        "undo_available": 9,
+        "auto_cancelled_saved": 2,
+        "_meta": {
+          "sim_remaining_s": 3160.1,
+          "sim_fraction_left": 0.986,
+          "wall_remaining_s": 816.0,
+          "tool_calls_remaining": 140,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 44.59,
+      "wall_s_elapsed": 83.99,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 9,
+          "undo_available": 9
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 11,
+      "wall_s_elapsed": 89.41,
+      "turn_wall_s": 5.43,
+      "input_tokens": 1980,
+      "output_tokens": 273,
+      "cache_read_tokens": 33530,
+      "cache_create_tokens": 461,
+      "content": [
+        {
+          "signature": "EtwCCmMIDRgCKkD7EcNQKyeEISKCCNgx3igg6OgnX0CdtndSruQfoz64doIHIPu9iPf2Vhw+zqwbZOEPZD2LcYBD+KlWa2Dzqm/2Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDOXFpdWzHrdh7FxCwRoMjUprpjGiyvYBHceaIjBZ/jaVdSy/6fAg0loOOvSHwTOhlV/aL5bJeMGOp6bSL9pTjcivbtkW0Qxi7xU2+J4qpgEBn++lYSNy5xuQJVpB7RfW5q5e4ozbS9jA+Ww70+Uaj3QBA1f14BYjtIPgh69AKnPi0Juc+t0xHqgVftZBxFmHFyPIAkTMD5y9HrpWbyZ5vP1IuL3bvplhy4k+oBto7PaaKtqcDjN2zh5xOeT8ocHeHmJ0tcgfGftrRe0mKOeRzCaGIva93DwnSEtph5r219gOmlgz5n0eiW6DK7kblbV99KYXYLQHGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Good \u2014 2 moves auto-cancelled. Now at DR-0C1E, just 1 slice edge to fix.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_019qKieB7AwnaFpbmc1jGcVZ",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "max_depth": 5,
+            "k": 8
+          },
+          "name": "dr_progress_options",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 11,
+      "tool_index": 11,
+      "name": "dr_progress_options",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "max_depth": 5,
+        "k": 8
+      },
+      "result": {
+        "axis": "RL",
+        "max_depth": 5,
+        "states_explored": 32345,
+        "starting_bad_corners": 0,
+        "starting_bad_slice_edges": 1,
+        "options": [
+          {
+            "setup_moves": [
+              "F",
+              "U2",
+              "R2",
+              "D2",
+              "B"
+            ],
+            "setup_length": 5,
+            "bad_corners": 0,
+            "bad_slice_edges": 0,
+            "substate_label": "DR (solved)",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [],
+            "setup_length": 0,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "D2"
+            ],
+            "setup_length": 1,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "L"
+            ],
+            "setup_length": 1,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "L2"
+            ],
+            "setup_length": 1,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "L'"
+            ],
+            "setup_length": 1,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "F2"
+            ],
+            "setup_length": 1,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          },
+          {
+            "setup_moves": [
+              "B2"
+            ],
+            "setup_length": 1,
+            "bad_corners": 0,
+            "bad_slice_edges": 1,
+            "substate_label": "DR-0C1E",
+            "hits_named_trigger": false
+          }
+        ],
+        "note": "BFS depth \u22645 over EO-preserving moves on axis RL; explored 32345 unique states. Each option reports `bad_corners` (corners with U/D sticker on the wrong face) and `bad_slice_edges` (E-slice edges in the wrong slice). These are state-readable counts \u2014 what you'd count yourself off the cube \u2014 NOT a distance-to-DR oracle. Sorted by total bad pieces ascending (ties: shorter setup first). Two states with the same bad-piece count can have very different actual move-to-DR distance; use the substate_label to judge which one you'd rather land in. If hits_named_trigger=true, applying trigger_moves from this state reaches DR. Otherwise: apply your chosen setup via apply_moves, then call dr_progress_options again from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3147.4,
+          "sim_fraction_left": 0.982,
+          "wall_remaining_s": 809.6,
+          "tool_calls_remaining": 139,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 57.29,
+      "wall_s_elapsed": 90.37,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 9,
+          "undo_available": 9
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 12,
+      "wall_s_elapsed": 98.46,
+      "turn_wall_s": 8.09,
+      "input_tokens": 1573,
+      "output_tokens": 438,
+      "cache_read_tokens": 33854,
+      "cache_create_tokens": 1843,
+      "content": [
+        {
+          "signature": "EtAGCmMIDRgCKkArpCcd7xMmPQLeYYeq057oaRVRz/G8TE7CX9PaS1BKSmBTSkC0/zTrCm6DbeaS+KSgcVgYKQWYQZdtmPrCWlM3Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDBJI/18Nd8RJNOX7QRoMTZBeyxQ7ipnNumXCIjD5Wo4k6/7GZzVRrqtjvozXXOpR8zr3PcngqacYGvJ5Vwmu0q3twETLUrYt+nQGth0qmgVYELzXkIjNdl7yoBgxoEF7iv7v111xBpzv80PpqkxpYsygkni/sNk9LZB9oO9qqONR+3yFCwXT4Vt5Buj+kaglDp8ZoPF5Eqg2VhThknoKcnnpI+QaxeEYE6dluROYrjCj35c1erSwD6eYiM+pyuQgSrGO7S5JrVOtkYmicHq3t+TIqGNvi4yb7fG0c7jNXceRWcq0ncNdaSSXV0NDVcJtDAGTVtV7sZ0YggvOaxPjFPlvOyOsDGoddg3spLpR2+iTSsoI6j/wNvJmIRt82UJrDOZbGf7OLR7TJpf65c7NHojOL13vSks5I293WngAcEa+QV7S0Mw20o5TUU/m7Yk+4KKJAt6EjFWM2dXnSUyWt744lFL2CpraOvr8UYgjGxUXNzwxd/cZmpo/DLwiGidUdYweI+McDCwT6T5Aa1Y2UgA/JWDynmmq/9BY17+A2oxa2/bxUvc9sAjX7p6YJG3zZWszS51i8zz5++QmytZJl6I4smJBRFTn5xTH1gDxmo06o91DF/qf7rBUJQRM4r7VHJTumbBMLyFFQov/ZPNi1zQKePGgWAYbqgppuPdyZpjWbsi9zBfc4ZAQUSLsl3ehyYgU2io95xDdjDcOo+M8H8QTCjVY34HVR848ZQ5AUglpIXm+/b0yjSZhijbk00/d2RyVZY6cRFpCftdJwpJNlPVQfCVCLIYau7kKLOeWr/APerU1SB0l5Iv4Ld++Lh8/JOL5kYvkgd2ATMLVVcMDhCFiLC6lKZtTEcD7s8CbjFZHxanbtnJ20I6En5LjUvuP23vzEC558wsiwqSga9HNnT8z3fOI8pcp/Di4YlD66B3iiNKsuk3Q7L1G4JsaRMsyPJwerZJBQ3At+hy2uq/qBtWnDmfC9dqXEvMYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "DR in 5 more moves with `F U2 R2 D2 B`. Same as prior \u2014 committing, then I'll focus on optimizing HTR this time.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01Td87TqM9kBkVFmaQYdW8p1",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "F",
+              "U2",
+              "R2",
+              "D2",
+              "B"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 12,
+      "tool_index": 12,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B"
+        ],
+        "move_count": 14,
+        "undo_available": 14,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3146.9,
+          "sim_fraction_left": 0.982,
+          "wall_remaining_s": 801.5,
+          "tool_calls_remaining": 138,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 57.79,
+      "wall_s_elapsed": 98.46,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 14,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 13,
+      "wall_s_elapsed": 100.49,
+      "turn_wall_s": 2.03,
+      "input_tokens": 1786,
+      "output_tokens": 89,
+      "cache_read_tokens": 35804,
+      "cache_create_tokens": 303,
+      "content": [
+        {
+          "id": "toolu_01LcyLKro93Vokw6Py73kmZS",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL"
+          },
+          "name": "htr_classify",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 13,
+      "tool_index": 13,
+      "name": "htr_classify",
+      "input": {
+        "slot": "main",
+        "axis": "RL"
+      },
+      "result": {
+        "subset_canonical": [
+          0,
+          2,
+          1,
+          5,
+          3,
+          7,
+          4,
+          6
+        ],
+        "subset_name": "2-swap long-cycle",
+        "subset_family": "long-cycle",
+        "structural": {
+          "swap_count": 2,
+          "axial_count": 1,
+          "perm_parity": 1,
+          "cycle_structure": [
+            5,
+            2,
+            1
+          ]
+        },
+        "axis": "RL",
+        "phases": {
+          "htr_reduction": {
+            "length": 9,
+            "description": "DR -> HTR-corner-subgroup; quarter-turn corners on the axis (or empty if already in HTR)."
+          },
+          "finish": {
+            "length": 11,
+            "description": "HTR -> solved; half-turn only."
+          }
+        },
+        "total_length": 20,
+        "cached": true,
+        "note": "Subset is 2-swap long-cycle (cycles=[5, 2, 1]). Apply with apply_htr_phase(phase='htr_reduction') then apply_htr_phase(phase='finish'). Recall (cached).",
+        "_meta": {
+          "sim_remaining_s": 3145.9,
+          "sim_fraction_left": 0.982,
+          "wall_remaining_s": 799.3,
+          "tool_calls_remaining": 137,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 58.79,
+      "wall_s_elapsed": 100.68,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 14,
+          "undo_available": 14
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 14,
+      "wall_s_elapsed": 109.74,
+      "turn_wall_s": 9.06,
+      "input_tokens": 786,
+      "output_tokens": 573,
+      "cache_read_tokens": 36244,
+      "cache_create_tokens": 1357,
+      "content": [
+        {
+          "signature": "ErIJCmMIDRgCKkCiEEAve3LIqgIVcRefgolfwHscf5KPwdeA9Iwaa1xtrYJkmPsNJsSvYRGG6qi26HF2KYwEfcLmeVUzMdzTrZL2Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDHTReK7+nMI9oDGXDxoMjtpS1TbNznjNzABoIjANegTsOLewvCGFDyAgJhyZonSb4D++I5kWXK1ENIS3fTZcvBPEZgJsUSSQ0OXcPn4q/AePC0/yPtGUb+Z+xDZzIhP+U9yMafNwdIYmZUGvaHaQpUUZgsLVVXZATOK7W89mAcGhzIZfvH2K6k5v7i4A+Owhg+MJ1ZmnsiVgn2Ga1IRjZkZZCMSs77u/qn0NIeVlNGC6XSqaDc3OXJtujygU0s4CjxkDFYBKTgkCvIvVtkk28OVA0vsP5EJ4tRe2Syi/rZ70nPJq3D5q1+UbD4KbloTK9uUl+frPEBQURdLARgF4ekhOoa0EeThPZnbY3FjtL8BAil78g8kYV8/RcdCmsBZfN4xC0krs86NIz16ImIPzYzkmCUVxkQTKQ0dK3eAMnNcONxWcLl2eIlR+WBnUcQyebxKNv4GwFPNXL8cmLaugXJOqbFa1h5BiaU42hwhrcTHSO1NS1gIhjvwx9yHJqSeLquF509/yNXZ7Zzm7GOvD44KTg+Ytn7kmEgnmCyXYtJVSMT7EdMO3jSvauWuFf8CvVIBJtE+/sZJQOIlXgRH2wPfLNmi4RPaZmT9yRKbyGmGziMLuEnlRF6+H7idSPxd7wXGMjP4Otx+altJ4nO4D5tHl1JdhfBNtZ+KKebvfkFDeOhsw7MpCRxnDjl4oJrGmcQNkGdfGkWOjizHQhQASKleiewy8bWDXoR97oMSEb6opW2l+zUPlEyGZzMvcKya3T6WBrYBKmlfXccsEdFua0pIvToI4MHf/7YkBKYHAz6Y7A88MyfbaSY5T3CNoMbNZ68hrlsi6XfafagAz6Nb2LtNjLrri773IXGAEmw0YSMhwdx0X1lJ799U7pnEv04M4iTIU1jFyU9VgWsVheeve7mO25qvnFTpFmMelu+uhSAJtRW1qpGTbdqsI5j+jAkMiKJz65yaUhMTgtKjr120zKgiMB1jOt53hY7PMefhiDuvF9eNkH1xdrcZq63y/hBfdZyEojLlBtyTtr32YDFNtCUaM+NYRMtTDJCZt2WsilpynjeTd44rYdw3CG9t6juZz8J9EYUpo3cy+17UVhpLCwCKXbP0pMUzuGxxueNhXC1vLsr3FeOjTEjpiQf0UbqEEUu9yYoll2bychriITFjNy0AamHuYdB+/yg/O3DAdxPUOyqAnQWeRGfbOjew6qxlv3DaxOa1D0DY2T/pIa1BWLuGbpB4C7daJswLQhjNuAiIIc/voN8oizjHUlTLdvo+9wVVwKAe+QFdgKq+jmUSsPBWpP6xC8fFUR13cOGd0uciHdgrcSM67JegNaaoB5eTI8fYCAQil4ckmtmP/nvSaTWroAmAP/KlOYZdGOzBF8Hu8RMfxRQFvgXgElm4WwVRuFBussj4+8R4STP08yvKiHCzosrza+0JzNEuhf23ykFjI3755WBswC3ryTeAYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Same subset as prior: 2-swap long-cycle, 20 moves to solve. Let me run the HTR reduction and check for shortcuts between chunks.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01G9nHzswq6Xd4YtWdQ9w8hU",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 14,
+      "tool_index": 14,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "RL",
+        "moves": [
+          "U2",
+          "R'",
+          "U2",
+          "R'"
+        ],
+        "length": 4,
+        "full_phase_length": 9,
+        "partial": true,
+        "note": "htr_reduction: 9 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3144.9,
+          "sim_fraction_left": 0.981,
+          "wall_remaining_s": 789.8,
+          "tool_calls_remaining": 136,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 59.79,
+      "wall_s_elapsed": 110.24,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B"
+          ],
+          "on_inverse": true,
+          "move_count": 14,
+          "undo_available": 14
+        }
+      }
+    }
+  ],
+  "input_tokens": 28816,
+  "output_tokens": 6277,
+  "cache_read_tokens": 391123,
+  "cache_create_tokens": 24141,
+  "per_turn_usage": [
+    {
+      "turn": 1,
+      "wall_s_elapsed": 7.57,
+      "turn_wall_s": 7.57,
+      "sim_spent_at_turn": 0.0,
+      "input_tokens": 4922,
+      "output_tokens": 460,
+      "cache_read_tokens": 18682,
+      "cache_create_tokens": 0,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 2,
+      "wall_s_elapsed": 13.4,
+      "turn_wall_s": 5.83,
+      "sim_spent_at_turn": 5.0,
+      "input_tokens": 866,
+      "output_tokens": 326,
+      "cache_read_tokens": 18682,
+      "cache_create_tokens": 5315,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 3,
+      "wall_s_elapsed": 15.21,
+      "turn_wall_s": 1.81,
+      "sim_spent_at_turn": 7.0,
+      "input_tokens": 1719,
+      "output_tokens": 95,
+      "cache_read_tokens": 18682,
+      "cache_create_tokens": 5315,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 4,
+      "wall_s_elapsed": 19.97,
+      "turn_wall_s": 4.76,
+      "sim_spent_at_turn": 8.5,
+      "input_tokens": 2272,
+      "output_tokens": 227,
+      "cache_read_tokens": 24064,
+      "cache_create_tokens": 1058,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 5,
+      "wall_s_elapsed": 30.26,
+      "turn_wall_s": 10.28,
+      "sim_spent_at_turn": 10.0,
+      "input_tokens": 3402,
+      "output_tokens": 623,
+      "cache_read_tokens": 25189,
+      "cache_create_tokens": 622,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 6,
+      "wall_s_elapsed": 34.9,
+      "turn_wall_s": 4.64,
+      "sim_spent_at_turn": 10.2,
+      "input_tokens": 2357,
+      "output_tokens": 192,
+      "cache_read_tokens": 25715,
+      "cache_create_tokens": 1906,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 7,
+      "wall_s_elapsed": 66.56,
+      "turn_wall_s": 30.96,
+      "sim_spent_at_turn": 17.07,
+      "input_tokens": 1539,
+      "output_tokens": 2000,
+      "cache_read_tokens": 27393,
+      "cache_create_tokens": 2346,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 8,
+      "wall_s_elapsed": 69.72,
+      "turn_wall_s": 3.16,
+      "sim_spent_at_turn": 20.07,
+      "input_tokens": 3498,
+      "output_tokens": 168,
+      "cache_read_tokens": 29836,
+      "cache_create_tokens": 197,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 9,
+      "wall_s_elapsed": 72.05,
+      "turn_wall_s": 2.33,
+      "sim_spent_at_turn": 20.47,
+      "input_tokens": 688,
+      "output_tokens": 136,
+      "cache_read_tokens": 30170,
+      "cache_create_tokens": 2997,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 10,
+      "wall_s_elapsed": 83.98,
+      "turn_wall_s": 9.68,
+      "sim_spent_at_turn": 44.09,
+      "input_tokens": 1428,
+      "output_tokens": 677,
+      "cache_read_tokens": 33278,
+      "cache_create_tokens": 421,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 11,
+      "wall_s_elapsed": 89.41,
+      "turn_wall_s": 5.43,
+      "sim_spent_at_turn": 44.59,
+      "input_tokens": 1980,
+      "output_tokens": 273,
+      "cache_read_tokens": 33530,
+      "cache_create_tokens": 461,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 12,
+      "wall_s_elapsed": 98.46,
+      "turn_wall_s": 8.09,
+      "sim_spent_at_turn": 57.29,
+      "input_tokens": 1573,
+      "output_tokens": 438,
+      "cache_read_tokens": 33854,
+      "cache_create_tokens": 1843,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 13,
+      "wall_s_elapsed": 100.49,
+      "turn_wall_s": 2.03,
+      "sim_spent_at_turn": 57.79,
+      "input_tokens": 1786,
+      "output_tokens": 89,
+      "cache_read_tokens": 35804,
+      "cache_create_tokens": 303,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 14,
+      "wall_s_elapsed": 109.74,
+      "turn_wall_s": 9.06,
+      "sim_spent_at_turn": 58.79,
+      "input_tokens": 786,
+      "output_tokens": 573,
+      "cache_read_tokens": 36244,
+      "cache_create_tokens": 1357,
+      "stop_reason": "tool_use"
+    }
+  ],
+  "cost_estimate_usd": 0.3885
+}
