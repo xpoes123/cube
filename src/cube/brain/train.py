@@ -228,14 +228,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--val-frac", type=float, default=0.05)
     parser.add_argument("--device", default=None)
+    parser.add_argument("--axis", choices=["UD", "FB", "RL"], default=None,
+                        help="v35: per-axis training. Reads "
+                             "{step}_{axis}.jsonl, writes brain_{step}_{axis}.pt. "
+                             "If unset, falls back to legacy {step}.jsonl and "
+                             "brain_{step}.pt (v4 UD-only behavior).")
     args = parser.parse_args(argv)
 
-    jsonl = args.data_dir / f"{args.step}.jsonl"
+    if args.axis:
+        jsonl = args.data_dir / f"{args.step}_{args.axis}.jsonl"
+        out_path = args.out_dir / f"brain_{args.step}_{args.axis}.pt"
+    else:
+        jsonl = args.data_dir / f"{args.step}.jsonl"
+        out_path = args.out_dir / f"brain_{args.step}.pt"
     if not jsonl.exists():
         print(f"error: {jsonl} not found. Run gen_training_data first.", file=sys.stderr)
         return 2
-
-    out_path = args.out_dir / f"brain_{args.step}.pt"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     summary = train_one_step(
         args.step, jsonl,
         out_path=out_path,

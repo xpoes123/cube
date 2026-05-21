@@ -159,28 +159,30 @@ class StepDatum:
     optimal_length: int
 
 
+_PIPELINE_BY_AXIS = {
+    "UD": [("eo", "eoud"), ("dr", "drud"), ("htr", "htr-drud"), ("finish", "htrfin")],
+    "FB": [("eo", "eofb"), ("dr", "drfb"), ("htr", "htr-drfb"), ("finish", "htrfin")],
+    "RL": [("eo", "eorl"), ("dr", "drrl"), ("htr", "htr-drrl"), ("finish", "htrfin")],
+}
+
+
 def full_pipeline(
     scramble: list[str], *, n_solutions: int = 50, timeout_s: float = 60.0,
+    axis: str = "UD",
 ) -> list[StepDatum]:
-    """Walk a scramble through eoud → drud → htr-drud → htrfin via nissy,
-    capturing the (state, optimal-move-distribution) datum at EACH step.
+    """Walk a scramble through eo<axis> → dr<axis> → htr-dr<axis> → htrfin.
+
+    `axis` selects which DR axis the pipeline targets. UD is the canonical
+    default; FB and RL produce data for non-UD agent workflows.
 
     Returns 4 StepDatum (or fewer if some step is already solved). The
     chosen_optimal for each step is appended to prior_moves before the
     next step query — this gives us the cascaded state.
-
-    Note: this only captures the TOP-LEVEL state per step (the state at
-    the moment the step starts). For richer training data, `gen_training_data.py`
-    will additionally unroll each step's optimal solution to extract
-    every intermediate (state, optimal_move) pair.
     """
+    if axis not in _PIPELINE_BY_AXIS:
+        raise ValueError(f"axis must be UD/FB/RL; got {axis!r}")
     out: list[StepDatum] = []
-    pipeline = [
-        ("eo", "eoud"),
-        ("dr", "drud"),
-        ("htr", "htr-drud"),
-        ("finish", "htrfin"),
-    ]
+    pipeline = _PIPELINE_BY_AXIS[axis]
     cumulative: list[str] = []
     for step_name, nissy_step in pipeline:
         # Pass scramble + cumulative-prior-step-moves to nissy.

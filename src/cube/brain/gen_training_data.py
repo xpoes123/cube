@@ -129,6 +129,7 @@ def datums_from_scramble(
     *,
     n_optimal: int = 50,
     timeout_s: float = 60.0,
+    axis: str = "UD",
 ) -> list[TrainingDatum]:
     """Walk one scramble through the 4-step pipeline and emit training data.
 
@@ -141,7 +142,7 @@ def datums_from_scramble(
     out: list[TrainingDatum] = []
     cumulative: list[str] = []  # moves so far on the scramble
     # Walk through nissy pipeline to get optimal solutions
-    pipeline = full_pipeline(scramble, n_solutions=n_optimal, timeout_s=timeout_s)
+    pipeline = full_pipeline(scramble, n_solutions=n_optimal, timeout_s=timeout_s, axis=axis)
     for datum in pipeline:
         step_name = datum.step_name
         # State at the START of this step
@@ -180,9 +181,13 @@ def datums_from_scramble(
     return out
 
 
-def _open_writers(out_dir: Path) -> dict[str, "object"]:
+def _open_writers(out_dir: Path, axis: str = "UD") -> dict[str, "object"]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    return {step: (out_dir / f"{step}.jsonl").open("a") for step in _STEP_TO_NISSY}
+    # v35: per-axis training output: eo_UD.jsonl, dr_FB.jsonl, etc.
+    return {
+        step: (out_dir / f"{step}_{axis}.jsonl").open("a")
+        for step in _STEP_TO_NISSY
+    }
 
 
 def _close_writers(writers: dict) -> None:
@@ -190,11 +195,11 @@ def _close_writers(writers: dict) -> None:
         w.close()
 
 
-def _worker_one(args: tuple[list[str], int]) -> list[dict]:
+def _worker_one(args: tuple[list[str], int, str]) -> list[dict]:
     """Multiprocessing worker — solves one scramble, returns serializable datums."""
-    scramble, n_optimal = args
+    scramble, n_optimal, axis = args
     try:
-        datums = datums_from_scramble(scramble, n_optimal=n_optimal)
+        datums = datums_from_scramble(scramble, n_optimal=n_optimal, axis=axis)
     except Exception:
         return []
     return [d.to_json() for d in datums]
@@ -209,20 +214,21 @@ def generate_corpus(
     verbose: bool = True,
     progress_every: int = 100,
     workers: int = 1,
+    axis: str = "UD",
 ) -> dict[str, int]:
     """Generate a per-step JSONL corpus of training data.
 
     Returns counts of records written per step.
     """
     rng = random.Random(seed)
-    writers = _open_writers(out_dir)
+    writers = _open_writers(out_dir, axis=axis)
     counts = {step: 0 for step in _STEP_TO_NISSY}
     t0 = time.time()
     scrambles = [_random_scramble(rng) for _ in range(n_scrambles)]
     try:
         if workers > 1:
             # Parallel path. Pool unordered for max throughput.
-            args = [(s, n_optimal) for s in scrambles]
+            args = [(s, n_optimal, axis) for s in scrambles]
             with mp.Pool(workers) as pool:
                 for i, datums_json in enumerate(pool.imap_unordered(_worker_one, args, chunksize=4)):
                     for d_json in datums_json:
@@ -239,7 +245,7 @@ def generate_corpus(
         for i in range(n_scrambles):
             scramble = scrambles[i]
             try:
-                datums = datums_from_scramble(scramble, n_optimal=n_optimal)
+                datums = datums_from_scramble(scramble, n_optimal=n_optimal, axis=axis)
             except Exception as e:
                 if verbose:
                     print(f"  scramble {i}: failed ({type(e).__name__}: {e})", file=sys.stderr)
@@ -268,13 +274,17 @@ def main(argv: list[str] | None = None) -> int:
                         help="Cap on optimal-solutions to enumerate per soft target.")
     parser.add_argument("--workers", type=int, default=1,
                         help="Parallel worker processes (uses multiprocessing.Pool).")
+    parser.add_argument("--axis", choices=["UD", "FB", "RL"], default="UD",
+                        help="v35: which DR axis to target. Outputs to "
+                             "{step}_{axis}.jsonl. Default UD matches v4 brain.")
     args = parser.parse_args(argv)
 
-    print(f"Generating brain training data: n={args.n} workers={args.workers} → {args.out}", file=sys.stderr)
+    print(f"Generating brain training data: n={args.n} workers={args.workers} axis={args.axis} → {args.out}", file=sys.stderr)
     t0 = time.time()
     counts = generate_corpus(
         args.n, args.out, seed=args.seed,
         n_optimal=args.n_optimal, verbose=True, workers=args.workers,
+        axis=args.axis,
     )
     elapsed = time.time() - t0
     print(f"\nDone in {elapsed:.1f}s. Records per step:", file=sys.stderr)
