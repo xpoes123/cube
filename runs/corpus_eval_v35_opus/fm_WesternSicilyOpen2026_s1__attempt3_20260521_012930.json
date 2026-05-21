@@ -30,11 +30,11 @@
   "final_solution": [],
   "solves": false,
   "total_moves": 0,
-  "tool_calls": 14,
+  "tool_calls": 33,
   "halt_reason": null,
-  "sim_spent": 59.79,
+  "sim_spent": 105.79,
   "sim_budget": 3204.72,
-  "wall_elapsed_s": 110.2,
+  "wall_elapsed_s": 186.2,
   "budget_events": [
     {
       "kind": "inspect_state",
@@ -149,6 +149,125 @@
       "slot": "main",
       "axis": "RL",
       "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 60.19,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 61.19,
+      "slot": "main",
+      "axis": "RL",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 61.59,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 62.59,
+      "slot": "main",
+      "axis": "RL",
+      "phase": "htr_reduction"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.1,
+      "sim_spent_after": 62.69,
+      "slot": "main",
+      "n": 1
+    },
+    {
+      "kind": "analyze_residual",
+      "cost": 2.0,
+      "sim_spent_after": 64.69,
+      "slot": "main"
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 65.69,
+      "slot": "main",
+      "axis": "RL",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 66.09,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "analyze_residual",
+      "cost": 2.0,
+      "sim_spent_after": 68.09,
+      "slot": "main"
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 69.09,
+      "slot": "main",
+      "axis": "RL",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.4,
+      "sim_spent_after": 69.49,
+      "slot": "main",
+      "n": 4
+    },
+    {
+      "kind": "analyze_residual",
+      "cost": 2.0,
+      "sim_spent_after": 71.49,
+      "slot": "main"
+    },
+    {
+      "kind": "apply_htr_phase",
+      "cost": 1.0,
+      "sim_spent_after": 72.49,
+      "slot": "main",
+      "axis": "RL",
+      "phase": "finish"
+    },
+    {
+      "kind": "apply_moves",
+      "cost": 0.3,
+      "sim_spent_after": 72.79,
+      "slot": "main",
+      "n": 3
+    },
+    {
+      "kind": "replace_and_shorten",
+      "cost": 30.0,
+      "sim_spent_after": 102.79,
+      "slot": "main"
+    },
+    {
+      "kind": "compose_niss_solution",
+      "cost": 1.0,
+      "sim_spent_after": 103.79,
+      "slot": "main"
+    },
+    {
+      "kind": "bookmark_fork",
+      "cost": 2.0,
+      "sim_spent_after": 105.79,
+      "slot": "main",
+      "name": "safety-34"
     }
   ],
   "slots_final": {
@@ -167,14 +286,76 @@
         "U2",
         "R2",
         "D2",
-        "B"
+        "B",
+        "U2",
+        "R'",
+        "U2",
+        "R'",
+        "D2",
+        "R2",
+        "U2",
+        "F2",
+        "L",
+        "U2",
+        "R2",
+        "U2",
+        "F2",
+        "R2",
+        "B2",
+        "U2",
+        "B2",
+        "U2",
+        "F2",
+        "R2"
       ],
       "on_inverse": true,
-      "move_count": 14,
-      "undo_available": 14
+      "move_count": 34,
+      "undo_available": 34
     }
   },
-  "bookmarks": {},
+  "bookmarks": {
+    "safety-34": {
+      "slot": "main",
+      "history": [
+        "R2",
+        "D'",
+        "U2",
+        "L",
+        "U2",
+        "L'",
+        "F2",
+        "L",
+        "B",
+        "F",
+        "U2",
+        "R2",
+        "D2",
+        "B",
+        "U2",
+        "R'",
+        "U2",
+        "R'",
+        "D2",
+        "R2",
+        "U2",
+        "F2",
+        "L",
+        "U2",
+        "R2",
+        "U2",
+        "F2",
+        "R2",
+        "B2",
+        "U2",
+        "B2",
+        "U2",
+        "F2",
+        "R2"
+      ],
+      "on_inverse": true,
+      "description": "verified 34-move solve, inverse frame, original DR via U2 L U2 B"
+    }
+  },
   "transcript": [
     {
       "type": "system",
@@ -2337,12 +2518,2113 @@
           "undo_available": 14
         }
       }
+    },
+    {
+      "type": "assistant",
+      "turn": 15,
+      "wall_s_elapsed": 113.65,
+      "turn_wall_s": 3.41,
+      "input_tokens": 1191,
+      "output_tokens": 104,
+      "cache_read_tokens": 37708,
+      "cache_create_tokens": 274,
+      "content": [
+        {
+          "id": "toolu_01YDjaDjWTi6m6YmDpBR7Bs4",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "R'",
+              "U2",
+              "R'"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 15,
+      "tool_index": 15,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "R'",
+          "U2",
+          "R'"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B",
+          "U2",
+          "R'",
+          "U2",
+          "R'"
+        ],
+        "move_count": 18,
+        "undo_available": 18,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3144.5,
+          "sim_fraction_left": 0.981,
+          "wall_remaining_s": 786.4,
+          "tool_calls_remaining": 135,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 60.19,
+      "wall_s_elapsed": 113.65,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 18
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 16,
+      "wall_s_elapsed": 115.97,
+      "turn_wall_s": 2.32,
+      "input_tokens": 638,
+      "output_tokens": 65,
+      "cache_read_tokens": 37892,
+      "cache_create_tokens": 948,
+      "content": [
+        {
+          "id": "toolu_017weYH8Zz86pEU9qpPEpKSF",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 16,
+      "tool_index": 16,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": false,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": false,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": false,
+          "FB": false,
+          "RL": true
+        },
+        "is_htr_ud": false,
+        "on_inverse": true,
+        "moves_in_history": 18,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 3144.5,
+          "sim_fraction_left": 0.981,
+          "wall_remaining_s": 784.0,
+          "tool_calls_remaining": 134,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 60.19,
+      "wall_s_elapsed": 115.97,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 18
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 17,
+      "wall_s_elapsed": 118.43,
+      "turn_wall_s": 2.46,
+      "input_tokens": 486,
+      "output_tokens": 119,
+      "cache_read_tokens": 38960,
+      "cache_create_tokens": 317,
+      "content": [
+        {
+          "id": "toolu_01315RftQLPvVLfB7u27eQM8",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 17,
+      "tool_index": 17,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "RL",
+        "moves": [
+          "D2",
+          "R2",
+          "U2",
+          "F2"
+        ],
+        "length": 4,
+        "full_phase_length": 5,
+        "partial": true,
+        "note": "htr_reduction: 5 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3143.5,
+          "sim_fraction_left": 0.981,
+          "wall_remaining_s": 781.5,
+          "tool_calls_remaining": 133,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 61.19,
+      "wall_s_elapsed": 118.48,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'"
+          ],
+          "on_inverse": true,
+          "move_count": 18,
+          "undo_available": 18
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 18,
+      "wall_s_elapsed": 120.66,
+      "turn_wall_s": 2.17,
+      "input_tokens": 552,
+      "output_tokens": 104,
+      "cache_read_tokens": 39172,
+      "cache_create_tokens": 371,
+      "content": [
+        {
+          "id": "toolu_01HQtq7qFsuskvnx6KtkHRYv",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "D2",
+              "R2",
+              "U2",
+              "F2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 18,
+      "tool_index": 18,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "D2",
+          "R2",
+          "U2",
+          "F2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B",
+          "U2",
+          "R'",
+          "U2",
+          "R'",
+          "D2",
+          "R2",
+          "U2",
+          "F2"
+        ],
+        "move_count": 22,
+        "undo_available": 22,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3143.1,
+          "sim_fraction_left": 0.981,
+          "wall_remaining_s": 779.3,
+          "tool_calls_remaining": 132,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 61.59,
+      "wall_s_elapsed": 120.66,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 22,
+          "undo_available": 22
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 19,
+      "wall_s_elapsed": 123.61,
+      "turn_wall_s": 2.95,
+      "input_tokens": 534,
+      "output_tokens": 119,
+      "cache_read_tokens": 39477,
+      "cache_create_tokens": 405,
+      "content": [
+        {
+          "id": "toolu_017eaVdfXJs21Mng2GT6iKpa",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "phase": "htr_reduction"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 19,
+      "tool_index": 19,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "phase": "htr_reduction"
+      },
+      "result": {
+        "phase": "htr_reduction",
+        "axis": "RL",
+        "moves": [
+          "L"
+        ],
+        "length": 1,
+        "partial": false,
+        "note": "htr_reduction: 1 moves, fully in view. Apply with apply_moves.",
+        "_meta": {
+          "sim_remaining_s": 3142.1,
+          "sim_fraction_left": 0.98,
+          "wall_remaining_s": 776.4,
+          "tool_calls_remaining": 131,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 62.59,
+      "wall_s_elapsed": 123.61,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 22,
+          "undo_available": 22
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 20,
+      "wall_s_elapsed": 125.69,
+      "turn_wall_s": 2.07,
+      "input_tokens": 500,
+      "output_tokens": 91,
+      "cache_read_tokens": 39762,
+      "cache_create_tokens": 437,
+      "content": [
+        {
+          "id": "toolu_01JSQVGr2j1qGmLXLJWftEAP",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "L"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 20,
+      "tool_index": 20,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "L"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B",
+          "U2",
+          "R'",
+          "U2",
+          "R'",
+          "D2",
+          "R2",
+          "U2",
+          "F2",
+          "L"
+        ],
+        "move_count": 23,
+        "undo_available": 23,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3142.0,
+          "sim_fraction_left": 0.98,
+          "wall_remaining_s": 774.3,
+          "tool_calls_remaining": 130,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 62.69,
+      "wall_s_elapsed": 125.69,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L"
+          ],
+          "on_inverse": true,
+          "move_count": 23,
+          "undo_available": 23
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 21,
+      "wall_s_elapsed": 129.95,
+      "turn_wall_s": 4.26,
+      "input_tokens": 475,
+      "output_tokens": 189,
+      "cache_read_tokens": 40094,
+      "cache_create_tokens": 441,
+      "content": [
+        {
+          "signature": "Es4CCmMIDRgCKkCdZv5od1gGqTg7Gbed6Qxv0NMB9+U9+FARIvE90xJVEs9rpNzEHQIv9ujWCY6AbAxDEWAs/cpXUwTF7WUbKyZaMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDHYSa7XfswiNz8J/lxoMs2+os4bA/rVm34/4IjBIzpfiHZj5NXWOZatWAWQoxxPUbuUAc/+81YwttrzYqOjar5JmRpQFktNuqkvuiR0qmAFBneNjaeBG7yGwQlOlu3lSl0zaJfddfMhjub9F+XS5MhUnXvrWGA/wjwhWtarFUF1Oqy2THtOmu9OvytihuVg4qHnrNj51Zy8qjC4+ONpbFpKKuAKNpR6Bma78t7AsGNQ7qyCpVz7FQGo9b+1UkmxTiddmTfpZiRIDTPpgPblOUlQovxx7TJQko+kgcxdH5nkS2HlvqcrMtBgB",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "In HTR at 23 moves. Let me check the residual before running finish \u2014 maybe a 3-cycle insertion is shorter than the 11-move finish.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01JfBQpPopw9HgZWbA1xeDih",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "analyze_residual",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 21,
+      "tool_index": 21,
+      "name": "analyze_residual",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "residual_class": "mixed",
+        "corner_perm_cycles": [
+          [
+            "URF",
+            "DRB",
+            "DLF",
+            "ULB"
+          ],
+          [
+            "UFL",
+            "DBL",
+            "DFR",
+            "UBR"
+          ]
+        ],
+        "edge_perm_cycles": [
+          [
+            "UL",
+            "DR"
+          ],
+          [
+            "UB",
+            "DF",
+            "DB"
+          ],
+          [
+            "FR",
+            "FL"
+          ]
+        ],
+        "corner_twists": [],
+        "edge_flips": [],
+        "is_solved": false,
+        "is_pure_corner_3cycle": false,
+        "is_pure_edge_3cycle": false,
+        "num_corners_unsolved": 8,
+        "num_edges_unsolved": 7,
+        "num_pieces_unsolved": 15,
+        "_meta": {
+          "sim_remaining_s": 3140.0,
+          "sim_fraction_left": 0.98,
+          "wall_remaining_s": 770.0,
+          "tool_calls_remaining": 129,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 64.69,
+      "wall_s_elapsed": 129.95,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L"
+          ],
+          "on_inverse": true,
+          "move_count": 23,
+          "undo_available": 23
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 22,
+      "wall_s_elapsed": 134.02,
+      "turn_wall_s": 4.06,
+      "input_tokens": 712,
+      "output_tokens": 237,
+      "cache_read_tokens": 40415,
+      "cache_create_tokens": 375,
+      "content": [
+        {
+          "signature": "EvwCCmMIDRgCKkDQYMccCGhlpwhN+TmiJGQqdsxVKRgm1YFh8L4+m+FN3d9PMDm4iVkFRjTsc2xP1bev+u8Tr+Me4clKeyjDe1mvMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDHuhL3W+0RCcgm7WgRoMnnFB2U5n6OG/rN3jIjBhKdz1BiolE6f1BRqsmz6GPE4MO3MOydzWoBLfWxlhtUaug+p7RbR7E00WfCRzvMkqxgHAkodtYK+Asbp6jm2I3Jy5awP9j+yoLlLG13YSS7gKIyQ6U9ELlwWO54pO62b2dgm7n85SY++Ljdw8LeZZXKT4mR/jweuJD6HsKQYg6o03/6kzZ+lapojdp8p0gorMOEt0SZsrHgR36Z5Wz72hdDxBYGtSbcuLHlRBQgNmNwb+l3HQSrvRjN6n7nOJYt3gnqFy+CuGqR294su5JaTEHFwM1VEqbvOrALYfE6D91d/OZbEFChiMWbkgI3hhKcd19ijiRNJYVVcYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Mixed residual, no clean insertion. Running finish, checking between chunks.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01ToXDNtZMSymx8L5pipiune",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 22,
+      "tool_index": 22,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "RL",
+        "moves": [
+          "U2",
+          "R2",
+          "U2",
+          "F2"
+        ],
+        "length": 4,
+        "full_phase_length": 11,
+        "partial": true,
+        "note": "finish: 11 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3139.0,
+          "sim_fraction_left": 0.98,
+          "wall_remaining_s": 766.0,
+          "tool_calls_remaining": 128,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 65.69,
+      "wall_s_elapsed": 134.02,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L"
+          ],
+          "on_inverse": true,
+          "move_count": 23,
+          "undo_available": 23
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 23,
+      "wall_s_elapsed": 136.45,
+      "turn_wall_s": 2.43,
+      "input_tokens": 813,
+      "output_tokens": 104,
+      "cache_read_tokens": 40698,
+      "cache_create_tokens": 433,
+      "content": [
+        {
+          "id": "toolu_01MGM447CFfGtgjzNeLEQcXt",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "R2",
+              "U2",
+              "F2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 23,
+      "tool_index": 23,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "R2",
+          "U2",
+          "F2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B",
+          "U2",
+          "R'",
+          "U2",
+          "R'",
+          "D2",
+          "R2",
+          "U2",
+          "F2",
+          "L",
+          "U2",
+          "R2",
+          "U2",
+          "F2"
+        ],
+        "move_count": 27,
+        "undo_available": 27,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3138.6,
+          "sim_fraction_left": 0.979,
+          "wall_remaining_s": 763.6,
+          "tool_calls_remaining": 127,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 66.09,
+      "wall_s_elapsed": 136.45,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 24,
+      "wall_s_elapsed": 138.38,
+      "turn_wall_s": 1.93,
+      "input_tokens": 661,
+      "output_tokens": 67,
+      "cache_read_tokens": 41199,
+      "cache_create_tokens": 424,
+      "content": [
+        {
+          "id": "toolu_013oUwoPXRTt6MobkepzVD7G",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "analyze_residual",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 24,
+      "tool_index": 24,
+      "name": "analyze_residual",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "residual_class": "mixed",
+        "corner_perm_cycles": [
+          [
+            "URF",
+            "ULB",
+            "DLF",
+            "DRB"
+          ],
+          [
+            "UFL",
+            "DBL",
+            "DFR",
+            "UBR"
+          ]
+        ],
+        "edge_perm_cycles": [
+          [
+            "UF",
+            "DB",
+            "UB",
+            "DF"
+          ],
+          [
+            "FL",
+            "BR"
+          ]
+        ],
+        "corner_twists": [],
+        "edge_flips": [],
+        "is_solved": false,
+        "is_pure_corner_3cycle": false,
+        "is_pure_edge_3cycle": false,
+        "num_corners_unsolved": 8,
+        "num_edges_unsolved": 6,
+        "num_pieces_unsolved": 14,
+        "_meta": {
+          "sim_remaining_s": 3136.6,
+          "sim_fraction_left": 0.979,
+          "wall_remaining_s": 761.6,
+          "tool_calls_remaining": 126,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 68.09,
+      "wall_s_elapsed": 138.38,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 25,
+      "wall_s_elapsed": 141.12,
+      "turn_wall_s": 2.74,
+      "input_tokens": 600,
+      "output_tokens": 153,
+      "cache_read_tokens": 41739,
+      "cache_create_tokens": 309,
+      "content": [
+        {
+          "signature": "EuoBCmMIDRgCKkBnS5/7/EC5z8YixMV9gN/iSAw+dZHTZthO/485JhK1V1AwB/AsZzD4J07V3TMK60St+pFVaiMGFywx3uaNzzTCMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDNFSDhAbbYiNT4f7whoM12XddZMmnS+lmBWCIjD3d9u+XR49kj66Hnv/2VjniIEzdF+BudSvBtgH1aHNVEdZtvxC3TO+Vr5FGKU7lo0qNe75V6irgl2wYC6wX3O3284Bncu4CbeGr5c5pAu/Sn44xJSZfTOdKA4L9RAyoHqivtX5ghJzGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01Va1obLgXeRHvLwq6tks4BM",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 25,
+      "tool_index": 25,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "RL",
+        "moves": [
+          "R2",
+          "B2",
+          "U2",
+          "B2"
+        ],
+        "length": 4,
+        "full_phase_length": 7,
+        "partial": true,
+        "note": "finish: 7 moves total, but only 4 fit in your visualization. Apply this chunk, then re-query to see the next 4 moves from the new state.",
+        "_meta": {
+          "sim_remaining_s": 3135.6,
+          "sim_fraction_left": 0.978,
+          "wall_remaining_s": 758.9,
+          "tool_calls_remaining": 125,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 69.09,
+      "wall_s_elapsed": 141.12,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2"
+          ],
+          "on_inverse": true,
+          "move_count": 27,
+          "undo_available": 27
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 26,
+      "wall_s_elapsed": 143.97,
+      "turn_wall_s": 2.84,
+      "input_tokens": 655,
+      "output_tokens": 104,
+      "cache_read_tokens": 41943,
+      "cache_create_tokens": 408,
+      "content": [
+        {
+          "id": "toolu_01N2V8J5NDfdh9a7N7VS14HN",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "R2",
+              "B2",
+              "U2",
+              "B2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 26,
+      "tool_index": 26,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "R2",
+          "B2",
+          "U2",
+          "B2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B",
+          "U2",
+          "R'",
+          "U2",
+          "R'",
+          "D2",
+          "R2",
+          "U2",
+          "F2",
+          "L",
+          "U2",
+          "R2",
+          "U2",
+          "F2",
+          "R2",
+          "B2",
+          "U2",
+          "B2"
+        ],
+        "move_count": 31,
+        "undo_available": 31,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3135.2,
+          "sim_fraction_left": 0.978,
+          "wall_remaining_s": 756.0,
+          "tool_calls_remaining": 124,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 69.49,
+      "wall_s_elapsed": 143.97,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2"
+          ],
+          "on_inverse": true,
+          "move_count": 31,
+          "undo_available": 31
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 27,
+      "wall_s_elapsed": 145.98,
+      "turn_wall_s": 2.0,
+      "input_tokens": 561,
+      "output_tokens": 67,
+      "cache_read_tokens": 42283,
+      "cache_create_tokens": 518,
+      "content": [
+        {
+          "id": "toolu_01PGEz6bpDXtXu6rrCC31tVy",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "analyze_residual",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 27,
+      "tool_index": 27,
+      "name": "analyze_residual",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "residual_class": "mixed",
+        "corner_perm_cycles": [
+          [
+            "URF",
+            "ULB",
+            "DLF",
+            "DRB"
+          ],
+          [
+            "UFL",
+            "DFR"
+          ]
+        ],
+        "edge_perm_cycles": [
+          [
+            "UR",
+            "UL",
+            "DR"
+          ],
+          [
+            "UF",
+            "UB",
+            "DF"
+          ],
+          [
+            "FR",
+            "FL",
+            "BR"
+          ]
+        ],
+        "corner_twists": [],
+        "edge_flips": [],
+        "is_solved": false,
+        "is_pure_corner_3cycle": false,
+        "is_pure_edge_3cycle": false,
+        "num_corners_unsolved": 6,
+        "num_edges_unsolved": 9,
+        "num_pieces_unsolved": 15,
+        "_meta": {
+          "sim_remaining_s": 3133.2,
+          "sim_fraction_left": 0.978,
+          "wall_remaining_s": 754.0,
+          "tool_calls_remaining": 123,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 71.49,
+      "wall_s_elapsed": 145.98,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2"
+          ],
+          "on_inverse": true,
+          "move_count": 31,
+          "undo_available": 31
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 28,
+      "wall_s_elapsed": 148.68,
+      "turn_wall_s": 2.7,
+      "input_tokens": 620,
+      "output_tokens": 147,
+      "cache_read_tokens": 42647,
+      "cache_create_tokens": 463,
+      "content": [
+        {
+          "signature": "EucBCmMIDRgCKkCx0xGmlBW/D3QQgXwJfH+gVZtlPE5fEpgUyJjfvELZSUn2zb2NxdUbyaLuRU32zScxyCehScapvdHuLCDNBAwCMg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDPEEMHd+TKlOLSqRqRoM5lkV7J1jU46D4DwaIjCzaGv3q+k0yAugnKhLtV3u9cCfe77ZReqbQUm7GKO6pTQP2JI4SGD0Qd+zYFqiY1IqMp3vG4VEC9RyzPddgWw28xDmo0JOFwIAz2OTCyNKt0ECzOSqmG7iAqbvdK40rRXGSy8mGAE=",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_01CqumJffM6m4hvBJetqiaLB",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "axis": "RL",
+            "phase": "finish"
+          },
+          "name": "apply_htr_phase",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 28,
+      "tool_index": 28,
+      "name": "apply_htr_phase",
+      "input": {
+        "slot": "main",
+        "axis": "RL",
+        "phase": "finish"
+      },
+      "result": {
+        "phase": "finish",
+        "axis": "RL",
+        "moves": [
+          "U2",
+          "F2",
+          "R2"
+        ],
+        "length": 3,
+        "partial": false,
+        "note": "finish: 3 moves, fully in view. Apply with apply_moves.",
+        "_meta": {
+          "sim_remaining_s": 3132.2,
+          "sim_fraction_left": 0.977,
+          "wall_remaining_s": 751.3,
+          "tool_calls_remaining": 122,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 72.49,
+      "wall_s_elapsed": 148.68,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2"
+          ],
+          "on_inverse": true,
+          "move_count": 31,
+          "undo_available": 31
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 29,
+      "wall_s_elapsed": 151.31,
+      "turn_wall_s": 2.63,
+      "input_tokens": 613,
+      "output_tokens": 100,
+      "cache_read_tokens": 43005,
+      "cache_create_tokens": 424,
+      "content": [
+        {
+          "id": "toolu_01BSiUhhVukjVhgfhrzasHCu",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "moves": [
+              "U2",
+              "F2",
+              "R2"
+            ]
+          },
+          "name": "apply_moves",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 29,
+      "tool_index": 29,
+      "name": "apply_moves",
+      "input": {
+        "slot": "main",
+        "moves": [
+          "U2",
+          "F2",
+          "R2"
+        ]
+      },
+      "result": {
+        "slot": "main",
+        "history": [
+          "R2",
+          "D'",
+          "U2",
+          "L",
+          "U2",
+          "L'",
+          "F2",
+          "L",
+          "B",
+          "F",
+          "U2",
+          "R2",
+          "D2",
+          "B",
+          "U2",
+          "R'",
+          "U2",
+          "R'",
+          "D2",
+          "R2",
+          "U2",
+          "F2",
+          "L",
+          "U2",
+          "R2",
+          "U2",
+          "F2",
+          "R2",
+          "B2",
+          "U2",
+          "B2",
+          "U2",
+          "F2",
+          "R2"
+        ],
+        "move_count": 34,
+        "undo_available": 34,
+        "auto_cancelled_saved": 0,
+        "_meta": {
+          "sim_remaining_s": 3131.9,
+          "sim_fraction_left": 0.977,
+          "wall_remaining_s": 748.7,
+          "tool_calls_remaining": 121,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 72.79,
+      "wall_s_elapsed": 151.31,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 30,
+      "wall_s_elapsed": 153.09,
+      "turn_wall_s": 1.78,
+      "input_tokens": 529,
+      "output_tokens": 65,
+      "cache_read_tokens": 43361,
+      "cache_create_tokens": 516,
+      "content": [
+        {
+          "id": "toolu_01NMyH972kwmE7K6SimtFzrv",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "quick_check",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 30,
+      "tool_index": 30,
+      "name": "quick_check",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "is_solved": true,
+        "is_eo_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_dr_per_axis": {
+          "UD": true,
+          "FB": true,
+          "RL": true
+        },
+        "is_htr_ud": true,
+        "on_inverse": true,
+        "moves_in_history": 34,
+        "note": "Free state class check \u2014 use this before reaching for analyze_residual.",
+        "_meta": {
+          "sim_remaining_s": 3131.9,
+          "sim_fraction_left": 0.977,
+          "wall_remaining_s": 746.9,
+          "tool_calls_remaining": 120,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 72.79,
+      "wall_s_elapsed": 153.09,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 31,
+      "wall_s_elapsed": 157.89,
+      "turn_wall_s": 4.8,
+      "input_tokens": 549,
+      "output_tokens": 287,
+      "cache_read_tokens": 43729,
+      "cache_create_tokens": 413,
+      "content": [
+        {
+          "signature": "EoEDCmMIDRgCKkDcvFEykfR3WwyKoz5dI4l5O2P2K5oXs5O36nwOe3EBBLYn6Oji2+GZ5u1u8USAczAIu4x7M7q60nOxAcP97Kr8Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDLXQMcwGbgKxjUbhExoM1/rF0Zq52tpvkwqeIjBU5ZS20J4CEi+oef42dkVZJ6ifxQNF8LxLC/FsT5FOyAkL3E8aE3fwX7B/HIc27vgqywEiMoEkVtlRdfImA1/UVurzZ1F+THTvjqjmVsgvE1QTlFS2YsHRwIHp7omx3fdkgw+1lROv4Bt9nU2HfpfH4iGpcYvD5NxrvDUdpYmDym1HlABAcspM8E0LD2e5jRzWCfifsS4moWhB69XeeUElAhtWut1PNIEzxcmdT/ue7Lv8QWg12j4fuRPOwDZgYPjrFAMQyqpBhDY86RZaCyEs5kTVJjAhSAE8U+T9dbJnrlpgueVrcBIFi0SjCjPS/Q5IxNlsoR+XxsyXu9NrahgB",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "Solved at 34 moves. Gates pass (\u226527 moves, 120 tool calls remaining). Mandatory r&s on a tail span.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01BbC8PgK4PiyJCHFc849rLi",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "start": 4,
+            "end": 34,
+            "axis": "RL"
+          },
+          "name": "replace_and_shorten",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 31,
+      "tool_index": 31,
+      "name": "replace_and_shorten",
+      "input": {
+        "slot": "main",
+        "start": 4,
+        "end": 34,
+        "axis": "RL"
+      },
+      "result": {
+        "error": "could not solve micro-scramble for span [4:34]: no DR found",
+        "rs_calls_used": 1,
+        "_meta": {
+          "sim_remaining_s": 3101.9,
+          "sim_fraction_left": 0.968,
+          "wall_remaining_s": 739.2,
+          "tool_calls_remaining": 119,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 102.79,
+      "wall_s_elapsed": 160.82,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 32,
+      "wall_s_elapsed": 178.82,
+      "turn_wall_s": 18.0,
+      "input_tokens": 636,
+      "output_tokens": 1079,
+      "cache_read_tokens": 44041,
+      "cache_create_tokens": 430,
+      "content": [
+        {
+          "signature": "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",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "citations": null,
+          "text": "r&s failed (no DR for span). I have 119 calls and 51 min of sim left \u2014 plenty to try an alternative DR path. Let me first lock in the verified 34 as a safety net by composing.",
+          "type": "text"
+        },
+        {
+          "id": "toolu_01U8hN2UsAtM9wwzFdCUxiBj",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main"
+          },
+          "name": "compose_niss_solution",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 32,
+      "tool_index": 32,
+      "name": "compose_niss_solution",
+      "input": {
+        "slot": "main"
+      },
+      "result": {
+        "solution": [
+          "R2",
+          "F2",
+          "U2",
+          "B2",
+          "U2",
+          "B2",
+          "R2",
+          "F2",
+          "U2",
+          "R2",
+          "U2",
+          "L'",
+          "F2",
+          "U2",
+          "R2",
+          "D2",
+          "R",
+          "U2",
+          "R",
+          "U2",
+          "B'",
+          "D2",
+          "R2",
+          "U2",
+          "F'",
+          "B'",
+          "L'",
+          "F2",
+          "L",
+          "U2",
+          "L'",
+          "U2",
+          "D",
+          "R2"
+        ],
+        "length": 34,
+        "solves": true,
+        "frame_at_compose": "inverse",
+        "note": "Submit this as FINAL_SOLUTION if you're satisfied, OR call replace_and_shorten first to see if a sub-span can be shortened (1-call cap, gated). YOU decide.",
+        "_meta": {
+          "sim_remaining_s": 3100.9,
+          "sim_fraction_left": 0.968,
+          "wall_remaining_s": 721.2,
+          "tool_calls_remaining": 118,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 103.79,
+      "wall_s_elapsed": 178.82,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
+    },
+    {
+      "type": "assistant",
+      "turn": 33,
+      "wall_s_elapsed": 186.22,
+      "turn_wall_s": 7.4,
+      "input_tokens": 1667,
+      "output_tokens": 458,
+      "cache_read_tokens": 44405,
+      "cache_create_tokens": 438,
+      "content": [
+        {
+          "signature": "EpkICmMIDRgCKkCegkOe8xlmUkgAvN/lEeZXMyqNk8oeFf76n8IhizyW4s4f0jPpd9pKwJ+lMEYZmpXjdQ65NHtkyc4c9VDZA4m6Mg9jbGF1ZGUtb3B1cy00LTc4AEIIdGhpbmtpbmcSDA/gjBPGKmecO1F58BoMetlDin6Dg/xXzSDMIjCTij/uXD8btx2ACeyMcwm+kF0m6VDVkqQPT4JHezA/vDEJ2Lc4dCHvz3RcyESBiiQq4waoEwCcbWmpSMbx8n1pvrbjfV+ZHuIGaQx/JyJVab9prhy5UQqsbMvzkvMswM0vrxFzQHgycKS0zxI481jlS3Rv5cl2iCb5pi3WxLRV+U62FjwhsZoFRNgXgqUDg43QGAvq7wJLxEiaUjk7ckBTa9HA9RvRy/eDLmv4CovJzfQYHxLb/IkeqK6lKeKCKrRA9f2KIQBkiuEPn1v1ry/RDQn1O7FZVteNFRfzh35mqbEdfb3iqpBA2x4Tfwyxi2EMC5JsXefOOkrWXInMPWv8zxNfxmbOjtdAUx8Ft2ucxflRUrCb9Sk1ngOMM/pZjASlptxY1vX0sxcrQZ2o65/zGWa02ClVVVMb99B5gl9JRbZ5liBvQsJ/wK3yWStm80QcmiwCcYHo+lm618skdObN5pH24p9iSI7WNy1owc9r6TfL0r8tLrGee9rSWQbnldLeawf3BiNQwFw3cKA/At77ftMvSHt5YwpNI0YnXtX953OU8fEXA7LQP+fT3Hm6r0hRFkwuAqnFTbjsaEtdorFA7G78YVAmcAu7VBmXvpIXglnk2IglhPmFsCUaidfXy5Anu7SfktJT+pWYVj4xC6VWX1EgDA3Fp7qY2c1YFQ2PHnl1/QSjLY5KcFpSiKzRs0aGpn00CJXP/HdutCD8gPF9kW2hjNAMncCvikndtVFJLkjf8yyQ8thPWuIl/E5t6i9/qz4ZH034pdBKgXcoWT7ToqRxML4oG8Io9xdCC4OoyhNERqzjLlZ9KYmU1KQNA72UoYe04Uoj4C12IC00I1gnpcy9MAnkhH36sdTedTyEjKIw2bAbyD1x7BnaRVX5KY5oARnyurmpIHKLf92P6wLPme6OZPFb8nOJJps5MTk5hEsjtOSR59dmzK16iqyF82rrDclxc3lovkAsu9He/rOPz2igy3QFHT7Ig79VoJ+E3hqDiMJrbCSPK9liAiqikyP6e9U/jNZW6husQ9VpoAg1C4kf06bPua/IlS0sd/PzFEo596TgFWIbNMO3oJ2ejozgw/1REzdXONBBslZCguzRJKgMR+HolbJQVfOKklGK+sieLkJn0S5g/T4JAmgFPHOtcEaQY+eAVUEvSaKk+cy5HdffQ/Z4YKRRJ7CN1PviQujNdremVMz679lsYLPzD7yIh6JXvOcYAQ==",
+          "thinking": "",
+          "type": "thinking"
+        },
+        {
+          "id": "toolu_0161EzZ71uApQkJ3QAnNGiS6",
+          "caller": {
+            "type": "direct"
+          },
+          "input": {
+            "slot": "main",
+            "name": "safety-34",
+            "description": "verified 34-move solve, inverse frame, original DR via U2 L U2 B"
+          },
+          "name": "bookmark_fork",
+          "type": "tool_use"
+        }
+      ],
+      "stop_reason": "tool_use"
+    },
+    {
+      "type": "tool_call",
+      "turn": 33,
+      "tool_index": 33,
+      "name": "bookmark_fork",
+      "input": {
+        "slot": "main",
+        "name": "safety-34",
+        "description": "verified 34-move solve, inverse frame, original DR via U2 L U2 B"
+      },
+      "result": {
+        "ok": true,
+        "name": "safety-34",
+        "description": "verified 34-move solve, inverse frame, original DR via U2 L U2 B",
+        "move_count": 34,
+        "on_inverse": true,
+        "total_bookmarks": 1,
+        "_meta": {
+          "sim_remaining_s": 3098.9,
+          "sim_fraction_left": 0.967,
+          "wall_remaining_s": 713.8,
+          "tool_calls_remaining": 117,
+          "urgency": "ample"
+        }
+      },
+      "sim_spent": 105.79,
+      "wall_s_elapsed": 186.22,
+      "slots_after": {
+        "main": {
+          "history": [
+            "R2",
+            "D'",
+            "U2",
+            "L",
+            "U2",
+            "L'",
+            "F2",
+            "L",
+            "B",
+            "F",
+            "U2",
+            "R2",
+            "D2",
+            "B",
+            "U2",
+            "R'",
+            "U2",
+            "R'",
+            "D2",
+            "R2",
+            "U2",
+            "F2",
+            "L",
+            "U2",
+            "R2",
+            "U2",
+            "F2",
+            "R2",
+            "B2",
+            "U2",
+            "B2",
+            "U2",
+            "F2",
+            "R2"
+          ],
+          "on_inverse": true,
+          "move_count": 34,
+          "undo_available": 34
+        }
+      }
     }
   ],
-  "input_tokens": 28816,
-  "output_tokens": 6277,
-  "cache_read_tokens": 391123,
-  "cache_create_tokens": 24141,
+  "input_tokens": 41808,
+  "output_tokens": 9936,
+  "cache_read_tokens": 1173653,
+  "cache_create_tokens": 32485,
   "per_turn_usage": [
     {
       "turn": 1,
@@ -2497,7 +4779,216 @@
       "cache_read_tokens": 36244,
       "cache_create_tokens": 1357,
       "stop_reason": "tool_use"
+    },
+    {
+      "turn": 15,
+      "wall_s_elapsed": 113.65,
+      "turn_wall_s": 3.41,
+      "sim_spent_at_turn": 59.79,
+      "input_tokens": 1191,
+      "output_tokens": 104,
+      "cache_read_tokens": 37708,
+      "cache_create_tokens": 274,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 16,
+      "wall_s_elapsed": 115.97,
+      "turn_wall_s": 2.32,
+      "sim_spent_at_turn": 60.19,
+      "input_tokens": 638,
+      "output_tokens": 65,
+      "cache_read_tokens": 37892,
+      "cache_create_tokens": 948,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 17,
+      "wall_s_elapsed": 118.43,
+      "turn_wall_s": 2.46,
+      "sim_spent_at_turn": 60.19,
+      "input_tokens": 486,
+      "output_tokens": 119,
+      "cache_read_tokens": 38960,
+      "cache_create_tokens": 317,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 18,
+      "wall_s_elapsed": 120.66,
+      "turn_wall_s": 2.17,
+      "sim_spent_at_turn": 61.19,
+      "input_tokens": 552,
+      "output_tokens": 104,
+      "cache_read_tokens": 39172,
+      "cache_create_tokens": 371,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 19,
+      "wall_s_elapsed": 123.61,
+      "turn_wall_s": 2.95,
+      "sim_spent_at_turn": 61.59,
+      "input_tokens": 534,
+      "output_tokens": 119,
+      "cache_read_tokens": 39477,
+      "cache_create_tokens": 405,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 20,
+      "wall_s_elapsed": 125.69,
+      "turn_wall_s": 2.07,
+      "sim_spent_at_turn": 62.59,
+      "input_tokens": 500,
+      "output_tokens": 91,
+      "cache_read_tokens": 39762,
+      "cache_create_tokens": 437,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 21,
+      "wall_s_elapsed": 129.95,
+      "turn_wall_s": 4.26,
+      "sim_spent_at_turn": 62.69,
+      "input_tokens": 475,
+      "output_tokens": 189,
+      "cache_read_tokens": 40094,
+      "cache_create_tokens": 441,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 22,
+      "wall_s_elapsed": 134.02,
+      "turn_wall_s": 4.06,
+      "sim_spent_at_turn": 64.69,
+      "input_tokens": 712,
+      "output_tokens": 237,
+      "cache_read_tokens": 40415,
+      "cache_create_tokens": 375,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 23,
+      "wall_s_elapsed": 136.45,
+      "turn_wall_s": 2.43,
+      "sim_spent_at_turn": 65.69,
+      "input_tokens": 813,
+      "output_tokens": 104,
+      "cache_read_tokens": 40698,
+      "cache_create_tokens": 433,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 24,
+      "wall_s_elapsed": 138.38,
+      "turn_wall_s": 1.93,
+      "sim_spent_at_turn": 66.09,
+      "input_tokens": 661,
+      "output_tokens": 67,
+      "cache_read_tokens": 41199,
+      "cache_create_tokens": 424,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 25,
+      "wall_s_elapsed": 141.12,
+      "turn_wall_s": 2.74,
+      "sim_spent_at_turn": 68.09,
+      "input_tokens": 600,
+      "output_tokens": 153,
+      "cache_read_tokens": 41739,
+      "cache_create_tokens": 309,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 26,
+      "wall_s_elapsed": 143.97,
+      "turn_wall_s": 2.84,
+      "sim_spent_at_turn": 69.09,
+      "input_tokens": 655,
+      "output_tokens": 104,
+      "cache_read_tokens": 41943,
+      "cache_create_tokens": 408,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 27,
+      "wall_s_elapsed": 145.98,
+      "turn_wall_s": 2.0,
+      "sim_spent_at_turn": 69.49,
+      "input_tokens": 561,
+      "output_tokens": 67,
+      "cache_read_tokens": 42283,
+      "cache_create_tokens": 518,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 28,
+      "wall_s_elapsed": 148.68,
+      "turn_wall_s": 2.7,
+      "sim_spent_at_turn": 71.49,
+      "input_tokens": 620,
+      "output_tokens": 147,
+      "cache_read_tokens": 42647,
+      "cache_create_tokens": 463,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 29,
+      "wall_s_elapsed": 151.31,
+      "turn_wall_s": 2.63,
+      "sim_spent_at_turn": 72.49,
+      "input_tokens": 613,
+      "output_tokens": 100,
+      "cache_read_tokens": 43005,
+      "cache_create_tokens": 424,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 30,
+      "wall_s_elapsed": 153.09,
+      "turn_wall_s": 1.78,
+      "sim_spent_at_turn": 72.79,
+      "input_tokens": 529,
+      "output_tokens": 65,
+      "cache_read_tokens": 43361,
+      "cache_create_tokens": 516,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 31,
+      "wall_s_elapsed": 157.89,
+      "turn_wall_s": 4.8,
+      "sim_spent_at_turn": 72.79,
+      "input_tokens": 549,
+      "output_tokens": 287,
+      "cache_read_tokens": 43729,
+      "cache_create_tokens": 413,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 32,
+      "wall_s_elapsed": 178.82,
+      "turn_wall_s": 18.0,
+      "sim_spent_at_turn": 102.79,
+      "input_tokens": 636,
+      "output_tokens": 1079,
+      "cache_read_tokens": 44041,
+      "cache_create_tokens": 430,
+      "stop_reason": "tool_use"
+    },
+    {
+      "turn": 33,
+      "wall_s_elapsed": 186.22,
+      "turn_wall_s": 7.4,
+      "sim_spent_at_turn": 103.79,
+      "input_tokens": 1667,
+      "output_tokens": 458,
+      "cache_read_tokens": 44405,
+      "cache_create_tokens": 438,
+      "stop_reason": "tool_use"
     }
   ],
-  "cost_estimate_usd": 0.3885
+  "cost_estimate_usd": 0.7484
 }
